@@ -22,7 +22,7 @@ html, body {
     font-family: "Segoe UI", Roboto, Arial, sans-serif;
     font-size: 13px;
     font-weight: 400;
-    color: #333;
+    color: #333; margin: 50px 0 0 0;
   }
 
     #checkboxContainer {
@@ -95,15 +95,24 @@ html, body {
 
 
 
-  .header nav a {
-    margin: 0 8px;
-    color: white;
-    text-decoration: none;
-    font-weight: 500;
-    position: relative;
-    padding-bottom: 2px;
-    font-size: 13px;
-  }
+  nav a,
+.dropbtn {
+  color: white;
+  padding: 10px 10px;
+  text-decoration: none;
+  background: none;
+  border: none;
+  font-size: 10px;
+  font-weight: bold;
+  font-family: Segoe UI;
+  cursor: pointer;
+  display: inline-block;
+  line-height: 1.5;
+  vertical-align: middle; margin-top: 6px;
+  margin-right: 8px;
+  margin-bottom: 6px;
+  margin-left: 8px;
+}
 
   .header nav a:hover::after,
   .header nav a.active::after {
@@ -279,9 +288,9 @@ html, body {
   text-decoration: underline;
 }
 
-/* Dropdown */
 .dropdown {
   position: relative;
+  display: inline-block;
 }
 
 .dropbtn {
