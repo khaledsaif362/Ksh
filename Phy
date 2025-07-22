@@ -31,7 +31,7 @@
 </head>
 <body>
 
-  <h2>📊 Var Margin Calculator</h2>
+  <h2>📊 Physical Margin Calculator</h2>
 
   <label>Upload File (optional):</label>
   <input type="file" id="fileUpload"><br><br>
