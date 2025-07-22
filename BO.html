@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RS KHALED</title>
+ 
+   <link rel="stylesheet" href="style.css">
+    
+</head>
+<body>
+
+  <div class="card">
+    <h2>BO File Generator</h2>
+
+    <label for="fileType">File Type: &nbsp; &nbsp; &nbsp;
+    <select id="fileType" style="width: 315px;">
+      <option value="client">Client</option>
+      <option value="bank">Bank Details</option>
+      <option value="product">Product Allowed</option>
+      <option value="exchange">Exchange Allowed</option>
+      <option value="limit">CAP/ALL Limit</option>
+      <option value="incr_limit">Incr CAP/ALL Limit</option>
+      <option value="comlimit">COM Limit</option>
+      <option value="incr_comlimit">Incr COM Limit</option>
+      <option value="DP">DP Holding</option>
+      <option value="ben">MRG Holding</option>
+      <option value="obb">T1 Holding</option>
+      <option value="mtf">MTF Holding</option>
+      <option value="mtf_T1">MTFT Holding</option>
+      <option value="indp">Incr DP</option>
+      <option value="inben">Incr MRG</option>
+      <option value="inobb">Incr T1</option>
+      <option value="inmtf">Incr MTF</option>
+      <option value="inmtf_T1">Incr MTF_T1</option>
+      <option value="mtfps03">NSE MTF Position</option>
+      <option value="bsemtfps03">BSE MTF Position</option>
+      <option value="dealer">Dealer Creation</option>
+      <option value="client_dealer">Dealer Mapping</option>
+      <option value="profile">Client Profile</option>
+      <option value="restrict">Client Restriction T5</option>
+      <option value="physical">Physical Expiry Block</option>
+    </select>
+
+    <label for="baseCode">Client Code:&nbsp;
+    <input type="text" id="baseCode" placeholder="e.g. AB1000" style="width: 306px;">
+
+
+    <label for="recordCount">Count:&nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp;
+    <input type="number" id="recordCount" placeholder="e.g. 5" style="width: 308px;">
+
+    <div class="button-group">
+      <button onclick="previewFile()">Preview</button>
+      <button onclick="downloadFile()">Download</button>
+      <button onclick="clearAll()">Clear</button>
+      <button onclick="downloadAllFiles()">Download All</button>
+    </div>
+
+    <pre id="preview"></pre>
+  </div>
+  
+
+
+
+
+  <script src="boscript.js"></script><div class="footer">© Khaled</div>
+
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RS KHALED</title>
+  <link rel="stylesheet" href="style.css"> 
+</head>
+<body>
+  <div class="card">
+    <h2>Position Files</h2>
+
+    <label for="client1">Client ID 1: &nbsp; &nbsp;
+    <input type="text" id="client1" placeholder="Client 1 (Required)" style="width: 291px;">
+
+    <label for="client2">Client ID 2: &nbsp; &nbsp;
+    <input type="text" id="client2" placeholder="Client 2 (Optional)" style="width: 290px;">
+
+   <div style="display: flex; align-items: center; gap: 10px;">
+  <label for="expiry">Expiry Date:</label>
+<input type="date" id="expiry" style="width: 291px; margin-top: 8px;" />  
+</div>
+    <!-- Checkboxes container -->
+    <div id="checkboxContainer">
+      <div class="checkbox-item">
+        <input type="checkbox" id="all" onclick="toggleAll()">
+        <label for="all">Select All</label>
+      </div>
+      <!-- More checkboxes will be added dynamically here -->
+    </div>
+
+    <!-- Moved the button OUTSIDE -->
+    <button onclick="generate()">Generate Files</button>
+  </div><div class="footer">© Khaled</div>
+  <script src="POSScript.js"></script>
+</body>
+</html>
