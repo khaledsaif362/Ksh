@@ -2,47 +2,50 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Personal e</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: green;
-      color: #333;
-      text-align: center;
-      padding: 50px;
-    }
-
-    h1 {
-      color: #2e7d32;
-    }
-
-    a {
-      text-decoration: none;
-      color: #0066cc;
-      font-weight: bold;
-    }
-
-    a:hover {
-      text-decoration: underline;
-    }
-
-    .card {
-      max-width: 600px;
-      margin: auto;
-      background: cyan;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-  </style>
+  <title>RS KHALED</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="card">
-    <h1>Welcome to My Website</h1>
-    <p>This is a simple HTML page hosted on GitHub Pages.</p>
-    <p>You can edit this file to add your own content.</p>
-    <a href="https://www.moneycontrol.com/" target="_blank">kkGitHub</a>
+
+  <div id="topMenu">
+    <img src="RSIMAGE.png" alt="Rupeeseed Logo">
+    <nav>
+      <a href="1.html" target="pdfViewer">Home</a>
+      <a href="BO.html" target="pdfViewer">BO Files</a>
+      <a href="POS.html" target="pdfViewer">Position Files</a>
+      <a href="http://172.16.101.74:8080/RupeeFileUpload" target="_blank">File Uploader</a>
+      
+      <div class="dropdown">
+        <button class="dropbtn">Exchange Sites</button>
+        <div class="dropdown-content">
+          <a href="https://www.nseindia.com/" target="_blank">NSE</a>
+          <a href="https://www.bseindia.com/" target="_blank">BSE</a>
+          <a href="https://member.bseindia.com/" target="_blank">Member BSE</a>
+          <a href="https://www.mcxindia.com/" target="_blank">MCX</a>
+          <a href="https://sftp.mcxindia.com/?Command=Login" target="_blank">SFTP MCX</a>
+          <a href="https://www.rupeeseed.com/" target="_blank">RupeeSeed</a>
+        </div>
+      </div>
+    </nav>
   </div>
+
+  <div id="container">
+    <div id="sidebar">
+      <a href="Profile_Master_new.pdf" target="pdfViewer">Profile Master</a>
+      <a href="sysparameter_3.0.pdf" target="pdfViewer">Sysparameter</a>
+      <a href="RupeeSeed_RMS_FileFormat_1.0.61 3.0.pdf" target="pdfViewer">File Format 3.0</a>
+      <a href="RupeeSeedRMSFileFormat 4.0.pdf" target="pdfViewer">File Format 4.0</a>
+      <a href="MCX-FundAllocation.pdf" target="pdfViewer">MCX Allocation Doc</a>
+      <a href="Draft Circuit Threshold Position to be viewed and square off.pdf" target="pdfViewer">Circuit Threshold Doc</a>
+      <a href="SQL.TXT" target="pdfViewer">SQL/PUTTY</a>
+      <a href="testk.html" target="pdfViewer">TEST</a>
+
+    </div>
+
+    <div id="mainContent">
+      <iframe id="pdfViewer" name="pdfViewer" src="1.html" width="100%" height="600px"></iframe>
+    </div>
+  </div>
+
 </body>
 </html>
