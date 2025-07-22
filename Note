@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Handwriting Notepad</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #f7f7f7;
+      font-family: Arial, sans-serif;
+    }
+
+    h2 {
+      margin-top: 20px;
+    }
+
+    canvas {
+      border: 2px solid #555;
+      margin-top: 10px;
+      touch-action: none; /* Prevent scrolling on touch */
+      background: white;
+      border-radius: 8px;
+    }
+
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>📝 Handwriting Notepad</h2>
+  <canvas id="pad" width="600" height="400"></canvas>
+
+  <div>
+    <button onclick="clearCanvas()">Clear</button>
+    <button onclick="saveImage()">Save</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('pad');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+
+    function startDraw(e) {
+      drawing = true;
+      ctx.beginPath();
+      ctx.moveTo(getX(e), getY(e));
+      e.preventDefault();
+    }
+
+    function draw(e) {
+      if (!drawing) return;
+      ctx.lineTo(getX(e), getY(e));
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.stroke();
+      e.preventDefault();
+    }
+
+    function stopDraw(e) {
+      if (!drawing) return;
+      drawing = false;
+      e.preventDefault();
+    }
+
+    function getX(e) {
+      return e.clientX ? e.clientX - canvas.offsetLeft : e.touches[0].clientX - canvas.offsetLeft;
+    }
+
+    function getY(e) {
+      return e.clientY ? e.clientY - canvas.offsetTop : e.touches[0].clientY - canvas.offsetTop;
+    }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDraw);
+    canvas.addEventListener('mouseout', stopDraw);
+
+    canvas.addEventListener('touchstart', startDraw);
+    canvas.addEventListener('touchmove', draw);
+    canvas.addEventListener('touchend', stopDraw);
+    canvas.addEventListener('touchcancel', stopDraw);
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function saveImage() {
+      const link = document.createElement('a');
+      link.download = 'handwriting.png';
+      link.href = canvas.toDataURL();
+      link.click();
+    }
+  </script>
+
+</body>
+</html>
