@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Peak Margin Calculator</title>
+  <link rel="stylesheet" href="style.css"> 
+</head>
+<body>
+<div class="card">
+  <h2>Peak Margin Calculator</h2>
+
+  <label>Peak:</label>
+  <input type="number" id="input1" placeholder="Enter Peak"><br>
+
+  <label>Qty:</label>
+  <input type="number" id="input2" placeholder="Enter Quantity"><br>
+
+  <label>Price:</label>
+  <input type="number" id="input3" placeholder="Enter Price"><br>
+
+  <label>Avail Balance:</label>
+  <input type="number" id="input4" placeholder="Enter Avail Balance"><br>
+
+  <button onclick="calculate()">Calculate</button>
+
+  <div class="output" id="output1"></div>
+  <div class="output" id="output2"></div>
+  <div class="output" id="output3"></div>
+</body>
+
+<script>
+  function calculate() {
+    const input1 = parseFloat(document.getElementById("input1").value) || 0;
+    const input2 = parseFloat(document.getElementById("input2").value) || 0;
+    const input3 = parseFloat(document.getElementById("input3").value) || 0;
+    const input4 = parseFloat(document.getElementById("input4").value) || 0;
+
+    const multiply = input2 * input3 * 0.2;
+    const amount = input1 - multiply;
+    const availBuyback = input4 - amount; // ✅ Updated logic here
+
+    document.getElementById("output1").innerText = "Open Position Peak (20%): ₹" + multiply.toFixed(2);
+    document.getElementById("output2").innerText = "Amount (Peak - Open Pos Peak): ₹" + amount.toFixed(2);
+    document.getElementById("output3").innerText = "AVAIL FOR BUYBACK: ₹" + availBuyback.toFixed(2);
+  }
+</script>
+
+</html>
