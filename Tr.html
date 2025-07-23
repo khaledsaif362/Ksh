@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Default Stock Price Edit</title>
+  <style>
+    body {
+      background-color: white;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .window {
+      width: 400px;
+      background-color: #1e1e1e; /* Window-like dark background */
+      border: 1px solid #aaa;
+      box-shadow: 0 0 10px #000;
+    }
+
+    .title-bar {
+      background-color: #f0f0f0;
+      color: black;
+      padding: 6px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+      font-size: 13px;
+    }
+
+    .title-bar .close {
+      cursor: pointer;
+      font-weight: normal;
+    }
+
+    .content {
+      padding: 20px;
+      background-color: #2a2a2a;
+      color: white;
+      font-size: 13px;
+    }
+
+    .form-group {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      flex: 1;
+    }
+
+    .form-group input[type="number"] {
+      width: 100px;
+      padding: 4px;
+      font-size: 13px;
+      border: 1px solid #ccc;
+      border-radius: 2px;
+    }
+
+    .save-button {
+      display: block;
+      margin: 20px auto 0;
+      padding: 8px 20px;
+      background-color: #1e1e1e;
+      color: yellow;
+      font-weight: bold;
+      border: 1px solid #999;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .save-button:hover {
+      background-color: #333;
+    }
+  </style>
+</head>
+<body>
+
+<div class="window">
+  <div class="title-bar">
+    <span>Default Stock Price Edit</span>
+    <span class="close">✕</span>
+  </div>
+  <div class="content">
+    <div class="form-group">
+      <label for="normal-ceil">Normal Ceiling Percentage</label>
+      <input type="number" id="normal-ceil" value="50.00">
+    </div>
+
+    <div class="form-group">
+      <label for="normal-floor">Normal Floor Percentage</label>
+      <input type="number" id="normal-floor" value="30.00">
+    </div>
+
+    <div class="form-group">
+      <label for="oddlot-ceil">Oddlot Ceiling Percentage</label>
+      <input type="number" id="oddlot-ceil" value="50.00">
+    </div>
+
+    <div class="form-group">
+      <label for="oddlot-floor">Oddlot Floor Percentage</label>
+      <input type="number" id="oddlot-floor" value="30.00">
+    </div>
+
+    <button class="save-button">Save</button>
+  </div>
+</div>
+
+</body>
+</html>
