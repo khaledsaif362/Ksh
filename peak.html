@@ -7,7 +7,7 @@
 </head>
 <body>
 <div class="card">
-  <h2>Peak Margin Calculator</h2>
+  <h2>Peak Margin Calc</h2>
 
   <label>Peak:</label>
   <input type="number" id="input1" placeholder="Enter Peak"><br>
@@ -26,6 +26,7 @@
   <div class="output" id="output1"></div>
   <div class="output" id="output2"></div>
   <div class="output" id="output3"></div>
+  <div class="output" id="output6"></div>
 </body>
 
 <script>
@@ -34,7 +35,8 @@
     const input2 = parseFloat(document.getElementById("input2").value) || 0;
     const input3 = parseFloat(document.getElementById("input3").value) || 0;
     const input4 = parseFloat(document.getElementById("input4").value) || 0;
-
+    
+const qtybuy = availBuyback / input3
     const multiply = input2 * input3 * 0.2;
     const amount = input1 - multiply;
     const availBuyback = input4 - amount; // ✅ Updated logic here
@@ -42,6 +44,9 @@
     document.getElementById("output1").innerText = "Open Position Peak (20%): ₹" + multiply.toFixed(2);
     document.getElementById("output2").innerText = "Amount (Peak - Open Pos Peak): ₹" + amount.toFixed(2);
     document.getElementById("output3").innerText = "AVAIL FOR BUYBACK: ₹" + availBuyback.toFixed(2);
+document.getElementById("output6").innerText = "QTY FOR BUYBACK: qtybuy.toFixed(2);
+  
+    
   }
 </script>
 
