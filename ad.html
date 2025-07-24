@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Physical Margin Calculator</title><link rel="stylesheet" href="stel.css">
+
+ 
+</head>
+<body>
+
+<h2>Physical Margin Calculator</h2>
+
+<div class="card">
+  <label>Upload DAT File:</label>
+  <input type="file" id="datFile" accept=".dat,.txt">
+</div>
+
+<div class="card">
+  <label>Symbol:</label>
+  <input type="text" id="symbol">
+</div>
+
+<div class="card">
+  <label>LTP:</label>
+  <input type="number" id="ltp">
+</div>
+
+<div class="card">
+  <label>Qty:</label>
+  <input type="number" id="qty">
+</div>
+
+<div class="card">
+  <label>Strike Price:</label>
+  <input type="number" id="strike">
+</div>
+
+<div class="card">
+  <label>Option Type:</label><br>
+  <input type="radio" name="optionType" value="CE" checked> CE
+  <input type="radio" name="optionType" value="PE"> PE
+</div>
+
+<div class="card">
+  <label>Select Day (Var%):</label><br>
+  <input type="radio" name="day" value="10" checked> 2nd Day (10%)<br>
+  <input type="radio" name="day" value="25"> 3rd Day (25%)<br>
+  <input type="radio" name="day" value="45"> 4th Day (45%)<br>
+  <input type="radio" name="day" value="70"> 5th Day (70%)<br>
+  <input type="radio" name="day" value="100"> 6th Day (100%)<br>
+</div>
+
+<div class="card">
+  <button onclick="calculate()">Calculate</button>
+</div>
+
+<h3 style="text-align:center; margin-top: 20px; color:#2e7d32;">Output</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Symbol</th>
+      <th>Qty</th>
+      <th>Var%</th>
+      <th>Physical Margin</th>
+    </tr>
+  </thead>
+  <tbody id="outputBody"></tbody>
+</table>
+
+<script>
+  let symbolsFromFile = [];
+
+  document.getElementById('datFile').addEventListener('change', function(event) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const lines = e.target.result.split('\n');
+      symbolsFromFile = lines.map(line => {
+        const cols = line.split(',');
+        return cols[1]?.trim().toUpperCase(); // 2nd column = symbol
+      }).filter(Boolean);
+      alert("DAT file loaded with " + symbolsFromFile.length + " symbols.");
+    };
+    reader.readAsText(event.target.files[0]);
+  });
+
+  function calculate() {
+    const symbol = document.getElementById("symbol").value.trim().toUpperCase();
+    const ltp = parseFloat(document.getElementById("ltp").value);
+    const qty = parseInt(document.getElementById("qty").value);
+    const strike = parseFloat(document.getElementById("strike").value);
+    const varPercent = parseFloat(document.querySelector('input[name="day"]:checked').value);
+    const optionType = document.querySelector('input[name="optionType"]:checked').value;
+
+    if (!symbol || isNaN(ltp) || isNaN(qty) || isNaN(strike)) {
+      alert("Please fill all fields correctly.");
+      return;
+    }
+
+    if (!symbolsFromFile.includes(symbol)) {
+      alert("Symbol not found in uploaded file.");
+      return;
+    }
+
+    let physicalMargin = "no physical margin";
+    if ((optionType === "CE" && ltp > strike) || (optionType === "PE" && ltp < strike)) {
+      physicalMargin = ((ltp * qty * varPercent) / 100).toFixed(2);
+    }
+
+    const tableRow = `<tr>
+      <td>${symbol}</td>
+      <td>${qty}</td>
+      <td>${varPercent}%</td>
+      <td>${physicalMargin}</td>
+    </tr>`;
+
+    document.getElementById("outputBody").innerHTML = tableRow;
+  }
+</script>
+
+</body>
+</html>
