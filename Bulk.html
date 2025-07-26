@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CSV Generator (EQ Series + Hardcoded Fields)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    .radio-group {
+      display: flex;
+      gap: 20px;
+    }
+    input[type="text"],
+    input[type="number"],
+    input[type="file"] {
+      width: 250px;
+      padding: 8px;
+    }
+    button {
+      padding: 10px 20px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>CSV Generator (from EQ File + Hardcoded Fields)</h2>
+
+  <div class="form-group">
+    <label>Upload Symbol File (Format: SYMBOL,SERIES,PRICE):</label>
+    <input type="file" id="fileInput" accept=".txt,.dat,.csv">
+  </div>
+
+  <div class="form-group">
+    <label>Client ID:</label>
+    <input type="text" id="clientInput">
+  </div>
+
+  <div class="form-group">
+    <label>Select Order Type:</label>
+    <div class="radio-group">
+      <label><input type="radio" name="orderType" value="BUY"> Buy</label>
+      <label><input type="radio" name="orderType" value="SELL"> Sell</label>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>How Many Records? (Max = EQ symbols):</label>
+    <input type="number" id="countInput" value="10" min="1">
+  </div>
+
+  <button onclick="processFile()">Generate CSV</button>
+
+  <script>
+    function processFile() {
+      const file = document.getElementById('fileInput').files[0];
+      const client = document.getElementById('clientInput').value.trim();
+      const orderType = document.querySelector('input[name="orderType"]:checked');
+      const count = parseInt(document.getElementById('countInput').value);
+
+      if (!file) return alert("Please upload a file.");
+      if (!client) return alert("Enter Client ID.");
+      if (!orderType) return alert("Select Buy or Sell.");
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const lines = e.target.result.split('\n');
+        const symbolMap = new Map(); // symbol => price
+
+        lines.forEach(line => {
+          const parts = line.trim().split(',');
+          if (parts.length >= 3) {
+            const symbol = parts[0].trim().toUpperCase();
+            const series = parts[1].trim().toUpperCase();
+            const price = parseFloat(parts[2].trim());
+            if (series === "EQ" && !symbolMap.has(symbol)) {
+              symbolMap.set(symbol, price);
+            }
+          }
+        });
+
+        const entries = Array.from(symbolMap.entries());
+        if (entries.length === 0) {
+          alert("No EQ symbols with price found.");
+          return;
+        }
+
+        const finalCount = Math.min(count, entries.length);
+        let csvContent = "client,type,symbol,price,qty,strike\n";
+
+        for (let i = 0; i < finalCount; i++) {
+          const [symbol, price] = entries[i];
+          csvContent += `${client},${orderType.value},${symbol},${price},100,2500\n`;
+        }
+
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "output.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      };
+
+      reader.readAsText(file);
+    }
+  </script>
+
+</body>
+</html>
