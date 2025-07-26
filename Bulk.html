@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>CSV Generator (EQ Series + Hardcoded Fields)</title>
+  <title>NSE CSV Generator</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -14,15 +14,15 @@
       display: block;
       margin-bottom: 5px;
     }
-    .radio-group {
-      display: flex;
-      gap: 20px;
-    }
     input[type="text"],
     input[type="number"],
     input[type="file"] {
       width: 250px;
       padding: 8px;
+    }
+    .radio-group {
+      display: flex;
+      gap: 20px;
     }
     button {
       padding: 10px 20px;
@@ -33,11 +33,11 @@
 </head>
 <body>
 
-  <h2>CSV Generator (from EQ File + Hardcoded Fields)</h2>
+  <h2>NSE CSV Generator (EQ Series + Hardcoded Fields)</h2>
 
   <div class="form-group">
-    <label>Upload Symbol File (Format: SYMBOL,SERIES,PRICE):</label>
-    <input type="file" id="fileInput" accept=".txt,.dat,.csv">
+    <label>Upload CSV File (Headers: TckrSymb, SctySrs, OpnPric, FinInstrmId):</label>
+    <input type="file" id="fileInput" accept=".csv,.txt">
   </div>
 
   <div class="form-group">
@@ -54,14 +54,14 @@
   </div>
 
   <div class="form-group">
-    <label>How Many Records? (Max = EQ symbols):</label>
+    <label>Number of Records:</label>
     <input type="number" id="countInput" value="10" min="1">
   </div>
 
-  <button onclick="processFile()">Generate CSV</button>
+  <button onclick="generateCSV()">Generate CSV</button>
 
   <script>
-    function processFile() {
+    function generateCSV() {
       const file = document.getElementById('fileInput').files[0];
       const client = document.getElementById('clientInput').value.trim();
       const orderType = document.querySelector('input[name="orderType"]:checked');
@@ -72,41 +72,50 @@
       if (!orderType) return alert("Select Buy or Sell.");
 
       const reader = new FileReader();
-      reader.onload = function(e) {
-        const lines = e.target.result.split('\n');
-        const symbolMap = new Map(); // symbol => price
+      reader.onload = function (e) {
+        const lines = e.target.result.split('\n').map(line => line.trim()).filter(Boolean);
+        const headers = lines[0].split(',').map(h => h.trim());
+        
+        const symbolIndex = headers.indexOf("TckrSymb");
+        const sctySrsIndex = headers.indexOf("SctySrs");
+        const priceIndex = headers.indexOf("OpnPric");
+        const tokenIndex = headers.indexOf("FinInstrmId");
 
-        lines.forEach(line => {
-          const parts = line.trim().split(',');
-          if (parts.length >= 3) {
-            const symbol = parts[0].trim().toUpperCase();
-            const series = parts[1].trim().toUpperCase();
-            const price = parseFloat(parts[2].trim());
-            if (series === "EQ" && !symbolMap.has(symbol)) {
-              symbolMap.set(symbol, price);
-            }
-          }
-        });
-
-        const entries = Array.from(symbolMap.entries());
-        if (entries.length === 0) {
-          alert("No EQ symbols with price found.");
+        if (symbolIndex === -1 || priceIndex === -1 || sctySrsIndex === -1 || tokenIndex === -1) {
+          alert("CSV must contain headers: TckrSymb, SctySrs, OpnPric, FinInstrmId");
           return;
         }
 
-        const finalCount = Math.min(count, entries.length);
-        let csvContent = "client,type,symbol,price,qty,strike\n";
+        const symbolMap = new Map();
 
-        for (let i = 0; i < finalCount; i++) {
-          const [symbol, price] = entries[i];
-          csvContent += `${client},${orderType.value},${symbol},${price},100,2500\n`;
+        for (let i = 1; i < lines.length; i++) {
+          const parts = lines[i].split(',');
+          const sym = parts[symbolIndex]?.trim().toUpperCase();
+          const series = parts[sctySrsIndex]?.trim().toUpperCase();
+          const price = parts[priceIndex]?.trim();
+          const token = parts[tokenIndex]?.trim();
+
+          if (series === "EQ" && sym && !symbolMap.has(sym)) {
+            symbolMap.set(sym, { price, token });
+          }
         }
 
-        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const entries = Array.from(symbolMap.entries());
+        const finalCount = Math.min(count, entries.length);
+        let content = ",Exch,EXCH_SEG,SegmentCode,Symbol,ClientID,Buy/Sell,Token,Product,Qty,Price,OrdType,Trigger Price,DQty,Val,Pro/Cli,Participant ID,LTP\n";
+
+        for (let i = 0; i < finalCount; i++) {
+          const [sym, data] = entries[i];
+          const price = data.price;
+          const token = data.token;
+          content += `,NSE,NSEE,E,${sym}-EQ,${client},${orderType.value},${token},CNC,1,${price},Limit,0,0,DAY,C,,${price}\n`;
+        }
+
+        const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.setAttribute("href", url);
-        link.setAttribute("download", "output.csv");
+        link.setAttribute("download", "nse_output.csv");
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
