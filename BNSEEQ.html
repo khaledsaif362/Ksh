@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Multi Client CSV Generator</title>
+  <style>
+   body {
+    background-color: #f5f5f5;
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    margin: 76px 0 0 0;
+  }
+    .card {
+    background: #ffffff; 
+    color: green;
+    padding: 20px;
+    border-radius: 15px;
+    max-width: 400px;
+    margin: 40px auto;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  
+   button {
+    background-color: #006400;
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background-color: #2e7d32;
+  }
+
+  .button-group {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  
+  
+  
+  
+  
+  
+
+    .client-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 10px; 
+      gap: 5px;
+    }
+    .client-row input[type="text"] {
+      width: 150px;
+      padding: 4px;  font-size: 13px;
+    font-family: inherit;
+    border-radius: 8px;
+    border: 1px solid #a5d6a7;
+    background-color: #fff;
+    font-weight: 500;
+    }
+    .client-row label {
+      margin-right: 10px;
+    }
+    .btn {
+      padding: 8px 16px;
+      margin-top: 15px;
+      cursor: pointer;
+    }
+	
+	.window {
+      width: 438px;
+      background-color: blue;
+      border: 1px solid #aaa;
+      box-shadow: 0 0 4px #000;  margin: -19px -200px 25px -20px;
+    }
+
+    .title-bar {
+      background-color: green;
+      color: white;
+      padding: 8px 160px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+  </style>
+</head>
+<body>
+
+<div class="card"><div class="window"><div class="title-bar">
+  NSE EQ
+</div></div>
+  <label>NSE Bhavcopy:
+    <input type="file" id="fileInput" accept=".csv,.txt" style="width: 250px;">
+  </label><br><br>
+
+  <label>Orders:&nbsp; &nbsp; 
+    <input type="number" id="count1" value="50" min="1"
+  style="width: 150px; padding: 5px 6px; margin-bottom: 8px; border-radius: 6px; border: 1px solid #a5d6a7; background-color: #fff;">
+
+  </label><br>
+
+  <div id="clientsContainer">
+    <!-- Clients will be added here -->
+  </div>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+  <button onclick="addClient()" class="btn" class="button-group">+ Add Client</button>
+  <button onclick="generateCSV()" class="btn" class="button-group">Generate</button>
+</div>
+
+<script>
+  let clientCount = 0;
+
+  function addClient() {
+    clientCount++;
+    const container = document.getElementById('clientsContainer');
+    const row = document.createElement('div');
+    row.className = 'client-row';
+    row.innerHTML = `
+      <label>Client ${clientCount}:</label>
+      <input type="text" id="client${clientCount}" placeholder="ID">
+      <label><input type="radio" name="orderType${clientCount}" value="BUY" checked> Buy</label>
+      <label><input type="radio" name="orderType${clientCount}" value="SELL"> Sell</label>
+    `;
+    container.appendChild(row);
+  }
+
+  // Add 2 clients by default
+  addClient();
+  addClient();
+
+  function generateCSV() {
+    const file = document.getElementById('fileInput').files[0];
+    if (!file) return alert("Please upload a CSV file.");
+
+    const count1 = parseInt(document.getElementById('count1').value);
+    if (isNaN(count1) || count1 <= 0) return alert("Enter a valid number of orders.");
+
+    const clients = [];
+    for (let i = 1; i <= clientCount; i++) {
+      const id = document.getElementById(`client${i}`).value.trim().toUpperCase();
+      const orderType = document.querySelector(`input[name="orderType${i}"]:checked`);
+      if (!id || !orderType) return alert(`Fill all fields for Client ${i}`);
+      clients.push({ id, side: orderType.value });
+    }
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const lines = e.target.result.split('\n').map(l => l.trim()).filter(Boolean);
+      const headers = lines[0].split(',').map(h => h.trim());
+
+      const symbolIndex = headers.indexOf("TckrSymb");
+      const srsIndex = headers.indexOf("SctySrs");
+      const priceIndex = headers.indexOf("OpnPric");
+      const tokenIndex = headers.indexOf("FinInstrmId");
+
+      if (symbolIndex === -1 || srsIndex === -1 || priceIndex === -1 || tokenIndex === -1) {
+        alert("Missing required headers: TckrSymb, SctySrs, OpnPric, FinInstrmId");
+        return;
+      }
+
+      const symbolMap = new Map();
+
+      for (let i = 1; i < lines.length; i++) {
+        const parts = lines[i].split(',');
+        const sym = parts[symbolIndex]?.trim().toUpperCase();
+        const srs = parts[srsIndex]?.trim().toUpperCase();
+        const price = parts[priceIndex]?.trim();
+        const token = parts[tokenIndex]?.trim();
+
+        if (srs === "EQ" && sym && !symbolMap.has(sym)) {
+          symbolMap.set(sym, { price, token });
+        }
+      }
+
+      const symbols = Array.from(symbolMap.entries());
+      if (symbols.length < count1) {
+        alert("Not enough EQ symbols. Available: " + symbols.length);
+        return;
+      }
+
+      let csv = ",Exch,EXCH_SEG,SegmentCode,Symbol,ClientID,Buy/Sell,Token,Product,Qty,Price,OrdType,Trigger Price,DQty,Val,Pro/Cli,Participant ID,LTP\n";
+
+      const selectedSymbols = symbols.slice(0, count1);
+      for (const client of clients) {
+        for (const [sym, data] of selectedSymbols) {
+          csv += `,NSE,NSEE,E,${sym}-EQ,${client.id},${client.side},${data.token},CNC,1,${data.price},Limit,0,0,DAY,C,,${data.price}\n`;
+        }
+      }
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "multi_client_orders.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+
+    reader.readAsText(file);
+  }
+</script>
+
+</body>
+</html>
