@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>NSE CSV Generator</title>
+  <title>RS</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -33,10 +33,10 @@
 </head>
 <body>
 
-  <h2>NSE CSV Generator (EQ Series + Hardcoded Fields)</h2>
+  <h2>NSE EQ</h2>
 
   <div class="form-group">
-    <label>Upload CSV File (Headers: TckrSymb, SctySrs, OpnPric, FinInstrmId):</label>
+    <label>Upload NSE Bhavcopy</label>
     <input type="file" id="fileInput" accept=".csv,.txt">
   </div>
 
@@ -46,7 +46,7 @@
   </div>
 
   <div class="form-group">
-    <label>Select Order Type:</label>
+    <label></label>
     <div class="radio-group">
       <label><input type="radio" name="orderType" value="BUY"> Buy</label>
       <label><input type="radio" name="orderType" value="SELL"> Sell</label>
@@ -54,11 +54,11 @@
   </div>
 
   <div class="form-group">
-    <label>Number of Records:</label>
+    <label>Records:</label>
     <input type="number" id="countInput" value="10" min="1">
   </div>
 
-  <button onclick="generateCSV()">Generate CSV</button>
+  <button onclick="generateCSV()">Generate</button>
 
   <script>
     function generateCSV() {
