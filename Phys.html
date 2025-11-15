@@ -1,122 +1,125 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Physical Margin Calculator</title><link rel="stylesheet" href="style.css">
- 
+  <title>RS</title><link rel="stylesheet" href="STYLE.css">
 </head>
+    
 <body>
+    
+	
 
-<h2>Physical Margin Calculator</h2>
+ 
+  
 
-<!-- Upload file -->
-<div class="input-group">
-  <label>Upload DAT File:</label>
-  <input type="file" id="datFile" accept=".dat,.txt">
+<div class="card">
+  <div class="window"><div class="title-bar">Physical Margin</div></div>
+
+  <div class="form-group">
+    <label>Upload VAR: &nbsp; &nbsp;
+    <input type="file" id="datFile" accept=".dat,.txt" style="width: 240px;">
+  </div>
+
+  <div class="form-group">
+    <label>Symbol: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    <input type="text" id="symbol" placeholder="e.g. INFY" style="width: 240px;">
+  </div>
+
+  <div class="form-group">
+    <label>LTP:&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp; &nbsp;
+    <input type="number" id="ltp" step="0.01" style="width: 240px;">
+  </div>
+
+  <div class="form-group">
+    <label>Quantity:&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    <input type="number" id="qty" id="symbol" placeholder="e.g. 400" style="width: 240px;">
+  </div>
+
+  <div class="form-group">
+    <label>Strike:&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+    <input type="number" id="strike" style="width: 240px;">
+  </div>
+
+  <div class="form-group radio-group">
+    <label>Option Type:</label>
+    <label><input type="radio" name="type" value="CE" checked> CE</label>
+    <label><input type="radio" name="type" value="PE"> PE</label>
+  </div>
+
+  <div class="form-group radio-group">
+    <label>Expiry Day:</label>
+    <div class="margin-levels">
+      <label><input type="radio" name="slab" value="10" checked> 1st</label>
+      <label><input type="radio" name="slab" value="25"> 2nd</label>
+      <label><input type="radio" name="slab" value="45"> 3rd</label>
+      <label><input type="radio" name="slab" value="70"> 4th</label>
+      <label><input type="radio" name="slab" value="100"> 5th</label>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <button onclick="calculateMargin()" class="button">Calculate</button>
+  </div>
+
+  <div class="output" id="output">Physical Margin:</div>
 </div>
-
-<!-- Inputs -->
-<div class="input-group">
-  <label>Symbol: </label>
-  <input type="text" id="symbol">
-</div>
-
-<div class="input-group">
-  <label>LTP: </label>
-  <input type="number" id="ltp">
-</div>
-
-<div class="input-group">
-  <label>Qty: </label>
-  <input type="number" id="qty">
-</div>
-
-<div class="input-group">
-  <label>Strike Price: </label>
-  <input type="number" id="strike">
-</div>
-
-<!-- CE / PE Selection -->
-<div class="input-group">
-  <label>Option Type:</label><br>
-  <input type="radio" name="optionType" value="CE" checked> CE
-  <input type="radio" name="optionType" value="PE"> PE
-</div>
-
-<!-- Day selection -->
-<div class="input-group">
-  <label>Select Day (Var%):</label><br>
-  <input type="radio" name="day" value="10" checked> 2nd Day (10%)<br>
-  <input type="radio" name="day" value="25"> 3rd Day (25%)<br>
-  <input type="radio" name="day" value="45"> 4th Day (45%)<br>
-  <input type="radio" name="day" value="70"> 5th Day (70%)<br>
-  <input type="radio" name="day" value="100"> 6th Day (100%)<br>
-</div>
-
-<!-- Button -->
-<button onclick="calculate()">Calculate</button>
-
-<!-- Output -->
-<h3>Output</h3>
-<table>
-  <thead>
-    <tr>
-      <th>Symbol</th>
-      <th>Qty</th>
-      <th>Var%</th>
-      <th>Physical Margin</th>
-    </tr>
-  </thead>
-  <tbody id="outputBody"></tbody>
-</table>
 
 <script>
-let symbolsFromFile = [];
+  let datRows = [];
 
-document.getElementById('datFile').addEventListener('change', function(event) {
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const lines = e.target.result.split('\n');
-    symbolsFromFile = lines.map(line => {
-      const cols = line.split(',');
-      return cols[1]?.trim().toUpperCase(); // 2nd column = symbol
-    }).filter(Boolean);
-    alert("DAT file loaded with " + symbolsFromFile.length + " symbols.");
-  };
-  reader.readAsText(event.target.files[0]);
-});
+  // Read file and extract rows
+  document.getElementById('datFile').addEventListener('change', function(event) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const lines = e.target.result.split('\n');
+      datRows = lines.map(line => line.split(','));
+    
+    };
+    reader.readAsText(event.target.files[0]);
+  });
 
-function calculate() {
-  const symbol = document.getElementById("symbol").value.trim().toUpperCase();
-  const ltp = parseFloat(document.getElementById("ltp").value);
-  const qty = parseInt(document.getElementById("qty").value);
-  const strike = parseFloat(document.getElementById("strike").value);
-  const varPercent = parseFloat(document.querySelector('input[name="day"]:checked').value);
-  const optionType = document.querySelector('input[name="optionType"]:checked').value;
+  function calculateMargin() {
+    const symbol = document.getElementById("symbol").value.trim().toUpperCase();
+    const ltp = parseFloat(document.getElementById("ltp").value);
+    const qty = parseFloat(document.getElementById("qty").value);
+    const strike = parseFloat(document.getElementById("strike").value);
+    const type = document.querySelector('input[name="type"]:checked')?.value;
+    const slab = parseFloat(document.querySelector('input[name="slab"]:checked')?.value);
 
-  if (!symbol || isNaN(ltp) || isNaN(qty) || isNaN(strike)) {
-    alert("Please fill all fields correctly.");
-    return;
+    const output = document.getElementById("output");
+
+    // Basic validation
+    if (!symbol || isNaN(ltp) || isNaN(qty) || isNaN(strike) || !type || isNaN(slab)) {
+      output.innerText = "⚠️ Please fill all fields and select options.";
+      return;
+    }
+
+    // Find matching row by 2nd column
+    const row = datRows.find(cols => cols[1]?.trim().toUpperCase() === symbol);
+    if (!row) {
+      output.innerText = `❌ Symbol '${symbol}' not found in DAT file.`;
+      return;
+    }
+
+    const varValue = parseFloat(row[9]); // 10th column (index 9)
+    if (isNaN(varValue)) {
+      output.innerText = "❌ VAR (column 10) is not a valid number.";
+      return;
+    }
+
+    // LTP condition check
+    if (type === "CE" && !(ltp > strike)) {
+      output.innerText = "❌ No physical Margin";
+      return;
+    }
+    if (type === "PE" && !(ltp < strike)) {
+      output.innerText = "❌ No Physical Margin";
+      return;
+    }
+
+    // Calculate margin
+    const margin = ((ltp * qty * varValue)/100 * slab/100);
+    output.innerText = `✅ Physical Margin: ₹${margin.toFixed(2)}`;
   }
-
-  if (!symbolsFromFile.includes(symbol)) {
-    alert("Symbol not found in uploaded file.");
-    return;
-  }
-
-  let physicalMargin = "no physical margin";
-  if ((optionType === "CE" && ltp > strike) || (optionType === "PE" && ltp < strike)) {
-    physicalMargin = ((ltp * qty * varPercent) / 100).toFixed(2);
-  }
-
-  const tableRow = `<tr>
-    <td>${symbol}</td>
-    <td>${qty}</td>
-    <td>${varPercent}%</td>
-    <td>${physicalMargin}</td>
-  </tr>`;
-
-  document.getElementById("outputBody").innerHTML = tableRow;
-}
 </script>
 
 </body>
