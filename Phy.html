@@ -1,85 +1,137 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Var Margin Calculator</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 30px;
-      max-width: 600px;
-    }
-    input[type="number"], input[type="text"] {
-      width: 100%;
-      padding: 8px;
-      margin: 8px 0;
-    }
-    .radio-group {
-      margin: 10px 0;
-    }
-    .radio-group label {
-      margin-right: 15px;
-    }
-    #output {
-      font-weight: bold;
-      margin-top: 20px;
-      background: #e6f3ff;
-      padding: 12px;
-      border-left: 5px solid #007acc;
-    }
-  </style>
+  <title>RS</title><link rel="stylesheet" href="style.css">
 </head>
+    
 <body>
 
-  <h2>📊 Physical Margin Calculator</h2>
+<div class="card">
+  <div class="window"><div class="title-bar">Physical Margin</div></div>
 
-  <label>Upload File (optional):</label>
-  <input type="file" id="fileUpload"><br><br>
-
-  <label>Scrip Code:</label>
-  <input type="text" id="scripCode" placeholder="Enter scrip code">
-
-  <label>Var Value (%):</label>
-  <input type="number" id="var" placeholder="Enter VAR value">
-
-  <label>LTP (Last Traded Price):</label>
-  <input type="number" id="ltp" placeholder="Enter LTP value">
-
-  <label>Quantity (Qty):</label>
-  <input type="number" id="qty" placeholder="Enter quantity">
-
-  <div class="radio-group">
-    <label><input type="radio" name="percent" value="5" checked> 1 (5%)</label>
-    <label><input type="radio" name="percent" value="10"> 2 (10%)</label>
-    <label><input type="radio" name="percent" value="15"> 3 (15%)</label>
-    <label><input type="radio" name="percent" value="20"> 4 (20%)</label>
-    <label><input type="radio" name="percent" value="25"> 5 (25%)</label>
+  <div class="form-group">
+    <label>Upload VAR: &nbsp; &nbsp;
+    <input type="file" id="datFile" accept=".dat,.txt" style="width: 240px;">
   </div>
 
-  <button onclick="calculateMargin()">Calculate</button>
+  <div class="form-group">
+    <label>Enter VAR %: &nbsp;
+    <input type="number" id="manualVar" step="0.01" placeholder="e.g. 23.45" style="width: 240px;">
+  </div>
 
-  <div id="output"></div>
+  <div class="form-group">
+    <label>Symbol: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    <input type="text" id="symbol" placeholder="e.g. INFY" style="width: 240px;">
+  </div>
 
-  <script>
-    function calculateMargin() {
-      const varVal = parseFloat(document.getElementById("var").value);
-      const ltpVal = parseFloat(document.getElementById("ltp").value);
-      const qty = parseFloat(document.getElementById("qty").value);
-      const percent = parseFloat(document.querySelector('input[name="percent"]:checked').value);
+  <div class="form-group">
+    <label>LTP:&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp; &nbsp;
+    <input type="number" id="ltp" step="0.01" style="width: 240px;">
+  </div>
 
-      if (isNaN(varVal) || isNaN(ltpVal) || isNaN(qty)) {
-        document.getElementById("output").innerText = "Please enter valid VAR, LTP, and Quantity values.";
+  <div class="form-group">
+    <label>Quantity:&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    <input type="number" id="qty" placeholder="e.g. 400" style="width: 240px;">
+  </div>
+
+  <div class="form-group">
+    <label>Strike price:&nbsp; &nbsp; &nbsp; &nbsp;
+    <input type="number" id="strike" style="width: 240px;">
+  </div>
+
+<br>
+
+<div style="display:flex; align-items:center; gap:20px;">
+    <label style="color:green;">Option Type:</label>
+    <label><input type="radio" name="type" value="CE" checked>CE</label>
+    <label><input type="radio" name="type" value="PE">PE</label>
+</div>
+
+<br>
+
+<div class="form-group radio-group" style="display:flex; align-items:center; gap:10px;">
+  <span style="min-width:90px; color:green;">Expiry Day:</span>
+
+  <label><input type="radio" name="slab" value="10" checked> 1st</label>
+  <label><input type="radio" name="slab" value="25"> 2nd</label>
+  <label><input type="radio" name="slab" value="45"> 3rd</label>
+  <label><input type="radio" name="slab" value="70"> 4th</label>
+  <label><input type="radio" name="slab" value="100"> 5th</label>
+</div>
+
+<div class="form-group">
+    <button onclick="calculateMargin()" class="button">Calculate</button>
+</div>
+
+<div class="output" id="output">Physical Margin:</div>
+</div>
+
+<script>
+  let datRows = [];
+
+  // Read file and extract rows
+  document.getElementById('datFile').addEventListener('change', function(event) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const lines = e.target.result.split('\n');
+      datRows = lines.map(line => line.split(','));
+    };
+    reader.readAsText(event.target.files[0]);
+  });
+
+  function calculateMargin() {
+    const symbol = document.getElementById("symbol").value.trim().toUpperCase();
+    const ltp = parseFloat(document.getElementById("ltp").value);
+    const qty = parseFloat(document.getElementById("qty").value);
+    const strike = parseFloat(document.getElementById("strike").value);
+    const type = document.querySelector('input[name="type"]:checked')?.value;
+    const slab = parseFloat(document.querySelector('input[name="slab"]:checked')?.value);
+    const manualVar = parseFloat(document.getElementById("manualVar").value);
+
+    const output = document.getElementById("output");
+
+    if (!symbol || isNaN(ltp) || isNaN(qty) || isNaN(strike) || !type || isNaN(slab)) {
+      output.innerText = "⚠️ Please fill all fields.";
+      return;
+    }
+
+    let varValue = null;
+
+    // CASE 1: Manual VAR entered → use manual
+    if (!isNaN(manualVar)) {
+      varValue = manualVar;
+    }
+
+    // CASE 2: Manual VAR NOT entered → use file VAR
+    else {
+      const row = datRows.find(cols => cols[1]?.trim().toUpperCase() === symbol);
+
+      if (!row) {
+        output.innerText = `❌ Symbol '${symbol}' not found in VAR file.`;
         return;
       }
 
-      // Backend logic
-      const A = ltpVal * qty;
-      const B = A * varVal / 100;
-      const C = B * percent / 100;
-
-      document.getElementById("output").innerHTML = `Physical Margin is: ₹${C.toFixed(2)}`;
+      varValue = parseFloat(row[9]);
+      if (isNaN(varValue)) {
+        output.innerText = "❌ VAR in file is invalid.";
+        return;
+      }
     }
-  </script>
+
+    // LTP conditions
+    if (type === "CE" && !(ltp > strike)) {
+      output.innerText = "❌ No physical Margin";
+      return;
+    }
+    if (type === "PE" && !(ltp < strike)) {
+      output.innerText = "❌ No Physical Margin";
+      return;
+    }
+
+    const margin = ((ltp * qty * varValue)/100 * (slab/100));
+    output.innerText = `✅ Physical Margin: ₹${margin.toFixed(2)}`;
+  }
+</script>
 
 </body>
 </html>
