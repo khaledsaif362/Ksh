@@ -57,11 +57,6 @@
       color: var(--primary);
     }
 
-    .subtle {
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
     .form-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -101,8 +96,13 @@
 
     .btn-row {
       display: flex;
+      align-items: center;
       gap: 8px;
       margin: 8px 0 4px;
+    }
+
+    .spacer {
+      flex: 1;
     }
 
     button {
@@ -138,6 +138,7 @@
       color: #ffffff;
       border: 1px solid #b71c1c;
     }
+
     .btn-clear:hover {
       background: #c62828;
     }
@@ -145,7 +146,6 @@
     .btn-download {
       background: var(--accent);
       color: #fff;
-      margin-left: auto;
       box-shadow: 0 2px 6px rgba(67,160,71,0.35);
     }
 
@@ -214,9 +214,6 @@
       .btn-row {
         flex-wrap: wrap;
       }
-      .btn-download {
-        margin-left: 0;
-      }
     }
   </style>
 </head>
@@ -227,7 +224,7 @@
       <div class="title">MWPL Base Position</div>
     </div>
 
-    <!-- Form (INSTRUMENT_TYPE removed) -->
+    <!-- Main Form -->
     <div class="form-grid">
       <div class="field">
         <label>CLIENT_CODE</label>
@@ -239,14 +236,10 @@
         <input type="text" id="symbol">
       </div>
 
-
-<div class="field">
+      <div class="field">
         <label>NET_POSITION</label>
         <input type="number" id="netPos">
       </div>
-
-
-
 
       <div class="field">
         <label>EXPIRY_DATE</label>
@@ -266,14 +259,30 @@
         </select>
       </div>
 
-      
+      <!-- Only for 2nd file -->
+      <div class="field">
+        <label>Future Price</label>
+        <input type="number" id="sttlmPric">
+      </div>
+
+      <div class="field">
+        <label>Option buy value</label>
+        <input type="number" id="opnBuyTradgVal">
+      </div>
+
+      <div class="field">
+        <label>Option Sell Value</label>
+        <input type="number" id="opnSellTradgVal">
+      </div>
     </div>
 
     <!-- Buttons -->
     <div class="btn-row">
       <button class="btn-add" onclick="addLine()">Add</button>
       <button class="btn-clear" onclick="clearLines()">Clear</button>
-      <button class="btn-download" onclick="downloadCSV()">Download CSV</button>
+      <div class="spacer"></div>
+      <button class="btn-download" onclick="downloadCSV()">Download MWPL CSV</button>
+      <button class="btn-download" onclick="downloadPositionCSV()">Download Position CSV</button>
     </div>
 
     <!-- Table preview -->
@@ -311,9 +320,28 @@
     return `${dd}-${mon}-${yy}`;
   }
 
-  let FIXED_DATE = getTodayFormatted();
+  function getTodayISO() {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  let FIXED_DATE = getTodayFormatted();   // for MWPL file
+
+  // Constants for first file
   const CLEARING_MBR_CODE = "M52040";
   const TRADING_MBR_CODE = "90144";
+
+  // Constants for 2nd file
+  const POS_SGMT = "FO";
+  const POS_SRC = "NCL";
+  const POS_TRAD_REGN_ORGN = "1";
+  const POS_CLR_MMB_ID = "6538";
+  const POS_BRKR_PTPT_ID = "6538";
+  const POS_CLNT_TP = "C";
+
   const rows = [];
 
   function formatExpiry(d) {
@@ -326,65 +354,88 @@
     return dd + "-" + mon + "-" + yyyy.slice(-2);
   }
 
+  // >>> UPDATED FUNCTION WITH YOUR CONDITIONS <<<
   function addLine() {
-    const client = document.getElementById("clientCode").value.trim();
-    const symbol = document.getElementById("symbol").value.trim();
-    const expiryRaw = document.getElementById("expiry").value;
-    const net = document.getElementById("netPos").value.trim();
-    const strikeInput = document.getElementById("strike").value.trim();
-    const optSelected = document.getElementById("optionType").value;
+  const client = document.getElementById("clientCode").value.trim();
+  const symbol = document.getElementById("symbol").value.trim();
+  const expiryRaw = document.getElementById("expiry").value;  // YYYY-MM-DD
+  const net = document.getElementById("netPos").value.trim();
+  const strikeInput = document.getElementById("strike").value.trim();
+  const optSelected = document.getElementById("optionType").value;
 
-    // Basic mandatory fields (instrument-type is auto)
-    if (!client || !symbol || !expiryRaw || !net) {
-      alert("Please fill CLIENT_CODE, SYMBOL, EXPIRY_DATE and NET_POSITION.");
-      return;
-    }
+  const sttlmPric = document.getElementById("sttlmPric").value.trim();
+  const opnBuyVal = document.getElementById("opnBuyTradgVal").value.trim();
+  const opnSellVal = document.getElementById("opnSellTradgVal").value.trim();
 
-    const expiry = formatExpiry(expiryRaw);
-    if (!expiry) {
-      alert("Invalid expiry date.");
-      return;
-    }
-
-    let inst, strikeVal, optVal;
-
-    if (strikeInput) {
-      // Strike given => OPTSTK
-      inst = "OPTSTK";
-      strikeVal = strikeInput;
-
-      if (!optSelected) {
-        alert("Please select OPTION_TYPE for options.");
-        return;
-      }
-      optVal = optSelected;
-    } else {
-      // No strike => FUTSTK
-      inst = "FUTSTK";
-      strikeVal = "0";
-      optVal = "FF";  // As per your earlier logic
-    }
-
-    rows.push({
-      date: FIXED_DATE,
-      clear: CLEARING_MBR_CODE,
-      trade: TRADING_MBR_CODE,
-      client,
-      inst,
-      symbol,
-      expiry,
-      strike: strikeVal,
-      opt: optVal,
-      net
-    });
-
-    refreshTable();
-
-    // FORM VALUES ARE NOT CLEARED NOW (per your requirement)
-    // If in future you want only NET_POSITION to clear, you can uncomment below:
-    // document.getElementById("netPos").value = "";
-    // document.getElementById("netPos").focus();
+  // Basic mandatory fields
+  if (!client || !symbol || !expiryRaw || !net) {
+    alert("Please fill CLIENT_CODE, SYMBOL, EXPIRY_DATE and NET_POSITION.");
+    return;
   }
+
+  // 🔴 Future Price mandatory in all cases
+  if (!sttlmPric) {
+    alert("Please enter Future Price");
+    return;
+  }
+
+  const netNum = parseInt(net, 10) || 0;
+
+  // Conditional compulsory fields for 2nd file (options only)
+  if (strikeInput) {
+    // OPTSTK: use NET_POSITION sign
+    if (netNum > 0 && !opnBuyVal) {
+      alert("Please enter Option Buy value");
+      return;
+    }
+    if (netNum < 0 && !opnSellVal) {
+      alert("Please enter Option Sell value");
+      return;
+    }
+  }
+
+  const expiry = formatExpiry(expiryRaw);
+  if (!expiry) {
+    alert("Invalid expiry date.");
+    return;
+  }
+
+  let inst, strikeVal, optVal;
+
+  if (strikeInput) {
+    inst = "OPTSTK";
+    strikeVal = strikeInput;
+    optVal = optSelected || "";
+  } else {
+    inst = "FUTSTK";
+    strikeVal = "0";
+    optVal = "FF";
+  }
+
+  rows.push({
+    date: FIXED_DATE,
+    clear: CLEARING_MBR_CODE,
+    trade: TRADING_MBR_CODE,
+    client,
+    inst,
+    symbol,
+    expiry,        // DD-Mon-YY (for MWPL)
+    expiryIso: expiryRaw, // YYYY-MM-DD (for Position file)
+    strike: strikeVal,
+    opt: optVal,
+    net,
+    sttlm: sttlmPric,
+    opnBuyVal: opnBuyVal,
+    opnSellVal: opnSellVal
+  });
+
+  refreshTable();
+
+  // ✅ After successful add: clear ONLY option values, keep Future Price
+  document.getElementById("opnBuyTradgVal").value = "";
+  document.getElementById("opnSellTradgVal").value = "";
+}
+
 
   function clearLines() {
     if (!confirm("Clear all rows?")) return;
@@ -392,15 +443,16 @@
     rows.length = 0;
     refreshTable();
 
-    // Clear all form fields
     document.getElementById("clientCode").value = "";
     document.getElementById("symbol").value = "";
     document.getElementById("expiry").value = "";
     document.getElementById("strike").value = "";
     document.getElementById("optionType").value = "CE";
     document.getElementById("netPos").value = "";
-}
-
+    document.getElementById("sttlmPric").value = "";
+    document.getElementById("opnBuyTradgVal").value = "";
+    document.getElementById("opnSellTradgVal").value = "";
+  }
 
   function refreshTable() {
     const tbody = document.getElementById("tableBody");
@@ -428,6 +480,7 @@
     });
   }
 
+  // First CSV (MWPL Base Position)
   function downloadCSV() {
     if (rows.length === 0) {
       alert("No rows added.");
@@ -452,6 +505,98 @@
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "F_MWPLBASEPOS01_90144_20251029.csv";
+    a.click();
+  }
+
+  // Second CSV (Position file)
+  function downloadPositionCSV() {
+    if (rows.length === 0) {
+      alert("No rows added.");
+      return;
+    }
+
+    const rptBizDate = getTodayISO();
+
+    const header = [
+      "Sgmt","Src","RptgDt","BizDt","TradRegnOrgn",
+      "ClrMmbId","BrkrOrCtdnPtcptId","ClntTp","ClntId",
+      "FinInstrmTp","ISIN","TckrSymb","XpryDt","FininstrmActlXpryDt",
+      "StrkPric","OptnTp","NewBrdLotQty","OpngLngQty","OpngLngVal",
+      "OpngShrtQty","OpngShrtVal","OpnBuyTradgQty","OpnBuyTradgVal",
+      "OpnSellTradgQty","OpnSellTradgVal","PreExrcAssgndLngQty",
+      "PreExrcAssgndLngVal","PreExrcAssgndShrtQty","PreExrcAssgndShrtVal",
+      "ExrcdQty","AssgndQty","PstExrcAssgndLngQty","PstExrcAssgndLngVal",
+      "PstExrcAssgndShrtQty","PstExrcAssgndShrtVal","SttlmPric","RefRate",
+      "PrmAmt","DalyMrkToMktSettlmVal","FutrsFnlSttlmVal","ExrcAssgndVal",
+      "Rmks","Rsvd1","Rsvd2","Rsvd3","Rsvd4"
+    ];
+
+    const lines = [header.join(",")];
+
+    rows.forEach(r => {
+      const netQty = parseInt(r.net, 10) || 0;
+      let opnBuyQty = 0;
+      let opnSellQty = 0;
+
+      if (netQty > 0) {
+        opnBuyQty = netQty;
+      } else if (netQty < 0) {
+        opnSellQty = Math.abs(netQty);
+      }
+
+      const finInstrmTp = (r.inst === "OPTSTK") ? "STO" : "STF";
+      const strkPric = (r.inst === "OPTSTK") ? r.strike : "";
+      const optnTp  = (r.inst === "OPTSTK") ? r.opt    : "";
+      const xpryIso = r.expiryIso || "";
+
+      const sttlmPric = r.sttlm || "";
+      const opnBuyVal = r.opnBuyVal || "0";
+      const opnSellVal = r.opnSellVal || "0";
+
+      const rowArr = [
+        POS_SGMT,          // Sgmt
+        POS_SRC,           // Src
+        rptBizDate,        // RptgDt
+        rptBizDate,        // BizDt
+        POS_TRAD_REGN_ORGN,// TradRegnOrgn
+        POS_CLR_MMB_ID,    // ClrMmbId
+        POS_BRKR_PTPT_ID,  // BrkrOrCtdnPtcptId
+        POS_CLNT_TP,       // ClntTp
+        r.client,          // ClntId
+        finInstrmTp,       // FinInstrmTp
+        "",                // ISIN
+        r.symbol,          // TckrSymb
+        xpryIso,           // XpryDt
+        xpryIso,           // FininstrmActlXpryDt
+        strkPric,          // StrkPric
+        optnTp,            // OptnTp
+        "",                // NewBrdLotQty
+        "0","0",           // OpngLngQty, OpngLngVal
+        "0","0",           // OpngShrtQty, OpngShrtVal
+        opnBuyQty.toString(),  // OpnBuyTradgQty
+        opnBuyVal,             // OpnBuyTradgVal
+        opnSellQty.toString(), // OpnSellTradgQty
+        opnSellVal,            // OpnSellTradgVal
+        "0","0","0","0",       // PreExrcAssgndLngQty,Val,ShrtQty,Val
+        "0","0",               // ExrcdQty, AssgndQty
+        "0","0","0","0",       // PstExrcAssgndLngQty,Val,ShrtQty,Val
+        sttlmPric,             // SttlmPric
+        "",                    // RefRate
+        "0",                   // PrmAmt
+        "0",                   // DalyMrkToMktSettlmVal
+        "0",                   // FutrsFnlSttlmVal
+        "0",                   // ExrcAssgndVal
+        "", "", "", "", ""     // Rmks, Rsvd1-4
+      ];
+
+      lines.push(rowArr.join(","));
+    });
+
+    const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+    const a = document.createElement("a");
+    const year = new Date().getFullYear();
+    a.href = URL.createObjectURL(blob);
+    a.download = "Position_NCL_FO_0_TM_6538_" + year + ".csv";
     a.click();
   }
 </script>
