@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Preview Report - Orders with CSV</title>
+  <style>
+    :root {
+      --primary: #1976d2;
+      --primary-soft: #e3f2fd;
+      --border: #d0d7e2;
+      --bg: #f5f7fb;
+      --text-main: #263238;
+      --text-muted: #607d8b;
+      --danger: #e53935;
+      --success: #2e7d32;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      background: var(--bg);
+      color: var(--text-main);
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+      padding: 20px 24px 28px;
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 18px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--text-main);
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .badge span.key {
+      font-weight: 600;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr 0.7fr 0.8fr 0.8fr; /* 5 inputs */
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      padding: 7px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      outline: none;
+      transition: border 0.15s, box-shadow 0.15s, background 0.15s;
+      background: #fff;
+    }
+
+    input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.12);
+    }
+
+    .actions-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      border-radius: 6px;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s, box-shadow 0.15s, transform 0.05s;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(25, 118, 210, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: #125aa5;
+    }
+
+    .btn-secondary {
+      background: #eceff4;
+      color: var(--text-main);
+    }
+
+    .btn-secondary:hover {
+      background: #dde3f0;
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+      padding: 4px 10px;
+      font-size: 12px;
+      box-shadow: none;
+    }
+
+    .btn-danger:hover {
+      background: #c62828;
+    }
+
+    .btn-primary:active,
+    .btn-secondary:active,
+    .btn-danger:active {
+      transform: translateY(1px);
+      box-shadow: none;
+    }
+
+    .message {
+      min-height: 18px;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+
+    .message.error {
+      color: var(--danger);
+    }
+
+    .message.success {
+      color: var(--success);
+    }
+
+    .preview-card {
+      margin-top: 8px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--primary-soft);
+      padding: 10px 12px;
+    }
+
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .preview-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .preview-count {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    thead {
+      background: #dde8fb;
+    }
+
+    th, td {
+      padding: 6px 8px;
+      border-bottom: 1px solid #e0e4f0;
+      text-align: left;
+    }
+
+    th {
+      font-weight: 600;
+      font-size: 12px;
+      color: #374151;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 14px 0;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .col-center {
+      text-align: center;
+    }
+
+    .col-right {
+      text-align: right;
+    }
+
+    @media (max-width: 1000px) {
+      .form-row {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .form-row {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 500px) {
+      body {
+        padding: 10px;
+      }
+      .container {
+        padding: 14px;
+      }
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Preview Report</h1>
+    <div class="subtitle">
+      Enter order details and click <strong>Add to Preview</strong>.<br>
+      For each input, it will create <strong>6 product types × 4 BUY/SELL × 4 order types = 48 rows</strong>.
+    </div>
+
+    <!-- Common (hard-coded) fields info -->
+    <div class="badge">
+      <span class="key">Common Fields:</span>
+      NSE / Segment: FO / Client Type: CLIENT / Validity: DAY |
+      Products: CNC, MARGIN, INTRADAY, CO, BO, MTF |
+      LIMIT → Price = input, Trigger = input (or 0) |
+      MKT → Price 0, Trigger 0 |
+      SL & SLM → BUY: Trigger = Price − 1, SELL: Trigger = Price + 1 (SLM has Price 0).
+    </div>
+
+    <form id="orderForm">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="clientCode">Client Code</label>
+          <input type="text" id="clientCode" placeholder="e.g. CL001" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label for="symbol">Symbol</label>
+          <input type="text" id="symbol" placeholder="e.g. NIFTY24NOVFUT" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label for="qty">Quantity</label>
+          <input type="number" id="qty" placeholder="e.g. 50" min="1" step="1">
+        </div>
+        <div class="form-group">
+          <label for="price">Price</label>
+          <input type="number" id="price" placeholder="e.g. 250.50" step="0.05">
+        </div>
+        <div class="form-group">
+          <label for="triggerPrice">Trigger Price (for LIMIT)</label>
+          <input type="number" id="triggerPrice" placeholder="e.g. 249.00" step="0.05">
+        </div>
+      </div>
+
+      <div class="actions-row">
+        <button type="button" class="btn-primary" id="addBtn">➕ Add to Preview</button>
+        <button type="button" class="btn-secondary" id="clearFormBtn">🧹 Clear Inputs</button>
+        <button type="button" class="btn-secondary" id="clearPreviewBtn">🗑 Clear Preview</button>
+        <button type="button" class="btn-primary" id="csvBtn">📥 Generate CSV</button>
+      </div>
+
+      <div id="message" class="message"></div>
+    </form>
+
+    <div class="preview-card">
+      <div class="preview-header">
+        <div class="preview-title">Order Preview</div>
+        <div class="preview-count">
+          Total rows: <span id="rowCount">0</span>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Exchange</th>
+            <th>Segment</th>
+            <th>Client Type</th>
+            <th>Validity</th>
+            <th>Client Code</th>
+            <th>Symbol</th>
+            <th class="col-right">Qty</th>
+            <th>Product</th>
+            <th>Side</th>
+            <th>Order Type</th>
+            <th class="col-right">Price</th>
+            <th class="col-right">Trigger Price</th>
+            <th class="col-center" style="width: 80px;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="previewBody">
+          <tr class="no-data-row">
+            <td colspan="14" class="no-data">No records added yet.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      // Common fixed fields
+      const COMMON = {
+        exchange: "NSE",
+        segment: "FO",
+        clientType: "CLIENT",
+        validity: "DAY"
+      };
+
+      // Auto-generated sets
+      const PRODUCTS = ["CNC", "MARGIN", "INTRADAY", "CO", "BO", "MTF"];
+      const SIDES = ["BUY", "SELL"];
+      const ORDER_TYPES = ["LIMIT", "MKT", "SL", "SLM"];
+
+      const clientCodeInput = document.getElementById("clientCode");
+      const symbolInput     = document.getElementById("symbol");
+      const qtyInput        = document.getElementById("qty");
+      const priceInput      = document.getElementById("price");
+      const triggerInput    = document.getElementById("triggerPrice");
+
+      const addBtn          = document.getElementById("addBtn");
+      const clearFormBtn    = document.getElementById("clearFormBtn");
+      const clearPreviewBtn = document.getElementById("clearPreviewBtn");
+      const csvBtn          = document.getElementById("csvBtn");
+
+      const messageDiv      = document.getElementById("message");
+      const previewBody     = document.getElementById("previewBody");
+      const rowCountSpan    = document.getElementById("rowCount");
+
+      function showMessage(text, type) {
+        messageDiv.textContent = text || "";
+        messageDiv.className = "message " + (type || "");
+      }
+
+      function updateRowNumbers() {
+        const rows = previewBody.querySelectorAll("tr.data-row");
+        let i = 1;
+        rows.forEach(row => {
+          const seqCell = row.querySelector("td.seq");
+          if (seqCell) seqCell.textContent = i++;
+        });
+        rowCountSpan.textContent = rows.length;
+
+        if (rows.length === 0) {
+          previewBody.innerHTML =
+            '<tr class="no-data-row"><td colspan="14" class="no-data">No records added yet.</td></tr>';
+        }
+      }
+
+      function clearForm() {
+        clientCodeInput.value = "";
+        symbolInput.value     = "";
+        qtyInput.value        = "";
+        priceInput.value      = "";
+        triggerInput.value    = "";
+        clientCodeInput.focus();
+      }
+
+      addBtn.addEventListener("click", function () {
+        const clientCode = clientCodeInput.value.trim();
+        const symbol     = symbolInput.value.trim();
+        const qty        = qtyInput.value.trim();
+        const priceVal   = priceInput.value.trim();
+        const trigVal    = triggerInput.value.trim();
+
+        if (!clientCode || !symbol || !qty || !priceVal) {
+          showMessage("Please fill Client Code, Symbol, Quantity and Price.", "error");
+          return;
+        }
+
+        const qtyNum   = Number(qty);
+        const priceNum = Number(priceVal);
+        const trigNum  = trigVal === "" ? 0 : Number(trigVal);
+
+        if (isNaN(qtyNum) || qtyNum <= 0) {
+          showMessage("Quantity should be a positive number.", "error");
+          return;
+        }
+        if (isNaN(priceNum)) {
+          showMessage("Price must be a valid number.", "error");
+          return;
+        }
+        if (trigVal !== "" && isNaN(trigNum)) {
+          showMessage("Trigger Price must be a valid number.", "error");
+          return;
+        }
+
+        const firstRow = previewBody.querySelector("tr.no-data-row");
+        if (firstRow) firstRow.remove();
+
+        PRODUCTS.forEach(product => {
+          SIDES.forEach(side => {
+            ORDER_TYPES.forEach(orderType => {
+              let rowPrice = 0;
+              let rowTrig  = 0;
+
+              if (orderType === "LIMIT") {
+                // Limit: price = input, trigger = trigger input (or 0)
+                rowPrice = priceNum;
+                rowTrig  = trigVal === "" ? 0 : trigNum;
+              } else if (orderType === "MKT") {
+                // Market: price 0, trigger 0
+                rowPrice = 0;
+                rowTrig  = 0;
+              } else if (orderType === "SL") {
+                // SL: price = input, trigger = price ±1
+                rowPrice = priceNum;
+                rowTrig  = side === "BUY" ? priceNum - 1 : priceNum + 1;
+              } else if (orderType === "SLM") {
+                // SLM: price = 0, trigger = price ±1
+                rowPrice = 0;
+                rowTrig  = side === "BUY" ? priceNum - 1 : priceNum + 1;
+              }
+
+              const tr = document.createElement("tr");
+              tr.classList.add("data-row");
+
+              tr.innerHTML = `
+                <td class="seq"></td>
+                <td>${COMMON.exchange}</td>
+                <td>${COMMON.segment}</td>
+                <td>${COMMON.clientType}</td>
+                <td>${COMMON.validity}</td>
+                <td>${clientCode}</td>
+                <td>${symbol}</td>
+                <td class="col-right">${qtyNum}</td>
+                <td>${product}</td>
+                <td>${side}</td>
+                <td>${orderType}</td>
+                <td class="col-right">${rowPrice}</td>
+                <td class="col-right">${rowTrig}</td>
+                <td class="col-center">
+                  <button type="button" class="btn-danger btn-remove">Remove</button>
+                </td>
+              `;
+
+              previewBody.appendChild(tr);
+            });
+          });
+        });
+
+        updateRowNumbers();
+        clearForm();
+        showMessage("48 rows added (6 products × 4 BUY/SELL × 4 order types).", "success");
+      });
+
+      clearFormBtn.addEventListener("click", function () {
+        clearForm();
+        showMessage("Inputs cleared.", "success");
+      });
+
+      clearPreviewBtn.addEventListener("click", function () {
+        previewBody.innerHTML =
+          '<tr class="no-data-row"><td colspan="14" class="no-data">No records added yet.</td></tr>';
+        updateRowNumbers();
+        showMessage("Preview cleared.", "success");
+      });
+
+      // Remove single row
+      previewBody.addEventListener("click", function (e) {
+        if (e.target && e.target.classList.contains("btn-remove")) {
+          const row = e.target.closest("tr");
+          if (row) {
+            row.remove();
+            updateRowNumbers();
+            showMessage("Row removed from preview.", "success");
+          }
+        }
+      });
+
+      // Generate CSV
+      csvBtn.addEventListener("click", function () {
+        const rows = previewBody.querySelectorAll("tr.data-row");
+        if (rows.length === 0) {
+          showMessage("No rows to export. Please add at least one row.", "error");
+          return;
+        }
+
+        const headers = [
+          "EXCHANGE",
+          "SEGMENT",
+          "CLIENT_TYPE",
+          "VALIDITY",
+          "CLIENT_CODE",
+          "SYMBOL",
+          "QTY",
+          "PRODUCT",
+          "SIDE",
+          "ORDER_TYPE",
+          "PRICE",
+          "TRIGGER_PRICE"
+        ];
+
+        const csvRows = [];
+        csvRows.push(headers.join(","));
+
+        rows.forEach(row => {
+          const cells = row.querySelectorAll("td");
+          // index map:
+          // 0=#,1=EX,2=SEG,3=CLIENT_TYPE,4=VALIDITY,5=CLIENT_CODE,6=SYMBOL,
+          // 7=QTY,8=PRODUCT,9=SIDE,10=ORDER_TYPE,11=PRICE,12=TRIGGER,13=ACTION
+          const data = [
+            cells[1].innerText.trim(),
+            cells[2].innerText.trim(),
+            cells[3].innerText.trim(),
+            cells[4].innerText.trim(),
+            cells[5].innerText.trim(),
+            cells[6].innerText.trim(),
+            cells[7].innerText.trim(),
+            cells[8].innerText.trim(),
+            cells[9].innerText.trim(),
+            cells[10].innerText.trim(),
+            cells[11].innerText.trim(),
+            cells[12].innerText.trim()
+          ];
+
+          const escaped = data.map(value => {
+            const v = value.replace(/"/g, '""');
+            return `"${v}"`;
+          });
+
+          csvRows.push(escaped.join(","));
+        });
+
+        const csvContent = csvRows.join("\r\n");
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "orders_preview.csv";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        showMessage("CSV generated and downloaded.", "success");
+      });
+
+      // Init
+      updateRowNumbers();
+    });
+  </script>
+</body>
+</html>
