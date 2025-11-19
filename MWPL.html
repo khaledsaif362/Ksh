@@ -157,11 +157,13 @@
       margin-top: 16px;
       border-radius: 10px;
       border: 1px solid var(--border);
-      overflow: hidden;
+      /* IMPORTANT: allow horizontal scroll so ACTION column is visible */
+      overflow-x: auto;
     }
 
     table {
       width: 100%;
+      min-width: 900px; /* ensures columns don't get squashed too much */
       border-collapse: collapse;
       font-size: 13px;
     }
@@ -196,6 +198,21 @@
       padding: 10px;
       font-size: 12px;
       color: var(--text-muted);
+    }
+
+    /* Remove button inside table */
+    .btn-remove {
+      padding: 4px 10px;
+      font-size: 11px;
+      border-radius: 4px;
+      background: #ffebee;
+      color: var(--danger);
+      border: 1px solid #ffcdd2;
+      cursor: pointer;
+    }
+
+    .btn-remove:hover {
+      background: #ffcdd2;
     }
 
     @media (max-width: 900px) {
@@ -300,10 +317,11 @@
           <th>STRIKE_PRICE</th>
           <th>OPTION_TYPE</th>
           <th>NET_POSITION</th>
+          <th>ACTION</th>
         </tr>
         </thead>
         <tbody id="tableBody">
-        <tr><td class="no-rows" colspan="10">No rows added yet.</td></tr>
+        <tr><td class="no-rows" colspan="11">No rows added yet.</td></tr>
         </tbody>
       </table>
     </div>
@@ -354,89 +372,89 @@
     return dd + "-" + mon + "-" + yyyy.slice(-2);
   }
 
-  // >>> UPDATED FUNCTION WITH YOUR CONDITIONS <<<
+  // ADD LINE
   function addLine() {
-  const client = document.getElementById("clientCode").value.trim();
-  const symbol = document.getElementById("symbol").value.trim();
-  const expiryRaw = document.getElementById("expiry").value;  // YYYY-MM-DD
-  const net = document.getElementById("netPos").value.trim();
-  const strikeInput = document.getElementById("strike").value.trim();
-  const optSelected = document.getElementById("optionType").value;
+    const client = document.getElementById("clientCode").value.trim();
+    const symbol = document.getElementById("symbol").value.trim();
+    const expiryRaw = document.getElementById("expiry").value;  // YYYY-MM-DD
+    const net = document.getElementById("netPos").value.trim();
+    const strikeInput = document.getElementById("strike").value.trim();
+    const optSelected = document.getElementById("optionType").value;
 
-  const sttlmPric = document.getElementById("sttlmPric").value.trim();
-  const opnBuyVal = document.getElementById("opnBuyTradgVal").value.trim();
-  const opnSellVal = document.getElementById("opnSellTradgVal").value.trim();
+    const sttlmPric = document.getElementById("sttlmPric").value.trim();
+    const opnBuyVal = document.getElementById("opnBuyTradgVal").value.trim();
+    const opnSellVal = document.getElementById("opnSellTradgVal").value.trim();
 
-  // Basic mandatory fields
-  if (!client || !symbol || !expiryRaw || !net) {
-    alert("Please fill CLIENT_CODE, SYMBOL, EXPIRY_DATE and NET_POSITION.");
-    return;
-  }
-
-  // 🔴 Future Price mandatory in all cases
-  if (!sttlmPric) {
-    alert("Please enter Future Price");
-    return;
-  }
-
-  const netNum = parseInt(net, 10) || 0;
-
-  // Conditional compulsory fields for 2nd file (options only)
-  if (strikeInput) {
-    // OPTSTK: use NET_POSITION sign
-    if (netNum > 0 && !opnBuyVal) {
-      alert("Please enter Option Buy value");
+    // Basic mandatory fields
+    if (!client || !symbol || !expiryRaw || !net) {
+      alert("Please fill CLIENT_CODE, SYMBOL, EXPIRY_DATE and NET_POSITION.");
       return;
     }
-    if (netNum < 0 && !opnSellVal) {
-      alert("Please enter Option Sell value");
+
+    // Future Price mandatory in all cases
+    if (!sttlmPric) {
+      alert("Please enter Future Price");
       return;
     }
+
+    const netNum = parseInt(net, 10) || 0;
+
+    // Conditional compulsory fields for 2nd file (options only)
+    if (strikeInput) {
+      // OPTSTK: use NET_POSITION sign
+      if (netNum > 0 && !opnBuyVal) {
+        alert("Please enter Option Buy value");
+        return;
+      }
+      if (netNum < 0 && !opnSellVal) {
+        alert("Please enter Option Sell value");
+        return;
+      }
+    }
+
+    const expiry = formatExpiry(expiryRaw);
+    if (!expiry) {
+      alert("Invalid expiry date.");
+      return;
+    }
+
+    let inst, strikeVal, optVal;
+
+    if (strikeInput) {
+      inst = "OPTSTK";
+      strikeVal = strikeInput;
+      optVal = optSelected || "";
+    } else {
+      inst = "FUTSTK";
+      strikeVal = "0";
+      optVal = "FF";
+    }
+
+    rows.push({
+      date: FIXED_DATE,
+      clear: CLEARING_MBR_CODE,
+      trade: TRADING_MBR_CODE,
+      client,
+      inst,
+      symbol,
+      expiry,        // DD-Mon-YY (for MWPL)
+      expiryIso: expiryRaw, // YYYY-MM-DD (for Position file)
+      strike: strikeVal,
+      opt: optVal,
+      net,
+      sttlm: sttlmPric,
+      opnBuyVal: opnBuyVal,
+      opnSellVal: opnSellVal
+    });
+
+    refreshTable();
+
+    // After successful add: clear ONLY option values, keep Future Price
+    document.getElementById("opnBuyTradgVal").value = "";
+    document.getElementById("opnSellTradgVal").value = "";
   }
 
-  const expiry = formatExpiry(expiryRaw);
-  if (!expiry) {
-    alert("Invalid expiry date.");
-    return;
-  }
-
-  let inst, strikeVal, optVal;
-
-  if (strikeInput) {
-    inst = "OPTSTK";
-    strikeVal = strikeInput;
-    optVal = optSelected || "";
-  } else {
-    inst = "FUTSTK";
-    strikeVal = "0";
-    optVal = "FF";
-  }
-
-  rows.push({
-    date: FIXED_DATE,
-    clear: CLEARING_MBR_CODE,
-    trade: TRADING_MBR_CODE,
-    client,
-    inst,
-    symbol,
-    expiry,        // DD-Mon-YY (for MWPL)
-    expiryIso: expiryRaw, // YYYY-MM-DD (for Position file)
-    strike: strikeVal,
-    opt: optVal,
-    net,
-    sttlm: sttlmPric,
-    opnBuyVal: opnBuyVal,
-    opnSellVal: opnSellVal
-  });
-
-  refreshTable();
-
-  // ✅ After successful add: clear ONLY option values, keep Future Price
-  document.getElementById("opnBuyTradgVal").value = "";
-  document.getElementById("opnSellTradgVal").value = "";
-}
-
-
+  // CLEAR ALL LINES
   function clearLines() {
     if (!confirm("Clear all rows?")) return;
 
@@ -454,16 +472,24 @@
     document.getElementById("opnSellTradgVal").value = "";
   }
 
+  // REMOVE SINGLE ROW
+  function removeRow(index) {
+    if (!confirm("Remove this row?")) return;
+    rows.splice(index, 1);
+    refreshTable();
+  }
+
+  // REFRESH TABLE
   function refreshTable() {
     const tbody = document.getElementById("tableBody");
     tbody.innerHTML = "";
 
     if (rows.length === 0) {
-      tbody.innerHTML = '<tr><td class="no-rows" colspan="10">No rows added yet.</td></tr>';
+      tbody.innerHTML = '<tr><td class="no-rows" colspan="11">No rows added yet.</td></tr>';
       return;
     }
 
-    rows.forEach(r => {
+    rows.forEach((r, idx) => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${r.date}</td>
@@ -475,7 +501,9 @@
         <td>${r.expiry}</td>
         <td>${r.strike}</td>
         <td>${r.opt}</td>
-        <td>${r.net}</td>`;
+        <td>${r.net}</td>
+        <td><button type="button" class="btn-remove" onclick="removeRow(${idx})">Remove</button></td>
+      `;
       tbody.appendChild(tr);
     });
   }
