@@ -2,348 +2,256 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Order Generator – MARGIN / INTRADAY / CO / BO</title>
+  <title>CSV 4x Row Generator (PRODUCT & BUY/SELL)</title>
   <style>
-    :root {
-      --primary: #1976d2;
-      --primary-soft: #e3f2fd;
-      --border: #d0d7e2;
-      --bg: #f5f7fa;
-      --text: #263238;
-    }
-
-    * {
-      box-sizing: border-box;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-
     body {
-      margin: 0;
-      padding: 20px;
-      background: var(--bg);
-      color: var(--text);
+      font-family: Arial, sans-serif;
+      margin: 16px;
     }
-
     h1 {
-      margin-top: 0;
-      font-size: 22px;
-      color: var(--primary);
+      font-size: 18px;
+      margin-bottom: 8px;
     }
-
-    .card {
-      background: #fff;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      padding: 16px 18px;
-      margin-bottom: 18px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+    .controls {
+      margin-bottom: 12px;
     }
-
-    .row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
-    label {
-      font-size: 13px;
-      font-weight: 600;
-    }
-
     input[type="file"] {
-      padding: 6px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      background: #fff;
+      margin-right: 8px;
     }
-
     button {
-      border: none;
-      border-radius: 6px;
-      padding: 8px 16px;
+      padding: 6px 10px;
+      margin: 4px 4px 4px 0;
       cursor: pointer;
-      font-weight: 600;
+    }
+    #info {
+      margin-top: 8px;
       font-size: 13px;
     }
-
-    .btn-primary {
-      background: var(--primary);
-      color: #fff;
+    .table-wrapper {
+      margin-top: 12px;
+      max-height: 60vh;
+      overflow: auto;
+      border: 1px solid #ccc;
     }
-
-    .btn-secondary {
-      background: var(--primary-soft);
-      color: var(--primary);
-    }
-
-    .btn-primary:disabled,
-    .btn-secondary:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .status {
-      font-size: 12px;
-      margin-top: 5px;
-    }
-
-    .status.ok {
-      color: #2e7d32;
-    }
-
-    .status.err {
-      color: #c62828;
-    }
-
     table {
-      width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
+      width: 100%;
       font-size: 12px;
     }
-
     th, td {
-      border: 1px solid var(--border);
+      border: 1px solid #ccc;
       padding: 4px 6px;
-      text-align: left;
       white-space: nowrap;
+      text-align: left;
     }
-
     th {
-      background: var(--primary-soft);
+      background: #f2f2f2;
       position: sticky;
       top: 0;
       z-index: 1;
     }
-
-    .table-wrapper {
-      max-height: 350px;
-      overflow: auto;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: #fff;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 2px 6px;
-      border-radius: 999px;
-      font-size: 11px;
-      background: var(--primary-soft);
-      color: var(--primary);
-      margin-left: 6px;
+    .hidden {
+      display: none;
     }
   </style>
 </head>
 <body>
 
-  <div class="card">
-    <h1>Order Generator – MARGIN / INTRADAY / CO / BO</h1>
-    <div class="row">
-      <div>
-        <label for="csvFile">Upload order CSV (multiple rows allowed)</label><br>
-        <input type="file" id="csvFile" accept=".csv" />
-      </div>
-      <div>
-        <button id="btnParse" class="btn-secondary">Load &amp; Preview Orders</button>
-      </div>
-    </div>
-    <div id="baseStatus" class="status"></div>
-  </div>
+<h1>CSV 4x Row Generator (PRODUCT & BUY/SELL)</h1>
+<div class="controls">
+  <input type="file" id="fileInput" accept=".csv">
+  <button id="generateBtn">Upload & Generate 4x Rows</button>
+  <button id="downloadBtn" disabled>Download New CSV</button>
+</div>
 
-  <div class="card">
-    <div class="row">
-      <div>
-        <strong>Combinations per row:</strong>
-        <span class="badge">
-          Products: MARGIN, INTRADAY, CO, BO
-        </span>
-      </div>
-    </div>
-    <div class="row">
-      <div>
-        <span style="font-size:12px;">
-          4 Products × 2 Sides (BUY/SELL) × 4 Order Types (Limit/Market/SL/SL-M)
-          = <b>32 orders per input row</b>
-        </span>
-      </div>
-    </div>
-    <div class="row">
-      <button id="btnGenerate" class="btn-primary" disabled>Generate All (32 × rows)</button>
-      <button id="btnDownload" class="btn-secondary" disabled>Download Generated CSV</button>
-      <div id="genStatus" class="status"></div>
-    </div>
-  </div>
+<div id="info"></div>
 
-  <div class="card">
-    <h2 style="font-size:16px;margin:0 0 6px;">Uploaded Orders Preview</h2>
-    <div id="basePreview" class="table-wrapper"></div>
-  </div>
-
-  <div class="card">
-    <h2 style="font-size:16px;margin:0 0 6px;">Generated Orders Preview</h2>
-    <div id="generatedPreview" class="table-wrapper"></div>
-  </div>
+<div class="table-wrapper hidden" id="tableWrapper">
+  <table id="previewTable">
+    <thead id="previewHead"></thead>
+    <tbody id="previewBody"></tbody>
+  </table>
+</div>
 
 <script>
-  const btnParse = document.getElementById('btnParse');
-  const btnGenerate = document.getElementById('btnGenerate');
-  const btnDownload = document.getElementById('btnDownload');
-  const baseStatus = document.getElementById('baseStatus');
-  const genStatus = document.getElementById('genStatus');
-  const basePreview = document.getElementById('basePreview');
-  const generatedPreview = document.getElementById('generatedPreview');
+  const fileInput    = document.getElementById('fileInput');
+  const generateBtn  = document.getElementById('generateBtn');
+  const downloadBtn  = document.getElementById('downloadBtn');
+  const infoDiv      = document.getElementById('info');
+  const tableWrapper = document.getElementById('tableWrapper');
+  const previewHead  = document.getElementById('previewHead');
+  const previewBody  = document.getElementById('previewBody');
 
-  let headers = [];
-  let baseRows = [];       // all uploaded rows
+  let headers       = [];
   let generatedRows = [];
 
-  // --- simple CSV helpers (no commas inside fields assumed) ---
-  function parseCsv(text) {
-    const lines = text.trim().split(/\r?\n/).filter(l => l.trim() !== '');
-    if (lines.length < 2) {
-      throw new Error('CSV must have header + at least one data row.');
+  // Simple CSV parser (no commas inside values assumed)
+  function parseCSV(text) {
+    const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+    const out = [];
+    for (let line of lines) {
+      if (!line.trim()) continue;
+      out.push(line.split(','));
     }
-    const hdr = lines[0].split(',');
-    const rows = lines.slice(1).map(l => l.split(','));
-    return { headers: hdr, rows: rows };
+    return out;
   }
 
-  function toCsv(headers, rows) {
-    const esc = v => {
-      const s = v === undefined || v === null ? '' : String(v);
-      if (s.includes('"') || s.includes(',') || s.includes('\n')) {
-        return '"' + s.replace(/"/g, '""') + '"';
-      }
-      return s;
-    };
-    const headLine = headers.map(esc).join(',');
-    const lines = rows.map(r => r.map(esc).join(','));
-    return [headLine, ...lines].join('\r\n');
+  function clearPreviewDOM() {
+    previewHead.innerHTML = '';
+    previewBody.innerHTML = '';
+    tableWrapper.classList.add('hidden');
   }
 
-  function renderTable(container, headers, rows) {
-    if (!headers.length || !rows.length) {
-      container.innerHTML = '<div style="font-size:12px;color:#607d8b;">No data</div>';
+  function buildPreview() {
+    clearPreviewDOM();
+
+    if (!headers.length || !generatedRows.length) {
+      infoDiv.textContent = 'No data to preview.';
+      downloadBtn.disabled = true;
       return;
     }
-    let html = '<table><thead><tr>';
+
+    // Header row
+    const trHead = document.createElement('tr');
     headers.forEach(h => {
-      html += '<th>' + (h || '&nbsp;') + '</th>';
+      const th = document.createElement('th');
+      th.textContent = h;
+      trHead.appendChild(th);
     });
-    html += '</tr></thead><tbody>';
-    rows.forEach(row => {
-      html += '<tr>';
-      headers.forEach((_, i) => {
-        const val = row[i] !== undefined && row[i] !== null ? row[i] : '';
-        html += '<td>' + val + '</td>';
+    previewHead.appendChild(trHead);
+
+    // Data rows
+    generatedRows.forEach(row => {
+      const tr = document.createElement('tr');
+      headers.forEach((_, idx) => {
+        const td = document.createElement('td');
+        td.textContent = row[idx] !== undefined ? row[idx] : '';
+        tr.appendChild(td);
       });
-      html += '</tr>';
+      previewBody.appendChild(tr);
     });
-    html += '</tbody></table>';
-    container.innerHTML = html;
+
+    tableWrapper.classList.remove('hidden');
+    downloadBtn.disabled = false;
   }
 
-  // --- Load & preview base orders ---
-  btnParse.addEventListener('click', () => {
-    const fileInput = document.getElementById('csvFile');
-    const file = fileInput.files[0];
+  // Find exact column by name (case-insensitive, trimmed)
+  function findExactColumnIndex(headers, targetName) {
+    const lowerTarget = targetName.toLowerCase();
+    for (let i = 0; i < headers.length; i++) {
+      const h = (headers[i] || '').toString().trim().toLowerCase();
+      if (h === lowerTarget) return i;
+    }
+    return -1;
+  }
+
+  generateBtn.addEventListener('click', () => {
+    const file = fileInput.files && fileInput.files[0];
     if (!file) {
-      baseStatus.textContent = 'Please choose a CSV file first.';
-      baseStatus.className = 'status err';
+      alert('Please choose a CSV file first.');
       return;
     }
 
     const reader = new FileReader();
-    reader.onload = e => {
-      try {
-        const parsed = parseCsv(e.target.result);
-        headers = parsed.headers;
-        baseRows = parsed.rows;
-        renderTable(basePreview, headers, baseRows);
-        baseStatus.textContent = 'Loaded ' + baseRows.length + ' base rows.';
-        baseStatus.className = 'status ok';
-        btnGenerate.disabled = false;
-        genStatus.textContent = '';
-        generatedPreview.innerHTML = '';
+    reader.onload = function(e) {
+      const text = e.target.result;
+      const parsed = parseCSV(text);
+
+      if (!parsed.length) {
+        infoDiv.textContent = 'CSV is empty or could not be parsed.';
+        headers = [];
         generatedRows = [];
-        btnDownload.disabled = true;
-      } catch (err) {
-        baseStatus.textContent = 'Error: ' + err.message;
-        baseStatus.className = 'status err';
-        btnGenerate.disabled = true;
+        clearPreviewDOM();
+        downloadBtn.disabled = true;
+        return;
       }
+
+      headers = parsed[0];
+      const dataRows = parsed
+        .slice(1)
+        .filter(r => r.some(v => String(v).trim() !== ''));
+
+      if (!dataRows.length) {
+        infoDiv.textContent = 'No data rows found in CSV.';
+        generatedRows = [];
+        clearPreviewDOM();
+        downloadBtn.disabled = true;
+        return;
+      }
+
+      // Here we expect columns named exactly "PRODUCT" and "BUY/SELL" (any case)
+      const prodIdx = findExactColumnIndex(headers, 'PRODUCT');
+      const sideIdx = findExactColumnIndex(headers, 'BUY/SELL');
+
+      if (prodIdx === -1 || sideIdx === -1) {
+        infoDiv.textContent =
+          'Did not find columns "PRODUCT" and/or "BUY/SELL" in header. ' +
+          'Please check the first row of your CSV.';
+        generatedRows = [];
+        clearPreviewDOM();
+        downloadBtn.disabled = true;
+        return;
+      }
+
+      // Generate 4x rows
+      generatedRows = [];
+      const combos = [
+        ['MARGIN',   'BUY'],
+        ['MARGIN',   'SELL'],
+        ['INTRADAY', 'BUY'],
+        ['INTRADAY', 'SELL']
+      ];
+
+      dataRows.forEach(row => {
+        combos.forEach(([prod, side]) => {
+          const newRow = row.slice();    // copy
+          newRow[prodIdx] = prod;        // overwrite PRODUCT
+          newRow[sideIdx] = side;        // overwrite BUY/SELL
+          generatedRows.push(newRow);
+        });
+      });
+
+      infoDiv.textContent =
+        `Original rows: ${dataRows.length}, Generated rows: ${generatedRows.length}. ` +
+        `Using columns "${headers[prodIdx]}" for Product and "${headers[sideIdx]}" for Buy/Sell.`;
+
+      buildPreview();
     };
-    reader.onerror = () => {
-      baseStatus.textContent = 'Could not read file.';
-      baseStatus.className = 'status err';
+
+    reader.onerror = function() {
+      infoDiv.textContent = 'Error reading file.';
     };
+
     reader.readAsText(file);
   });
 
-  // --- Generate 32 orders for EACH base row ---
-  btnGenerate.addEventListener('click', () => {
-    if (!headers.length || !baseRows.length) {
-      genStatus.textContent = 'Load orders first.';
-      genStatus.className = 'status err';
+  downloadBtn.addEventListener('click', () => {
+    if (!headers.length || !generatedRows.length) {
+      alert('Nothing to download.');
       return;
     }
 
-    const idxProduct = headers.indexOf('Product');
-    const idxSide = headers.indexOf('Buy/Sell');
-    const idxOrdType = headers.indexOf('OrdType');
+    const rowsForCsv = [];
+    rowsForCsv.push(headers);  // same header as original
+    generatedRows.forEach(r => rowsForCsv.push(r));
 
-    if (idxProduct === -1 || idxSide === -1 || idxOrdType === -1) {
-      genStatus.textContent = 'Required columns not found (Product, Buy/Sell, OrdType).';
-      genStatus.className = 'status err';
-      return;
-    }
-
-    const products = ['MARGIN', 'INTRADAY', 'CO', 'BO'];  // ONLY THESE 4
-    const sides = ['BUY', 'SELL'];                       // 2
-    const ordTypes = ['Limit', 'Market', 'SL', 'SL-M'];  // 4
-
-    generatedRows = [];
-
-    baseRows.forEach(baseRow => {
-      products.forEach(prod => {
-        sides.forEach(side => {
-          ordTypes.forEach(ord => {
-            const row = baseRow.slice(); // copy
-            row[idxProduct] = prod;
-            row[idxSide] = side;
-            row[idxOrdType] = ord;
-
-            // if first column is blank header, keep value blank
-            if (headers[0] && headers[0].trim() === '') {
-              row[0] = '';
-            }
-            generatedRows.push(row);
-          });
-        });
-      });
+    let csvContent = '';
+    rowsForCsv.forEach(cols => {
+      const line = cols
+        .map(val => {
+          const v = val == null ? '' : String(val);
+          const escaped = v.replace(/"/g, '""');
+          return `"${escaped}"`;
+        })
+        .join(',');
+      csvContent += line + '\r\n';
     });
 
-    renderTable(generatedPreview, headers, generatedRows);
-    const perRow = 32;
-    const total = generatedRows.length;
-    genStatus.textContent =
-      'Generated ' + total + ' orders (' + perRow + ' × ' + baseRows.length + ' rows).';
-    genStatus.className = 'status ok';
-    btnDownload.disabled = total === 0;
-  });
-
-  // --- Download CSV ---
-  btnDownload.addEventListener('click', () => {
-    if (!generatedRows.length) return;
-    const csv = toCsv(headers, generatedRows);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'generated_orders_margin_intraday_co_bo.csv';
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'generated_4x_rows.csv';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
