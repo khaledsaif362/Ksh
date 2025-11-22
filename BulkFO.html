@@ -4,6 +4,8 @@
 <meta charset="UTF-8" />
 <title>Bulk Orders CSV – Full Page Preview</title>
 <style>
+  * { box-sizing: border-box; }
+
   body {
     margin: 0;
     font-family: "Segoe UI", Arial, sans-serif;
@@ -40,21 +42,19 @@
     border-radius: 8px;
     border: 1px solid #b0bec5;
     background: #fafafa;
+    font-size: 13px;
   }
 
   button {
     border: none;
-    padding: 10px 16px;
+    padding: 8px 16px;
     border-radius: 20px;
     cursor: pointer;
     font-size: 13px;
-    font-weight: bold;
+    font-weight: 600;
     color: #fff;
     transition: 0.1s;
   }
-
-  #btnPreview { background: #42a5f5; }
-  #btnPreview:hover { background: #1e88e5; }
 
   #btnGenerate { background: #66bb6a; }
   #btnGenerate:hover { background: #388e3c; }
@@ -88,6 +88,97 @@
 
   tr:nth-child(even) { background: #f5f5f5; }
   tr:hover { background: #fff9c4; }
+
+  #slConfig {
+    margin: 14px auto 18px;
+    max-width: 650px;
+  }
+
+  .sl-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #cfd8dc;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+    overflow: hidden;
+  }
+
+  .sl-card-header {
+    background: #bbdefb;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e3c72;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .sl-card-header span.desc {
+    font-weight: normal;
+    font-size: 11px;
+    color: #455a64;
+  }
+
+  .sl-card-body {
+    padding: 6px 10px 10px;
+    background: #f7f9fb;
+  }
+
+  .sl-table-wrapper {
+    max-height: 260px;
+    overflow-y: auto;
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+    background: #ffffff;
+  }
+
+  #slConfig table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+    font-size: 12px;
+  }
+
+  #slConfig th, #slConfig td {
+    border: 0;
+    border-bottom: 1px solid #eceff1;
+    padding: 5px 8px;
+  }
+
+  #slConfig thead th {
+    background: #e3f2fd;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    text-align: left;
+  }
+
+  #slConfig tbody tr:nth-child(even) {
+    background: #fafafa;
+  }
+
+  #slConfig tbody tr:hover {
+    background: #fffde7;
+  }
+
+  #slConfig td:first-child {
+    font-family: "Consolas","Courier New",monospace;
+  }
+
+  #slConfig input[type="text"] {
+    width: 40px;
+    padding: 1px 2px;
+    font-size: 10px;
+    border-radius: 4px;
+    border: 1px solid #90a4ae;
+    text-align: right;
+  }
+
+  #slConfig input[type="text"]:focus {
+    outline: none;
+    border-color: #42a5f5;
+    box-shadow: 0 0 0 2px rgba(66,165,245,0.25);
+  }
 </style>
 </head>
 <body>
@@ -98,21 +189,52 @@
 
 <div class="controls">
   <input type="file" id="csvFile" accept=".csv">
-  <button id="btnPreview">Preview</button>
-  <button id="btnGenerate">Download</button>
+  <button id="btnGenerate">Generate CSV</button>
 </div>
 
 <div id="message"></div>
 
-<!-- FULL PAGE PREVIEW -->
 <table id="previewTable"></table>
 
+<div id="slConfig"></div>
+
 <script>
-const fileInput = document.getElementById("csvFile");
-const btnPreview = document.getElementById("btnPreview");
-const btnGenerate = document.getElementById("btnGenerate");
+const fileInput    = document.getElementById("csvFile");
+const btnGenerate  = document.getElementById("btnGenerate");
 const previewTable = document.getElementById("previewTable");
-const message = document.getElementById("message");
+const message      = document.getElementById("message");
+const slConfigDiv  = document.getElementById("slConfig");
+
+let configBuilt      = false;  // 1st Generate -> show inputs
+let overridesApplied = false;  // 2nd Generate -> apply & preview
+let lastBaseData     = null;
+
+// auto preview after upload
+fileInput.addEventListener("change", () => {
+  const file = fileInput.files[0];
+  previewTable.innerHTML = "";
+  slConfigDiv.innerHTML = "";
+  configBuilt = false;
+  overridesApplied = false;
+  lastBaseData = null;
+  setMessage("");
+
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data     = parseCSV(e.target.result);
+      lastBaseData   = data;
+      const expanded = expandData(data);
+      showTable(expanded);
+      setMessage(`Generated: ${expanded.length - 1} Rows`, false);
+    } catch (err) {
+      setMessage(err.message, true);
+    }
+  };
+  reader.readAsText(file);
+});
 
 function setMessage(text, error = true) {
   message.style.color = error ? "#d32f2f" : "#2e7d32";
@@ -123,51 +245,136 @@ function parseCSV(text) {
   return text.trim().split(/\r?\n/).map(r => r.split(','));
 }
 
+function findColumnIndex(header, keywordList, fallbackContains) {
+  const norm = header.map(h => h.trim().toLowerCase());
+
+  for (let i = 0; i < norm.length; i++) {
+    for (const k of keywordList) {
+      if (norm[i] === k) return i;
+    }
+  }
+  if (fallbackContains) {
+    for (let i = 0; i < norm.length; i++) {
+      if (norm[i].includes(fallbackContains)) return i;
+    }
+  }
+  return -1;
+}
+
 function expandData(data) {
+  if (data.length < 2) {
+    throw new Error("CSV has no data rows.");
+  }
+
   const header = data[0];
-  const p = header.indexOf("Product");
-  const s = header.indexOf("Buy/Sell");
-  const o = header.indexOf("OrdType");
 
-  if (p < 0 || s < 0 || o < 0)
-    throw new Error("CSV MUST contain columns: Product, Buy/Sell, OrdType");
+  const productIndex = findColumnIndex(header, ["product"], "product");
+  const sideIndex    = findColumnIndex(header, ["buy/sell","side","transaction type"], "buy");
+  const ordTypeIndex = findColumnIndex(header, ["ordtype","order type","order_type"], "ord");
+  const priceIndex   = findColumnIndex(header, ["price","limit price","lmtprice"], "price");
+  const triggerIndex = findColumnIndex(header, ["trigger","triggerprice","trigger price","trigger_price"], "trigger");
 
-  const products = ["MARGIN","INTRADAY"];
-  const sides = ["BUY","SELL"];
-  const ordTypes = ["Limit","Market","SL","SL-M"];
+  if (productIndex === -1 || sideIndex === -1 || ordTypeIndex === -1) {
+    throw new Error("CSV must contain Product, Buy/Sell, OrdType columns. Headers: " + header.join(" | "));
+  }
 
-  const out = [header];
+  if (priceIndex === -1 || triggerIndex === -1) {
+    throw new Error("CSV must contain Price and Trigger/Trigger price columns. Headers: " + header.join(" | "));
+  }
+
+  const products = ["MARGIN", "INTRADAY"];
+  const ordTypes = ["Limit", "Market", "SL", "SL-M"];
+
+  const productOrder = { "MARGIN": 0, "INTRADAY": 1 };
+  const sideOrder    = { "BUY": 0, "SELL": 1 };
+  const ordTypeOrder = { "Limit": 0, "Market": 1, "SL": 2, "SL-M": 3 };
+
+  const rows = [];
 
   for (let i = 1; i < data.length; i++) {
     const base = data[i];
+    if (!base || !base.length) continue;
+
+    const basePrice   = base[priceIndex];
+    const baseTrigger = base[triggerIndex];
+    const priceNum    = parseFloat(basePrice);
 
     products.forEach(P => {
-      sides.forEach(S => {
-        ordTypes.forEach(O => {
-          const row = base.slice();
-          row[p] = P;
-          row[s] = S;
-          row[o] = O;
-          out.push(row);
-        });
+      ordTypes.forEach(O => {
+        const row = base.slice();
+
+        row[productIndex] = P;
+        row[ordTypeIndex] = O;
+
+        const S = row[sideIndex];
+
+        if (O === "Limit") {
+          row[priceIndex]   = basePrice;
+          row[triggerIndex] = baseTrigger;
+        } else if (O === "Market") {
+          row[priceIndex]   = "0";
+          row[triggerIndex] = "0";
+        } else if (O === "SL") {
+          row[priceIndex] = basePrice;
+          if (!isNaN(priceNum)) {
+            if (S === "BUY") {
+              row[triggerIndex] = String(priceNum - 1);
+            } else if (S === "SELL") {
+              row[triggerIndex] = String(priceNum + 1);
+            } else {
+              row[triggerIndex] = baseTrigger;
+            }
+          } else {
+            row[triggerIndex] = baseTrigger;
+          }
+        } else if (O === "SL-M") {
+          row[priceIndex] = "0";
+          if (!isNaN(priceNum)) {
+            if (S === "BUY") {
+              row[triggerIndex] = String(priceNum - 10);
+            } else if (S === "SELL") {
+              row[triggerIndex] = String(priceNum + 10);
+            } else {
+              row[triggerIndex] = baseTrigger;
+            }
+          } else {
+            row[triggerIndex] = baseTrigger;
+          }
+        }
+
+        rows.push(row);
       });
     });
   }
 
-  return out;
+  rows.sort((a, b) => {
+    const pA = productOrder[a[productIndex]] ?? 99;
+    const pB = productOrder[b[productIndex]] ?? 99;
+    if (pA !== pB) return pA - pB;
+
+    const sA = sideOrder[a[sideIndex]] ?? 99;
+    const sB = sideOrder[b[sideIndex]] ?? 99;
+    if (sA !== sB) return sA - sB;
+
+    const oA = ordTypeOrder[a[ordTypeIndex]] ?? 99;
+    const oB = ordTypeOrder[b[ordTypeIndex]] ?? 99;
+    return oA - oB;
+  });
+
+  return [header, ...rows];
 }
 
 function showTable(rows) {
   previewTable.innerHTML = "";
   if (!rows.length) return;
 
-  const header = document.createElement("tr");
+  const headerRow = document.createElement("tr");
   rows[0].forEach(col => {
     const th = document.createElement("th");
     th.textContent = col;
-    header.appendChild(th);
+    headerRow.appendChild(th);
   });
-  previewTable.appendChild(header);
+  previewTable.appendChild(headerRow);
 
   for (let i = 1; i < rows.length; i++) {
     const tr = document.createElement("tr");
@@ -180,24 +387,147 @@ function showTable(rows) {
   }
 }
 
-btnPreview.onclick = () => {
-  const file = fileInput.files[0];
-  if (!file) return setMessage("Upload CSV first", true);
+function buildSlConfigFromBase(baseData) {
+  slConfigDiv.innerHTML = "";
 
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const data = parseCSV(e.target.result);
-      const expanded = expandData(data);
-      showTable(expanded);
-      setMessage(`Preview loaded: ${expanded.length - 1} rows`, false);
-    } catch (err) {
-      setMessage(err.message, true);
+  if (!baseData || baseData.length < 2) {
+    slConfigDiv.textContent = "";
+    return;
+  }
+
+  const header = baseData[0];
+  const symbolIndex = findColumnIndex(header, ["symbol"], "symbol");
+
+  if (symbolIndex === -1) {
+    slConfigDiv.textContent = "Symbol column not found – override grid cannot be built.";
+    return;
+  }
+
+  const symbols = [];
+  const seen = new Set();
+
+  for (let i = 1; i < baseData.length; i++) {
+    const sym = baseData[i][symbolIndex];
+    if (sym && !seen.has(sym)) {
+      seen.add(sym);
+      symbols.push(sym);
     }
-  };
-  reader.readAsText(file);
-};
+  }
 
+  if (!symbols.length) {
+    slConfigDiv.textContent = "No symbols found.";
+    return;
+  }
+
+  const card = document.createElement("div");
+  card.className = "sl-card";
+
+  const headerDiv = document.createElement("div");
+  headerDiv.className = "sl-card-header";
+  headerDiv.innerHTML = `
+    <span>Custom SL Price</span>
+    <span class="desc"></span>
+  `;
+  card.appendChild(headerDiv);
+
+  const body = document.createElement("div");
+  body.className = "sl-card-body";
+
+  const wrap = document.createElement("div");
+  wrap.className = "sl-table-wrapper";
+
+  const tbl = document.createElement("table");
+  const thead = document.createElement("thead");
+  const trh = document.createElement("tr");
+  ["Symbol","SL Price"].forEach(h => {
+    const th = document.createElement("th");
+    th.textContent = h;
+    trh.appendChild(th);
+  });
+  thead.appendChild(trh);
+  tbl.appendChild(thead);
+
+  const tbody = document.createElement("tbody");
+  symbols.forEach(sym => {
+    const tr = document.createElement("tr");
+    tr.setAttribute("data-symbol", sym);
+
+    const tdSym = document.createElement("td");
+    tdSym.textContent = sym;
+    tr.appendChild(tdSym);
+
+    const tdSl = document.createElement("td");
+    const inpSl = document.createElement("input");
+    inpSl.type = "text";
+    inpSl.className = "sl-price";
+    tdSl.appendChild(inpSl);
+    tr.appendChild(tdSl);
+
+    tbody.appendChild(tr);
+  });
+
+  tbl.appendChild(tbody);
+  wrap.appendChild(tbl);
+  body.appendChild(wrap);
+  card.appendChild(body);
+
+  slConfigDiv.appendChild(card);
+}
+
+function readSlOverrides() {
+  const map = {};
+  const rows = slConfigDiv.querySelectorAll("tbody tr");
+  rows.forEach(r => {
+    const sym = r.getAttribute("data-symbol");
+    map[sym] = {
+      slPrice: (r.querySelector(".sl-price")?.value || "").trim()
+    };
+  });
+  return map;
+}
+
+// SL: price = SL Price, trigger = SL Price - 2 (BUY) / +2 (SELL)
+// SL-M: price = 0, trigger = SL Price
+function applyOverrides(expanded, overrides) {
+  const header = expanded[0];
+  const symbolIndex = findColumnIndex(header, ["symbol"], "symbol");
+  const ordTypeIndex = findColumnIndex(header, ["ordtype","order type","order_type"], "ord");
+  const sideIndex    = findColumnIndex(header, ["buy/sell","side","transaction type"], "buy");
+  const priceIndex   = findColumnIndex(header, ["price","limit price","lmtprice"], "price");
+  const triggerIndex = findColumnIndex(header, ["trigger","triggerprice","trigger price","trigger_price"], "trigger");
+
+  if (symbolIndex === -1 || ordTypeIndex === -1 ||
+      sideIndex === -1 || priceIndex === -1 || triggerIndex === -1) {
+    return expanded;
+  }
+
+  for (let i = 1; i < expanded.length; i++) {
+    const row = expanded[i];
+    const sym = row[symbolIndex];
+    const cfg = overrides[sym];
+    if (!cfg || !cfg.slPrice) continue;
+
+    const otype = row[ordTypeIndex];
+    const side  = row[sideIndex];
+    const p = parseFloat(cfg.slPrice);
+    if (isNaN(p)) continue;
+
+    if (otype === "SL") {
+      row[priceIndex] = cfg.slPrice;
+      if (side === "BUY") {
+        row[triggerIndex] = String(p - 2);
+      } else if (side === "SELL") {
+        row[triggerIndex] = String(p + 2);
+      }
+    } else if (otype === "SL-M") {
+      row[priceIndex] = "0";
+      row[triggerIndex] = cfg.slPrice;
+    }
+  }
+  return expanded;
+}
+
+// GENERATE: 1st = build SL grid, 2nd = apply overrides + PREVIEW, 3rd = DOWNLOAD
 btnGenerate.onclick = () => {
   const file = fileInput.files[0];
   if (!file) return setMessage("Upload CSV first", true);
@@ -206,15 +536,46 @@ btnGenerate.onclick = () => {
   reader.onload = e => {
     try {
       const data = parseCSV(e.target.result);
-      const expanded = expandData(data);
+      lastBaseData = data;
+      let expanded = expandData(data);
 
+      // 1st click: show base & build SL config
+      if (!configBuilt) {
+        showTable(expanded);
+        buildSlConfigFromBase(lastBaseData);
+        setMessage(
+          `Generated: ${expanded.length - 1} Rows. ` +
+          `Enter SL Price per symbol (optional), then click "Generate CSV" again`,
+          false
+        );
+        configBuilt = true;
+        overridesApplied = false;
+        return;
+      }
+
+      const overrides = readSlOverrides();
+      expanded = applyOverrides(expanded, overrides);
+
+      // 2nd click: preview overridden values
+      if (!overridesApplied) {
+        showTable(expanded);
+        setMessage(
+          `Custom SL prices applied. ` +
+          `Click "Generate CSV" again to Download file.`,
+          false
+        );
+        overridesApplied = true;
+        return;
+      }
+
+      // 3rd click: download CSV with overrides
       const csv = expanded.map(r => r.join(",")).join("\r\n");
       const blob = new Blob([csv], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
+      const url  = URL.createObjectURL(blob);
 
       const a = document.createElement("a");
       a.href = url;
-      a.download = "bulk_256_orders.csv";
+      a.download = "bulk_orders_generated.csv";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
