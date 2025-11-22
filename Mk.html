@@ -1,263 +1,232 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>CSV 4x Row Generator (PRODUCT & BUY/SELL)</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 16px;
-    }
-    h1 {
-      font-size: 18px;
-      margin-bottom: 8px;
-    }
-    .controls {
-      margin-bottom: 12px;
-    }
-    input[type="file"] {
-      margin-right: 8px;
-    }
-    button {
-      padding: 6px 10px;
-      margin: 4px 4px 4px 0;
-      cursor: pointer;
-    }
-    #info {
-      margin-top: 8px;
-      font-size: 13px;
-    }
-    .table-wrapper {
-      margin-top: 12px;
-      max-height: 60vh;
-      overflow: auto;
-      border: 1px solid #ccc;
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      font-size: 12px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 4px 6px;
-      white-space: nowrap;
-      text-align: left;
-    }
-    th {
-      background: #f2f2f2;
-      position: sticky;
-      top: 0;
-      z-index: 1;
-    }
-    .hidden {
-      display: none;
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>Bulk Orders CSV – Full Page Preview</title>
+<style>
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #e3f2fd;
+  }
+
+  .top-bar {
+    background: linear-gradient(90deg, #1976d2, #42a5f5);
+    color: #fff;
+    padding: 14px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  }
+
+  .top-bar h1 {
+    margin: 0;
+    font-size: 20px;
+  }
+
+  .controls {
+    padding: 14px 18px;
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  input[type="file"] {
+    flex: 1;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #b0bec5;
+    background: #fafafa;
+  }
+
+  button {
+    border: none;
+    padding: 10px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+    color: #fff;
+    transition: 0.1s;
+  }
+
+  #btnPreview { background: #42a5f5; }
+  #btnPreview:hover { background: #1e88e5; }
+
+  #btnGenerate { background: #66bb6a; }
+  #btnGenerate:hover { background: #388e3c; }
+
+  #message {
+    padding: 8px 18px;
+    font-size: 13px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    background: #fff;
+    margin-top: 10px;
+  }
+
+  th, td {
+    border: 1px solid #cfd8dc;
+    padding: 6px 8px;
+    white-space: nowrap;
+  }
+
+  th {
+    background: #bbdefb;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    font-weight: bold;
+  }
+
+  tr:nth-child(even) { background: #f5f5f5; }
+  tr:hover { background: #fff9c4; }
+</style>
 </head>
 <body>
 
-<h1>CSV 4x Row Generator (PRODUCT & BUY/SELL)</h1>
+<div class="top-bar">
+  <h1>📊 Bulk Orders CSV (256 Generator)</h1>
+</div>
+
 <div class="controls">
-  <input type="file" id="fileInput" accept=".csv">
-  <button id="generateBtn">Upload & Generate 4x Rows</button>
-  <button id="downloadBtn" disabled>Download New CSV</button>
+  <input type="file" id="csvFile" accept=".csv">
+  <button id="btnPreview">Preview</button>
+  <button id="btnGenerate">Generate & CSV</button>
 </div>
 
-<div id="info"></div>
+<div id="message"></div>
 
-<div class="table-wrapper hidden" id="tableWrapper">
-  <table id="previewTable">
-    <thead id="previewHead"></thead>
-    <tbody id="previewBody"></tbody>
-  </table>
-</div>
+<!-- FULL PAGE PREVIEW -->
+<table id="previewTable"></table>
 
 <script>
-  const fileInput    = document.getElementById('fileInput');
-  const generateBtn  = document.getElementById('generateBtn');
-  const downloadBtn  = document.getElementById('downloadBtn');
-  const infoDiv      = document.getElementById('info');
-  const tableWrapper = document.getElementById('tableWrapper');
-  const previewHead  = document.getElementById('previewHead');
-  const previewBody  = document.getElementById('previewBody');
+const fileInput = document.getElementById("csvFile");
+const btnPreview = document.getElementById("btnPreview");
+const btnGenerate = document.getElementById("btnGenerate");
+const previewTable = document.getElementById("previewTable");
+const message = document.getElementById("message");
 
-  let headers       = [];
-  let generatedRows = [];
+function setMessage(text, error = true) {
+  message.style.color = error ? "#d32f2f" : "#2e7d32";
+  message.textContent = text;
+}
 
-  // Simple CSV parser (no commas inside values assumed)
-  function parseCSV(text) {
-    const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-    const out = [];
-    for (let line of lines) {
-      if (!line.trim()) continue;
-      out.push(line.split(','));
-    }
-    return out;
-  }
+function parseCSV(text) {
+  return text.trim().split(/\r?\n/).map(r => r.split(','));
+}
 
-  function clearPreviewDOM() {
-    previewHead.innerHTML = '';
-    previewBody.innerHTML = '';
-    tableWrapper.classList.add('hidden');
-  }
+function expandData(data) {
+  const header = data[0];
+  const p = header.indexOf("Product");
+  const s = header.indexOf("Buy/Sell");
+  const o = header.indexOf("OrdType");
 
-  function buildPreview() {
-    clearPreviewDOM();
+  if (p < 0 || s < 0 || o < 0)
+    throw new Error("CSV MUST contain columns: Product, Buy/Sell, OrdType");
 
-    if (!headers.length || !generatedRows.length) {
-      infoDiv.textContent = 'No data to preview.';
-      downloadBtn.disabled = true;
-      return;
-    }
+  const products = ["MARGIN","INTRADAY"];
+  const sides = ["BUY","SELL"];
+  const ordTypes = ["Limit","Market","SL","SL-M"];
 
-    // Header row
-    const trHead = document.createElement('tr');
-    headers.forEach(h => {
-      const th = document.createElement('th');
-      th.textContent = h;
-      trHead.appendChild(th);
-    });
-    previewHead.appendChild(trHead);
+  const out = [header];
 
-    // Data rows
-    generatedRows.forEach(row => {
-      const tr = document.createElement('tr');
-      headers.forEach((_, idx) => {
-        const td = document.createElement('td');
-        td.textContent = row[idx] !== undefined ? row[idx] : '';
-        tr.appendChild(td);
-      });
-      previewBody.appendChild(tr);
-    });
+  for (let i = 1; i < data.length; i++) {
+    const base = data[i];
 
-    tableWrapper.classList.remove('hidden');
-    downloadBtn.disabled = false;
-  }
-
-  // Find exact column by name (case-insensitive, trimmed)
-  function findExactColumnIndex(headers, targetName) {
-    const lowerTarget = targetName.toLowerCase();
-    for (let i = 0; i < headers.length; i++) {
-      const h = (headers[i] || '').toString().trim().toLowerCase();
-      if (h === lowerTarget) return i;
-    }
-    return -1;
-  }
-
-  generateBtn.addEventListener('click', () => {
-    const file = fileInput.files && fileInput.files[0];
-    if (!file) {
-      alert('Please choose a CSV file first.');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const text = e.target.result;
-      const parsed = parseCSV(text);
-
-      if (!parsed.length) {
-        infoDiv.textContent = 'CSV is empty or could not be parsed.';
-        headers = [];
-        generatedRows = [];
-        clearPreviewDOM();
-        downloadBtn.disabled = true;
-        return;
-      }
-
-      headers = parsed[0];
-      const dataRows = parsed
-        .slice(1)
-        .filter(r => r.some(v => String(v).trim() !== ''));
-
-      if (!dataRows.length) {
-        infoDiv.textContent = 'No data rows found in CSV.';
-        generatedRows = [];
-        clearPreviewDOM();
-        downloadBtn.disabled = true;
-        return;
-      }
-
-      // Here we expect columns named exactly "PRODUCT" and "BUY/SELL" (any case)
-      const prodIdx = findExactColumnIndex(headers, 'PRODUCT');
-      const sideIdx = findExactColumnIndex(headers, 'BUY/SELL');
-
-      if (prodIdx === -1 || sideIdx === -1) {
-        infoDiv.textContent =
-          'Did not find columns "PRODUCT" and/or "BUY/SELL" in header. ' +
-          'Please check the first row of your CSV.';
-        generatedRows = [];
-        clearPreviewDOM();
-        downloadBtn.disabled = true;
-        return;
-      }
-
-      // Generate 4x rows
-      generatedRows = [];
-      const combos = [
-        ['MARGIN',   'BUY'],
-        ['MARGIN',   'SELL'],
-        ['INTRADAY', 'BUY'],
-        ['INTRADAY', 'SELL']
-      ];
-
-      dataRows.forEach(row => {
-        combos.forEach(([prod, side]) => {
-          const newRow = row.slice();    // copy
-          newRow[prodIdx] = prod;        // overwrite PRODUCT
-          newRow[sideIdx] = side;        // overwrite BUY/SELL
-          generatedRows.push(newRow);
+    products.forEach(P => {
+      sides.forEach(S => {
+        ordTypes.forEach(O => {
+          const row = base.slice();
+          row[p] = P;
+          row[s] = S;
+          row[o] = O;
+          out.push(row);
         });
       });
-
-      infoDiv.textContent =
-        `Original rows: ${dataRows.length}, Generated rows: ${generatedRows.length}. ` +
-        `Using columns "${headers[prodIdx]}" for Product and "${headers[sideIdx]}" for Buy/Sell.`;
-
-      buildPreview();
-    };
-
-    reader.onerror = function() {
-      infoDiv.textContent = 'Error reading file.';
-    };
-
-    reader.readAsText(file);
-  });
-
-  downloadBtn.addEventListener('click', () => {
-    if (!headers.length || !generatedRows.length) {
-      alert('Nothing to download.');
-      return;
-    }
-
-    const rowsForCsv = [];
-    rowsForCsv.push(headers);  // same header as original
-    generatedRows.forEach(r => rowsForCsv.push(r));
-
-    let csvContent = '';
-    rowsForCsv.forEach(cols => {
-      const line = cols
-        .map(val => {
-          const v = val == null ? '' : String(val);
-          const escaped = v.replace(/"/g, '""');
-          return `"${escaped}"`;
-        })
-        .join(',');
-      csvContent += line + '\r\n';
     });
+  }
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = 'generated_4x_rows.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  return out;
+}
+
+function showTable(rows) {
+  previewTable.innerHTML = "";
+  if (!rows.length) return;
+
+  const header = document.createElement("tr");
+  rows[0].forEach(col => {
+    const th = document.createElement("th");
+    th.textContent = col;
+    header.appendChild(th);
   });
-</script>
+  previewTable.appendChild(header);
 
+  for (let i = 1; i < rows.length; i++) {
+    const tr = document.createElement("tr");
+    rows[i].forEach(v => {
+      const td = document.createElement("td");
+      td.textContent = v;
+      tr.appendChild(td);
+    });
+    previewTable.appendChild(tr);
+  }
+}
+
+btnPreview.onclick = () => {
+  const file = fileInput.files[0];
+  if (!file) return setMessage("Upload CSV first", true);
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = parseCSV(e.target.result);
+      const expanded = expandData(data);
+      showTable(expanded);
+      setMessage(`Preview loaded: ${expanded.length - 1} rows`, false);
+    } catch (err) {
+      setMessage(err.message, true);
+    }
+  };
+  reader.readAsText(file);
+};
+
+btnGenerate.onclick = () => {
+  const file = fileInput.files[0];
+  if (!file) return setMessage("Upload CSV first", true);
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = parseCSV(e.target.result);
+      const expanded = expandData(data);
+
+      const csv = expanded.map(r => r.join(",")).join("\r\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "bulk_256_orders.csv";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      setMessage(`Downloaded ${expanded.length - 1} records`, false);
+    } catch (err) {
+      setMessage(err.message, true);
+    }
+  };
+  reader.readAsText(file);
+};
+</script>
 </body>
 </html>
