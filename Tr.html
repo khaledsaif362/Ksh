@@ -1,116 +1,457 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Default Stock Price Edit</title>
+  <meta charset="utf-8" />
+  <title>Preview Report - Minimal Inputs + Fullpage Preview</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body {
-      background-color: white;
-      font-family: 'Segoe UI', sans-serif;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
+    :root{
+      --primary:#1976d2; --bg:#f5f7fb; --text:#263238; --muted:#607d8b;
+      --border:#dfe7f3; --danger:#e53935; --success:#2e7d32;
+    }
+    *{box-sizing:border-box;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    body{margin:0;background:var(--bg);color:var(--text);padding:16px}
+    .top { max-width:1100px;margin:0 auto 12px; padding:14px; }
+    .Tcard { background:#fff;border-radius:10px;padding:14px;box-shadow:0 6px 20px rgba(15,23,42,0.06); }
+    h1{margin:0 0 6px;color:var(--primary)}
+    .subtitle{color:var(--muted);font-size:13px;margin-bottom:10px}
+    .form-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    .form-group{display:flex;flex-direction:column;gap:6px}
+    label{font-size:13px;color:var(--muted);font-weight:600}
+    input[type="text"],input[type="number"]{padding:8px;border-radius:6px;border:1px solid var(--border);font-size:13px;background:#fff}
+    .actions{display:flex;gap:10px;margin-top:12px}
+    button{border:none;border-radius:6px;padding:9px 14px;cursor:pointer;font-weight:700}
+    .btn-primary{background:var(--primary);color:#fff}
+    .btn-secondary{background:#eceff4;color:var(--text)}
+    .btn-danger{background:var(--danger);color:#fff}
+    .message{min-height:18px;margin-top:8px;font-size:13px}
+    .message.error{color:var(--danger)}
+    .message.success{color:var(--success)}
+
+    /* FULL PAGE PREVIEW */
+    .preview-wrap{max-width:1200px;margin:16px auto 60px}
+    .preview-card{background:#fff;border-radius:10px;padding:12px;box-shadow:2 6px 30px rgba(15,23,42,0.06)}
+    .preview-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px}
+    .preview-title{font-weight:700}
+    table{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:6px;overflow:hidden}
+    thead{background:#f1f7ff}
+    th,td{padding:8px;border-bottom:1px solid #eef3fb;text-align:left}
+    .col-right{text-align:right}
+    .col-center{text-align:center}
+    tbody tr:nth-child(even){background:#fbfeff}
+    .no-data{text-align:center;padding:14px;color:var(--muted)}
+    .seq{width:38px}
+    @media(max-width:900px){.form-row{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:520px){.form-row{grid-template-columns:1fr}}
+	
+	
+	
+	/* TITLE BAR — clean, centered, full width */
+.title-bar {
+  background-color: green;
+  color: white;
+
+  padding-top: 12px;
+  padding-right: 0px;
+  padding-bottom: 12px;
+  padding-left: 10px;
+
+margin-left: -31px;
+margin-right: -31px;
+
+
+  text-align: center;
+  font-weight: bold;
+  font-size: 15px;
+
+  border: 3px solid grey;
+  border-radius: 1px 1px 0 0;   /* matches card */
+  
+  box-sizing: border-box;
+}
+
+/* CARD — clean fixed padding around content */
+.card {
+  background: #ffffff;
+  color: #333;
+border-radius: 10px;
+  padding-top: 1px;
+  padding-right: 30px;
+  padding-bottom: 30px;
+  padding-left: 30px;
+
+  
+  max-width: 1100px;
+  margin: 0 auto;            /* center card */
+  margin-top: 10px;          /* small space under green bar */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+
+
+.btn-add {
+      background: var(--primary);
+      color: #fff;
+      border: 1px solid #b71c1c;
     }
 
-    .window {
-      width: 400px;
-      background-color: #1e1e1e; /* Window-like dark background */
-      border: 1px solid #aaa;
-      box-shadow: 0 0 10px #000;
+   
+    .btn-clear {
+      background: #e53935;
+      color: #ffffff;
+      border: 1px solid #b71c1c;
     }
 
-    .title-bar {
-      background-color: #f0f0f0;
-      color: black;
-      padding: 6px 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-weight: bold;
-      font-size: 13px;
+   
+    .btn-download {
+      background: #008000;
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(67,160,71,0.35);
     }
 
-    .title-bar .close {
-      cursor: pointer;
-      font-weight: normal;
-    }
+    
 
-    .content {
-      padding: 20px;
-      background-color: #2a2a2a;
-      color: white;
-      font-size: 13px;
-    }
 
-    .form-group {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-    }
-
-    .form-group label {
-      flex: 1;
-    }
-
-    .form-group input[type="number"] {
-      width: 100px;
-      padding: 4px;
-      font-size: 13px;
-      border: 1px solid #ccc;
-      border-radius: 2px;
-    }
-
-    .save-button {
-      display: block;
-      margin: 20px auto 0;
-      padding: 8px 20px;
-      background-color: #1e1e1e;
-      color: yellow;
-      font-weight: bold;
-      border: 1px solid #999;
-      border-radius: 3px;
-      cursor: pointer;
-    }
-
-    .save-button:hover {
-      background-color: #333;
-    }
+	
   </style>
 </head>
-<body>
-
-<div class="window">
+<body><br><br>
+  <div class="card">
   <div class="title-bar">
-    <span>Default Stock Price Edit</span>
-    <span class="close">✕</span>
+   
+      Bulk Generator</div> 
+      <br><form id="orderForm" onsubmit="return false;">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="symbol">Symbol</label>
+            <input id="symbol" type="text">
+          </div>
+
+          <div class="form-group">
+            <label for="clientBuy">Client (BUY)</label>
+            <input id="clientBuy" type="text">
+          </div>
+
+          <div class="form-group">
+            <label for="clientSell">Client (SELL)</label>
+            <input id="clientSell" type="text">
+          </div>
+
+          <div class="form-group">
+            <label for="token">Token</label>
+            <input id="token" type="text">
+          </div>
+
+          <div class="form-group">
+            <label for="qty">Qty</label>
+            <input id="qty" type="number" min="1" step="1">
+          </div>
+
+          <div class="form-group">
+            <label for="price">Price</label>
+            <input id="price" type="number" step="0.01">
+          </div>
+
+          <div class="form-group">
+            <label for="trigger">Trigger Price</label>
+            <input id="trigger" type="number" step="0.01" placeholder="optional" />
+          </div>
+
+          
+        </div>
+
+        <div class="actions">
+          <button type="button" id="addBtn" class="btn-add">Add</button>
+          <button type="button" id="clearPreviewBtn" class="btn-clear">Clear</button>
+          <button type="button" id="csvBtn" class="btn-download">Generate</button>
+          <div id="message" class="message" aria-live="polite"></div>
+        </div>
+      </form>
+    </div>
   </div>
-  <div class="content">
-    <div class="form-group">
-      <label for="normal-ceil">Normal Ceiling Percentage</label>
-      <input type="number" id="normal-ceil" value="50.00">
-    </div>
 
-    <div class="form-group">
-      <label for="normal-floor">Normal Floor Percentage</label>
-      <input type="number" id="normal-floor" value="30.00">
-    </div>
+  <!-- FULL PAGE PREVIEW (outside form) -->
+  <div class="preview-wrap">
+    <div class="preview-card">
+      <div class="preview-head">
+        
+       
+      </div>
 
-    <div class="form-group">
-      <label for="oddlot-ceil">Oddlot Ceiling Percentage</label>
-      <input type="number" id="oddlot-ceil" value="50.00">
+      <div style="overflow:auto;">
+        <table id="previewTable" role="table" aria-label="Order preview table">
+          <thead>
+            <tr>
+              <th class="seq"><!-- # --></th>
+              <th><!-- blank column before Exch --></th>
+              <th>Exch</th>
+              <th>EXCH_SEG</th>
+              <th>SegmentCode</th>
+              <th>Symbol</th>
+              <th>ClientID</th>
+              <th>Buy/Sell</th>
+              <th>Token</th>
+              <th>Product</th>
+              <th class="col-right">Qty</th>
+              <th class="col-right">Price</th>
+              <th>OrdType</th>
+              <th class="col-right">Trigger Price</th>
+              <th class="col-right">DQty</th>
+              <th>Val</th>
+              <th>Pro/Cli</th>
+              <th>Participant ID</th>
+              <th class="col-right">LTP</th>
+              <th class="col-center">Action</th>
+            </tr>
+          </thead>
+          <tbody id="previewBody">
+            <tr class="no-data-row"><td colspan="20" class="no-data">No records added yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
-
-    <div class="form-group">
-      <label for="oddlot-floor">Oddlot Floor Percentage</label>
-      <input type="number" id="oddlot-floor" value="30.00">
-    </div>
-
-    <button class="save-button">Save</button>
   </div>
-</div>
 
+  <script>
+    // Hard-coded fields (per your screenshot instructions)
+    const HARDCODE = {
+      EXCH: "NSE",
+      EXCH_SEG: "NSEE",
+      SEGMENT_CODE: "E",
+      DQTY: "0",
+      VAL: "DAY",
+      PRO_CLI: "C",
+      PARTICIPANT: "", // left blank
+      LTP: "" // left blank
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const DEFAULT_PRODUCTS = ["CNC","MARGIN","INTRADAY","MTF"];
+      const BUY_ONLY_PRODUCTS = new Set(["CNC","MTF"]);
+
+      // form inputs
+      const symbolInput = document.getElementById("symbol");
+      const clientBuyInput = document.getElementById("clientBuy");
+      const clientSellInput = document.getElementById("clientSell");
+      const tokenInput = document.getElementById("token");
+      const qtyInput = document.getElementById("qty");
+      const priceInput = document.getElementById("price");
+      const triggerInput = document.getElementById("trigger");
+
+      // buttons + preview elements
+      const addBtn = document.getElementById("addBtn");
+      const clearPreviewBtn = document.getElementById("clearPreviewBtn");
+      const csvBtn = document.getElementById("csvBtn");
+      const messageDiv = document.getElementById("message");
+      const previewBody = document.getElementById("previewBody");
+      const rowCount = document.getElementById("rowCount");
+
+      function showMessage(text, type) {
+        messageDiv.textContent = text || "";
+        messageDiv.className = type ? ("message " + type) : "message";
+      }
+
+      function updateCounts() {
+        const rows = previewBody.querySelectorAll("tr.data-row");
+        rowCount.textContent = rows.length;
+        if (rows.length === 0) {
+          previewBody.innerHTML = '<tr class="no-data-row"><td colspan="20" class="no-data">No records added yet.</td></tr>';
+        } else {
+          let i = 1;
+          rows.forEach(r => {
+            const seq = r.querySelector("td.seq");
+            if (seq) seq.textContent = i++;
+          });
+        }
+      }
+
+      function clearInputs() {
+        symbolInput.value = "";
+        clientBuyInput.value = "";
+        clientSellInput.value = "";
+        tokenInput.value = "";
+        qtyInput.value = "";
+        priceInput.value = "";
+        triggerInput.value = "";
+        symbolInput.focus();
+      }
+
+      addBtn.addEventListener("click", () => {
+        const symbol = symbolInput.value.trim();
+        const clientBuy = clientBuyInput.value.trim();
+        const clientSell = clientSellInput.value.trim();
+        const token = tokenInput.value.trim();
+        const qty = qtyInput.value.trim();
+        const priceVal = priceInput.value.trim();
+        const triggerVal = triggerInput.value.trim();
+
+        // Validation: symbol, qty, price required; at least one client provided
+        if (!symbol || !qty || !priceVal) {
+          showMessage("Please fill Symbol, Qty and Price.", "error");
+          return;
+        }
+        if (!clientBuy && !clientSell) {
+          showMessage("Provide at least one Client (BUY or SELL).", "error");
+          return;
+        }
+
+        const qtyNum = Number(qty);
+        const priceNum = Number(priceVal);
+        const trigNum = triggerVal === "" ? 0 : Number(triggerVal);
+
+        if (isNaN(qtyNum) || qtyNum <= 0) { showMessage("Qty should be a positive number.", "error"); return; }
+        if (isNaN(priceNum)) { showMessage("Price must be a valid number.", "error"); return; }
+        if (triggerVal !== "" && isNaN(trigNum)) { showMessage("Trigger Price must be a valid number.", "error"); return; }
+
+        // remove no-data row if present
+        const firstRow = previewBody.querySelector("tr.no-data-row");
+        if (firstRow) firstRow.remove();
+
+        // generation logic:
+        const products = DEFAULT_PRODUCTS;
+        const orderTypes = ["LIMIT","MKT","SL","SLM"];
+
+        // decide sides based on clients provided:
+        const sides = clientBuy && !clientSell ? ["BUY"]
+                    : !clientBuy && clientSell ? ["SELL"]
+                    : ["BUY","SELL"];
+
+        let added = 0;
+
+        products.forEach(product => {
+          // apply buy-only rule
+          const productSides = BUY_ONLY_PRODUCTS.has(product) ? ["BUY"] : sides;
+
+          productSides.forEach(side => {
+            // if side requested but corresponding client not provided, skip
+            if (side === "BUY" && !clientBuy && clientSell) return; // user wanted SELL-only
+            if (side === "SELL" && !clientSell && clientBuy) return; // user wanted BUY-only
+
+            let clientForRow = (side === "BUY") ? clientBuy : clientSell;
+            // safety fallback if client missing but other exists (edge-case)
+            if (!clientForRow) clientForRow = clientBuy || clientSell;
+            if (!clientForRow) return;
+
+            orderTypes.forEach(orderType => {
+              const isBuy = side === "BUY";
+              const basePrice = isBuy ? priceNum : (priceNum + 3);
+
+              let rowPrice = 0, rowTrig = 0;
+              if (orderType === "LIMIT") {
+                rowPrice = basePrice;
+                rowTrig = triggerVal === "" ? 0 : (isBuy ? trigNum : (trigNum + 3));
+              } else if (orderType === "MKT") {
+                rowPrice = 0; rowTrig = 0;
+              } else if (orderType === "SL") {
+                rowPrice = basePrice; rowTrig = isBuy ? (basePrice - 1) : (basePrice + 1);
+              } else { // SLM
+                rowPrice = 0; rowTrig = isBuy ? (basePrice - 1) : (basePrice + 1);
+              }
+
+              const tr = document.createElement("tr");
+              tr.classList.add("data-row");
+              tr.innerHTML = `
+                <td class="seq"></td>
+                <td></td>
+                <td>${escapeHtml(HARDCODE.EXCH)}</td>
+                <td>${escapeHtml(HARDCODE.EXCH_SEG)}</td>
+                <td>${escapeHtml(HARDCODE.SEGMENT_CODE)}</td>
+                <td>${escapeHtml(symbol)}</td>
+                <td>${escapeHtml(clientForRow)}</td>
+                <td>${side}</td>
+                <td>${escapeHtml(token)}</td>
+                <td>${escapeHtml(product)}</td>
+                <td class="col-right">${qtyNum}</td>
+                <td class="col-right">${rowPrice}</td>
+                <td>${orderType}</td>
+                <td class="col-right">${rowTrig}</td>
+                <td class="col-right">${escapeHtml(HARDCODE.DQTY)}</td>
+                <td>${escapeHtml(HARDCODE.VAL)}</td>
+                <td>${escapeHtml(HARDCODE.PRO_CLI)}</td>
+                <td>${escapeHtml(HARDCODE.PARTICIPANT)}</td>
+                <td class="col-right">${escapeHtml(HARDCODE.LTP)}</td>
+                <td class="col-center"><button type="button" class="btn-danger btn-remove">Remove</button></td>
+              `;
+              previewBody.appendChild(tr);
+              added++;
+            });
+          });
+        });
+
+        updateCounts();
+        clearInputs();
+        showMessage(`${added} rows added. `, "success");
+      });
+
+      // remove single row
+      previewBody.addEventListener("click", (e) => {
+        if (e.target && e.target.classList.contains("btn-remove")) {
+          const row = e.target.closest("tr");
+          if (row) { row.remove(); updateCounts(); showMessage("Row removed.", "success"); }
+        }
+      });
+
+      // clear preview
+      clearPreviewBtn.addEventListener("click", () => {
+        previewBody.innerHTML = '<tr class="no-data-row"><td colspan="20" class="no-data">No records added yet.</td></tr>';
+        updateCounts();
+        showMessage("Preview cleared.", "success");
+      });
+
+      // CSV generation: header includes blank first column before Exch
+      csvBtn.addEventListener("click", () => {
+        const rows = previewBody.querySelectorAll("tr.data-row");
+        if (rows.length === 0) { showMessage("No rows to export.", "error"); return; }
+
+        const headers = ["","Exch","EXCH_SEG","SegmentCode","Symbol","ClientID","Buy/Sell","Token","Product","Qty","Price","OrdType","Trigger Price","DQty","Val","Pro/Cli","Participant ID","LTP"];
+        const csv = [ headers.join(",") ];
+
+        rows.forEach(r => {
+          const c = r.querySelectorAll("td");
+          // mapping: c[0]=seq, c[1]=blank, c[2]=Exch, c[3]=EXCH_SEG, c[4]=SegmentCode, c[5]=Symbol,
+          // c[6]=ClientID, c[7]=Buy/Sell, c[8]=Token, c[9]=Product, c[10]=Qty, c[11]=Price, c[12]=OrdType,
+          // c[13]=Trigger Price, c[14]=DQty, c[15]=Val, c[16]=Pro/Cli, c[17]=Participant ID, c[18]=LTP, c[19]=Action
+          const data = [
+            "",
+            c[2].innerText.trim(),
+            c[3].innerText.trim(),
+            c[4].innerText.trim(),
+            c[5].innerText.trim(),
+            c[6].innerText.trim(),
+            c[7].innerText.trim(),
+            c[8].innerText.trim(),
+            c[9].innerText.trim(),
+            c[10].innerText.trim(),
+            c[11].innerText.trim(),
+            c[12].innerText.trim(),
+            c[13].innerText.trim(),
+            c[14].innerText.trim(),
+            c[15].innerText.trim(),
+            c[16].innerText.trim(),
+            c[17].innerText.trim()
+          ];
+          const escaped = data.map(v => `"${String(v).replace(/"/g,'""')}"`);
+          csv.push(escaped.join(","));
+        });
+
+        const blob = new Blob([csv.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "orders_preview.csv";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showMessage("CSV generated and downloaded.", "success");
+      });
+
+      // escape helper
+      function escapeHtml(t){ if(t===undefined||t===null) return ""; return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+      updateCounts();
+    });
+  </script>
 </body>
 </html>
