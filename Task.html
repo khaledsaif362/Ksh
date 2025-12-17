@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Tester Status Table</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f9;
+    margin: 0;
+}
+
+header {
+    background: #2c3e50;
+    color: white;
+    padding: 14px;
+    text-align: center;
+    font-size: 20px;
+}
+
+#lastUpdate {
+    text-align: center;
+    font-size: 13px;
+    color: #555;
+    margin: 8px 0;
+}
+
+table {
+    width: 80%;
+    margin: 20px auto;
+    border-collapse: collapse;
+    background: white;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+}
+
+th, td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: center;
+    font-size: 14px;
+}
+
+th {
+    background: #34495e;
+    color: white;
+}
+
+.pending { color: #e67e22; font-weight: bold; }
+.progress { color: #2980b9; font-weight: bold; }
+.completed { color: #27ae60; font-weight: bold; }
+
+footer {
+    text-align: center;
+    font-size: 12px;
+    color: #777;
+    padding-bottom: 12px;
+}
+</style>
+</head>
+
+<body>
+
+<header>Tester Patch Status</header>
+<div id="lastUpdate">Last updated: --</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Tester</th>
+            <th>Pending</th>
+            <th>In Progress</th>
+            <th>Completed</th>
+            <th>Total</th>
+        </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+</table>
+
+<script>
+const SHEET_ID = "11umteDx8Ejkjk4kn1rQz8-9c0UMALgG5uSk7Evgy6Ow";
+const SHEET_NAME = "Sheet1";
+const REFRESH_INTERVAL = 30000;
+
+function loadSheet() {
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`;
+
+    fetch(url)
+        .then(r => r.text())
+        .then(txt => {
+            const json = JSON.parse(txt.substring(txt.indexOf("{"), txt.lastIndexOf("}") + 1));
+            const rows = json.table.rows;
+            const testers = {};
+
+            rows.forEach(r => {
+                const status = r.c[1]?.v;
+                const tester = r.c[3]?.v;
+
+                if (!tester || !status) return;
+
+                if (!testers[tester]) {
+                    testers[tester] = { Pending: 0, "In Progress": 0, Completed: 0 };
+                }
+
+                if (testers[tester][status] !== undefined) {
+                    testers[tester][status]++;
+                }
+            });
+
+            renderTable(testers);
+            document.getElementById("lastUpdate").innerText =
+                "Last updated: " + new Date().toLocaleTimeString();
+        });
+}
+
+function renderTable(data) {
+    const tbody = document.getElementById("tableBody");
+    tbody.innerHTML = "";
+
+    Object.keys(data).sort().forEach(tester => {
+        const d = data[tester];
+        const total = d.Pending + d["In Progress"] + d.Completed;
+
+        tbody.innerHTML += `
+        <tr>
+            <td>${tester}</td>
+            <td class="pending">${d.Pending}</td>
+            <td class="progress">${d["In Progress"]}</td>
+            <td class="completed">${d.Completed}</td>
+            <td><b>${total}</b></td>
+        </tr>`;
+    });
+}
+
+loadSheet();
+setInterval(loadSheet, REFRESH_INTERVAL);
+</script>
+
+</body>
+</html>
