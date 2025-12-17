@@ -19,11 +19,23 @@ header {
     font-size: 20px;
 }
 
-#lastUpdate {
-    text-align: center;
+#topBar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+    background: #eef2f6;
+    border-bottom: 1px solid #ccc;
     font-size: 13px;
-    color: #555;
-    margin: 6px 0;
+}
+
+button {
+    padding: 6px 12px;
+    cursor: pointer;
+    border: 1px solid #2c3e50;
+    background: #2c3e50;
+    color: white;
+    border-radius: 4px;
 }
 
 /* SEARCH */
@@ -54,18 +66,62 @@ th, td {
 th {
     background: #34495e;
     color: white;
-    cursor: pointer;
     position: sticky;
     top: 0;
 }
 
+tbody tr:nth-child(even) {
+    background: #f8f9fb;
+}
+
+.tester-link {
+    color: #2c3e50;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+/* STATUS COLORS */
 .pending { color: #e67e22; font-weight: bold; }
 .progress { color: #2980b9; font-weight: bold; }
 .completed { color: #27ae60; font-weight: bold; }
 
-.danger { background: #ffe5e5; }
-.topper { background: #e8f8f5; }
+/* PREVIEW */
+#preview {
+    width: 95%;
+    margin: 15px auto;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 12px;
+}
 
+#preview .tester-name {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 6px;
+    color: #2c3e50;
+}
+
+.preview-section {
+    margin-top: 10px;
+}
+
+.preview-section h4 {
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.preview-section ol {
+    padding-left: 22px;
+    font-size: 13px;
+}
+
+.preview-section li {
+    margin-bottom: 3px;
+}
+
+/* FOOTER */
 tfoot td {
     font-weight: bold;
     background: #ecf0f1;
@@ -82,23 +138,25 @@ footer {
 
 <body>
 
-<header>Tester Patch Status Dashboard</header>
-<div id="lastUpdate">Last updated: --</div>
+<header>Tester Patch Status</header>
 
-<!-- Search -->
+<div id="topBar">
+    <div id="lastUpdate">Last updated: --</div>
+    <button onclick="loadData()">Refresh</button>
+</div>
+
 <div class="search">
     <input type="text" id="searchBox" placeholder="Search tester..." onkeyup="filterTable()">
 </div>
 
-<table id="mainTable">
+<table>
 <thead>
 <tr>
-    <th onclick="sortTable(0)">Tester</th>
-    <th onclick="sortTable(1)">Pending</th>
-    <th onclick="sortTable(2)">In Progress</th>
-    <th onclick="sortTable(3)">Completed</th>
+    <th>Tester</th>
+    <th>Pending</th>
+    <th>In Progress</th>
+    <th>Completed</th>
     <th>Total</th>
-    <th>% Completed</th>
 </tr>
 </thead>
 <tbody id="tableBody"></tbody>
@@ -109,126 +167,146 @@ footer {
     <td id="gProgress">0</td>
     <td id="gCompleted">0</td>
     <td id="gTotal">0</td>
-    <td id="gPercent">0%</td>
 </tr>
 </tfoot>
 </table>
 
-<footer>Live Google Sheet | Auto Refresh</footer>
+<!-- PREVIEW -->
+<div id="preview">
+    <div id="previewContent">
+        Click a tester name to view pending and in-progress patches.
+    </div>
+</div>
+
 
 <script>
 const SHEET_ID = "11umteDx8Ejkjk4kn1rQz8-9c0UMALgG5uSk7Evgy6Ow";
 const SHEET_NAME = "Sheet1";
-const REFRESH = 30000;
-const PENDING_ALERT = 10;
 
-let currentSortCol = 0;
-let sortAsc = true;
+let patchStore = {};
 
 function normalize(v){ return v.toString().trim().toLowerCase(); }
 
 function normalizeStatus(s){
     s = normalize(s);
-    if(s==="pending") return "Pending";
-    if(s==="in progress"||s==="in-progress") return "In Progress";
-    if(s==="completed") return "Completed";
+    if (s === "pending") return "Pending";
+    if (s === "in progress" || s === "in-progress") return "In Progress";
+    if (s === "completed") return "Completed";
     return null;
 }
 
-function formatName(n){ return n.charAt(0).toUpperCase()+n.slice(1); }
+function formatName(n){
+    return n.charAt(0).toUpperCase() + n.slice(1);
+}
 
 function loadData(){
+    document.getElementById("previewContent").innerHTML =
+        "Click a tester name to view pending and in-progress patches.";
+
     const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`;
     fetch(url)
-    .then(r=>r.text())
-    .then(t=>{
-        const json = JSON.parse(t.substring(t.indexOf("{"), t.lastIndexOf("}")+1));
-        const rows = json.table.rows;
-        const testers={};
-        let gP=0,gIP=0,gC=0;
+        .then(r => r.text())
+        .then(txt => {
+            const json = JSON.parse(txt.substring(txt.indexOf("{"), txt.lastIndexOf("}") + 1));
+            const rows = json.table.rows;
 
-        rows.forEach(r=>{
-            let tester=r.c[3]?.v;
-            let status=r.c[1]?.v;
-            if(!tester||!status) return;
+            const testers = {};
+            patchStore = {};
+            let gP=0, gIP=0, gC=0;
 
-            const key=normalize(tester);
-            const st=normalizeStatus(status);
-            if(!st) return;
+            rows.forEach(r => {
+                const patch = r.c[0]?.v;
+                const statusRaw = r.c[1]?.v;
+                const testerRaw = r.c[3]?.v;
+                if (!patch || !statusRaw || !testerRaw) return;
 
-            if(!testers[key]){
-                testers[key]={name:formatName(key),Pending:0,"In Progress":0,Completed:0};
-            }
-            testers[key][st]++;
-            if(st==="Pending") gP++;
-            if(st==="In Progress") gIP++;
-            if(st==="Completed") gC++;
+                const testerKey = normalize(testerRaw);
+                const status = normalizeStatus(statusRaw);
+                if (!status) return;
+
+                if (!testers[testerKey]) {
+                    testers[testerKey] = {
+                        name: formatName(testerKey),
+                        Pending: 0,
+                        "In Progress": 0,
+                        Completed: 0
+                    };
+                    patchStore[testerKey] = {
+                        Pending: [],
+                        "In Progress": [],
+                        Completed: []
+                    };
+                }
+
+                testers[testerKey][status]++;
+                patchStore[testerKey][status].push(patch);
+
+                if (status === "Pending") gP++;
+                if (status === "In Progress") gIP++;
+                if (status === "Completed") gC++;
+            });
+
+            renderTable(testers);
+            updateTotals(gP, gIP, gC);
+
+            document.getElementById("lastUpdate").innerText =
+                "Last updated: " + new Date().toLocaleTimeString();
         });
+}
 
-        render(testers,gP,gIP,gC);
-        document.getElementById("lastUpdate").innerText =
-            "Last updated: "+new Date().toLocaleTimeString();
+function renderTable(data){
+    const tbody = document.getElementById("tableBody");
+    tbody.innerHTML = "";
+
+    Object.keys(data).sort().forEach(k => {
+        const d = data[k];
+        const total = d.Pending + d["In Progress"] + d.Completed;
+
+        tbody.innerHTML += `
+        <tr>
+            <td class="tester-link" onclick="showTester('${k}')">${d.name}</td>
+            <td class="pending">${d.Pending}</td>
+            <td class="progress">${d["In Progress"]}</td>
+            <td class="completed">${d.Completed}</td>
+            <td>${total}</td>
+        </tr>`;
     });
 }
 
-function render(data,gP,gIP,gC){
-    const tbody=document.getElementById("tableBody");
-    tbody.innerHTML="";
-    let maxPending=0,topKey="";
+function showTester(testerKey){
+    const p = patchStore[testerKey];
 
-    Object.values(data).forEach(d=>{
-        if(d.Pending>maxPending){maxPending=d.Pending;topKey=d.name;}
-    });
+    document.getElementById("previewContent").innerHTML = `
+        <div class="tester-name">${formatName(testerKey)}</div>
 
-    Object.keys(data).sort().forEach(k=>{
-        const d=data[k];
-        const total=d.Pending+d["In Progress"]+d.Completed;
-        const percent=total?Math.round((d.Completed/total)*100):0;
-        const tr=document.createElement("tr");
-        if(d.Pending>PENDING_ALERT) tr.classList.add("danger");
-        if(d.name===topKey) tr.classList.add("topper");
+        <div class="preview-section">
+            <h4 class="pending">Pending (${p.Pending.length})</h4>
+            <ol>${p.Pending.map(x => `<li>${x}</li>`).join("") || "<li>None</li>"}</ol>
+        </div>
 
-        tr.innerHTML=`
-        <td>${d.name}</td>
-        <td class="pending">${d.Pending}</td>
-        <td class="progress">${d["In Progress"]}</td>
-        <td class="completed">${d.Completed}</td>
-        <td>${total}</td>
-        <td>${percent}%</td>`;
-        tbody.appendChild(tr);
-    });
+        <div class="preview-section">
+            <h4 class="progress">In Progress (${p["In Progress"].length})</h4>
+            <ol>${p["In Progress"].map(x => `<li>${x}</li>`).join("") || "<li>None</li>"}</ol>
+        </div>
+    `;
+}
 
-    document.getElementById("gPending").innerText=gP;
-    document.getElementById("gProgress").innerText=gIP;
-    document.getElementById("gCompleted").innerText=gC;
-    document.getElementById("gTotal").innerText=gP+gIP+gC;
-    document.getElementById("gPercent").innerText=
-        (gC?Math.round((gC/(gP+gIP+gC))*100):0)+"%";
+function updateTotals(p, ip, c){
+    document.getElementById("gPending").innerText = p;
+    document.getElementById("gProgress").innerText = ip;
+    document.getElementById("gCompleted").innerText = c;
+    document.getElementById("gTotal").innerText = p + ip + c;
 }
 
 function filterTable(){
-    const q=document.getElementById("searchBox").value.toLowerCase();
+    const q = document.getElementById("searchBox").value.toLowerCase();
     document.querySelectorAll("#tableBody tr").forEach(r=>{
-        r.style.display=r.cells[0].innerText.toLowerCase().includes(q)?"":"none";
+        r.style.display = r.cells[0].innerText.toLowerCase().includes(q) ? "" : "none";
     });
 }
 
-function sortTable(col){
-    const table=document.getElementById("mainTable");
-    const rows=[...table.tBodies[0].rows];
-    sortAsc = col===currentSortCol ? !sortAsc : true;
-    currentSortCol=col;
-
-    rows.sort((a,b)=>{
-        let x=a.cells[col].innerText.replace('%','');
-        let y=b.cells[col].innerText.replace('%','');
-        return sortAsc ? x-y || x.localeCompare(y) : y-x || y.localeCompare(x);
-    });
-    rows.forEach(r=>table.tBodies[0].appendChild(r));
-}
-
+/* INIT */
 loadData();
-setInterval(loadData,REFRESH);
 </script>
 
 </body>
