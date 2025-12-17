@@ -127,13 +127,6 @@ tfoot td {
     font-weight: bold;
     background: #ecf0f1;
 }
-
-footer {
-    text-align: center;
-    font-size: 12px;
-    color: #777;
-    padding: 10px;
-}
 </style>
 </head>
 
@@ -179,13 +172,15 @@ footer {
     </div>
 </div>
 
-
 <script>
-const SHEET_ID = "const SHEET_ID = "11umteDx8Ejkjk4kn1rQz8-9c0UMALgG5uSk7Evgy6Ow";
+/* ===== CONFIG ===== */
+const SHEET_ID = "11umteDx8Ejkjk4kn1rQz8-9c0UMALgG5uSk7Evgy6Ow";
 const SHEET_NAME = "Sheet1";
 
+/* ===== STATE ===== */
 let patchStore = {};
 
+/* ===== HELPERS ===== */
 function normalize(v){ return v.toString().trim().toLowerCase(); }
 
 function normalizeStatus(s){
@@ -200,15 +195,20 @@ function formatName(n){
     return n.charAt(0).toUpperCase() + n.slice(1);
 }
 
+/* ===== LOAD DATA ===== */
 function loadData(){
     document.getElementById("previewContent").innerHTML =
         "Click a tester name to view pending and in-progress patches.";
 
     const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`;
+
     fetch(url)
         .then(r => r.text())
         .then(txt => {
-            const json = JSON.parse(txt.substring(txt.indexOf("{"), txt.lastIndexOf("}") + 1));
+            const json = JSON.parse(
+                txt.substring(txt.indexOf("{"), txt.lastIndexOf("}") + 1)
+            );
+
             const rows = json.table.rows;
 
             const testers = {};
@@ -252,9 +252,15 @@ function loadData(){
 
             document.getElementById("lastUpdate").innerText =
                 "Last updated: " + new Date().toLocaleTimeString();
+        })
+        .catch(err => {
+            document.getElementById("previewContent").innerText =
+                "Error loading data. Check sheet sharing.";
+            console.error(err);
         });
 }
 
+/* ===== RENDER ===== */
 function renderTable(data){
     const tbody = document.getElementById("tableBody");
     tbody.innerHTML = "";
@@ -292,6 +298,7 @@ function showTester(testerKey){
     `;
 }
 
+/* ===== TOTALS ===== */
 function updateTotals(p, ip, c){
     document.getElementById("gPending").innerText = p;
     document.getElementById("gProgress").innerText = ip;
@@ -299,6 +306,7 @@ function updateTotals(p, ip, c){
     document.getElementById("gTotal").innerText = p + ip + c;
 }
 
+/* ===== SEARCH ===== */
 function filterTable(){
     const q = document.getElementById("searchBox").value.toLowerCase();
     document.querySelectorAll("#tableBody tr").forEach(r=>{
