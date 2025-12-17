@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Tester Status Table</title>
+<title>Tester Status Dashboard</title>
 
 <style>
 body {
@@ -27,7 +27,7 @@ header {
 }
 
 table {
-    width: 80%;
+    width: 85%;
     margin: 20px auto;
     border-collapse: collapse;
     background: white;
@@ -61,7 +61,7 @@ footer {
 
 <body>
 
-<header>Tester Patch Status</header>
+<header>Tester Patch Status – Table View</header>
 <div id="lastUpdate">Last updated: --</div>
 
 <table>
@@ -77,40 +77,58 @@ footer {
     <tbody id="tableBody"></tbody>
 </table>
 
+<footer>Live Google Sheet | Auto Refresh</footer>
+
 <script>
+/* ===============================
+   GOOGLE SHEET CONFIG
+================================ */
 const SHEET_ID = "11umteDx8Ejkjk4kn1rQz8-9c0UMALgG5uSk7Evgy6Ow";
 const SHEET_NAME = "Sheet1";
-const REFRESH_INTERVAL = 30000;
+const REFRESH_INTERVAL = 30000; // 30 seconds
 
-function loadSheet() {
+function loadSheetData() {
     const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`;
 
     fetch(url)
-        .then(r => r.text())
-        .then(txt => {
-            const json = JSON.parse(txt.substring(txt.indexOf("{"), txt.lastIndexOf("}") + 1));
+        .then(res => res.text())
+        .then(text => {
+            // remove Google JSON wrapper
+            const json = JSON.parse(text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1));
             const rows = json.table.rows;
+
             const testers = {};
 
             rows.forEach(r => {
-                const status = r.c[1]?.v;
                 const tester = r.c[3]?.v;
+                let status = r.c[1]?.v;
 
                 if (!tester || !status) return;
+
+                // 🔧 NORMALIZE STATUS
+                status = status.toString().trim().toLowerCase();
 
                 if (!testers[tester]) {
                     testers[tester] = { Pending: 0, "In Progress": 0, Completed: 0 };
                 }
 
-                if (testers[tester][status] !== undefined) {
-                    testers[tester][status]++;
+                if (status === "pending") {
+                    testers[tester].Pending++;
+                }
+                else if (status === "in progress" || status === "in-progress") {
+                    testers[tester]["In Progress"]++;
+                }
+                else if (status === "completed") {
+                    testers[tester].Completed++;
                 }
             });
 
             renderTable(testers);
+
             document.getElementById("lastUpdate").innerText =
                 "Last updated: " + new Date().toLocaleTimeString();
-        });
+        })
+        .catch(err => console.error("Sheet error:", err));
 }
 
 function renderTable(data) {
@@ -132,8 +150,11 @@ function renderTable(data) {
     });
 }
 
-loadSheet();
-setInterval(loadSheet, REFRESH_INTERVAL);
+// initial load
+loadSheetData();
+
+// auto refresh
+setInterval(loadSheetData, REFRESH_INTERVAL);
 </script>
 
 </body>
