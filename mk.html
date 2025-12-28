@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Zoho Sheet Live Dashboard</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f6f9;
+  margin: 0;
+  padding: 16px;
+}
+
+h2 {
+  margin-top: 0;
+}
+
+input {
+  padding: 8px;
+  width: 240px;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  background: #fff;
+}
+
+th, td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  font-size: 14px;
+}
+
+th {
+  background: #2c3e50;
+  color: #fff;
+}
+.error {
+  color: red;
+  margin-top: 10px;
+  font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Zoho Sheet Live Dashboard</h2>
+
+<b>Total Rows:</b> <span id="totalRows">0</span>
+<br><br>
+
+<input type="text" id="search" placeholder="Search...">
+
+<table id="dataTable"></table>
+
+<div id="error" class="error"></div>
+
+<script>
+const ZOHO_URL =
+"https://sheet.zohopublic.com/sheet/open/e90n6093f548c9e314f37af7c8dc18146db7a?zview=html&zformat=json";
+
+let allRows = [];
+
+fetch(ZOHO_URL)
+.then(res => res.json())
+.then(json => {
+
+  // 🔹 Correct Zoho JSON path
+  const rowsObj = json?.table?.content?.rows;
+
+  if (!rowsObj) {
+    document.getElementById("error").innerText =
+      "Zoho data not accessible. Open this file in a real browser (Chrome/Edge).";
+    return;
+  }
+
+  const rows = Object.values(rowsObj);
+  const table = document.getElementById("dataTable");
+  table.innerHTML = "";
+
+  rows.forEach((row, rowIndex) => {
+    const tr = document.createElement("tr");
+    const cells = Object.values(row).map(c => c?.v ?? "");
+
+    allRows.push(cells);
+
+    cells.forEach(cell => {
+      const el = document.createElement(rowIndex === 0 ? "th" : "td");
+      el.innerText = cell;
+      tr.appendChild(el);
+    });
+
+    table.appendChild(tr);
+  });
+
+  // subtract header
+  document.getElementById("totalRows").innerText = rows.length - 1;
+})
+.catch(err => {
+  document.getElementById("error").innerText =
+    "Fetch blocked. Do NOT open inside Zoho/Drive preview.";
+  console.error(err);
+});
+
+// 🔍 SEARCH
+document.getElementById("search").addEventListener("input", function () {
+  const term = this.value.toLowerCase();
+  const table = document.getElementById("dataTable");
+  table.innerHTML = "";
+
+  allRows.forEach((row, i) => {
+    if (i === 0 || row.join(" ").toLowerCase().includes(term)) {
+      const tr = document.createElement("tr");
+      row.forEach(cell => {
+        const el = document.createElement(i === 0 ? "th" : "td");
+        el.innerText = cell;
+        tr.appendChild(el);
+      });
+      table.appendChild(tr);
+    }
+  });
+
+  document.getElementById("totalRows").innerText =
+    Math.max(0, table.rows.length - 1);
+});
+</script>
+
+</body>
+</html>
