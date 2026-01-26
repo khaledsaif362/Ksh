@@ -1,445 +1,206 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>My Mutual Fund Wiki</title>
-  <style>
-    :root{
-      --bg:#0b1220;
-      --panel:#0f1a30;
-      --panel2:#101f3a;
-      --text:#e8eefc;
-      --muted:#a9b6d3;
-      --border:rgba(255,255,255,.10);
-      --shadow:0 12px 30px rgba(0,0,0,.35);
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      background:radial-gradient(1000px 600px at 15% 5%, rgba(90,130,255,.18), transparent 60%),
-                 radial-gradient(900px 600px at 85% 10%, rgba(25,220,180,.14), transparent 55%),
-                 var(--bg);
-      color:var(--text);
-      line-height:1.6;
-    }
-    .wrap{max-width:1100px; margin:0 auto; padding:22px}
-    .topbar{
-      display:flex; gap:12px; align-items:center; justify-content:space-between;
-      padding:14px 16px;
-      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-      border:1px solid var(--border);
-      border-radius:16px;
-      box-shadow:var(--shadow);
-      position:sticky; top:12px; z-index:10;
-      backdrop-filter: blur(10px);
-    }
-    .brand{
-      display:flex; gap:12px; align-items:center; min-width:220px;
-    }
-    .logo{
-      width:38px; height:38px; border-radius:12px;
-      background:linear-gradient(135deg, rgba(90,130,255,.9), rgba(25,220,180,.85));
-      box-shadow:0 10px 20px rgba(0,0,0,.35);
-    }
-    .brand h1{font-size:16px; margin:0}
-    .brand p{margin:0; font-size:12px; color:var(--muted)}
-    .search{
-      flex:1;
-      display:flex; gap:10px; align-items:center;
-      background:rgba(255,255,255,.04);
-      border:1px solid var(--border);
-      border-radius:14px;
-      padding:10px 12px;
-      max-width:520px;
-    }
-    .search input{
-      width:100%;
-      background:transparent; border:0; outline:none;
-      color:var(--text); font-size:14px;
-    }
-    .pill{
-      font-size:12px; color:var(--muted);
-      border:1px solid var(--border);
-      padding:8px 10px; border-radius:999px;
-      background:rgba(255,255,255,.03);
-      white-space:nowrap;
-    }
-
-    .grid{
-      display:grid;
-      grid-template-columns: 290px 1fr;
-      gap:18px;
-      margin-top:18px;
-      align-items:start;
-    }
-    @media (max-width: 920px){
-      .grid{grid-template-columns: 1fr}
-      .toc{position:relative; top:auto}
-      .brand{min-width:auto}
-      .search{max-width:none}
-    }
-
-    .toc{
-      position:sticky;
-      top:92px;
-      padding:14px;
-      border-radius:16px;
-      border:1px solid var(--border);
-      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
-      box-shadow:var(--shadow);
-    }
-    .toc h2{margin:0 0 10px; font-size:14px}
-    .toc a{
-      display:block;
-      padding:8px 10px;
-      margin:6px 0;
-      border-radius:12px;
-      color:var(--muted);
-      text-decoration:none;
-      border:1px solid transparent;
-      background:transparent;
-      transition:.15s;
-      font-size:13px;
-    }
-    .toc a:hover{
-      color:var(--text);
-      background:rgba(255,255,255,.04);
-      border-color:var(--border);
-    }
-    .content{
-      padding:18px;
-      border-radius:16px;
-      border:1px solid var(--border);
-      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
-      box-shadow:var(--shadow);
-    }
-    .header{
-      display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;
-      margin-bottom:14px;
-    }
-    .header h2{margin:0; font-size:22px}
-    .header .meta{color:var(--muted); font-size:12px}
-    .note{
-      color:var(--muted);
-      font-size:13px;
-      margin:0 0 14px;
-    }
-
-    .section{
-      border:1px solid var(--border);
-      border-radius:16px;
-      padding:14px 14px 10px;
-      background:rgba(16,31,58,.55);
-      margin:12px 0;
-    }
-    .section h3{
-      margin:0 0 6px;
-      font-size:16px;
-    }
-    .section h3 b{font-weight:800}
-    .section p{margin:6px 0 10px; color:var(--text)}
-    .section ul{margin:8px 0 10px 18px; color:var(--text)}
-    .section li{margin:6px 0}
-    .formula{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-      font-size:13px;
-      padding:10px 12px;
-      border-radius:14px;
-      border:1px dashed rgba(255,255,255,.18);
-      background:rgba(255,255,255,.03);
-      overflow:auto;
-    }
-    mark{
-      background:rgba(90,130,255,.25);
-      color:var(--text);
-      padding:0 3px;
-      border-radius:6px;
-    }
-    .hidden{display:none !important}
-  </style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My Mutual Fund Wiki</title>
+<style>
+  :root{--bg:#0b1020;--card:rgba(255,255,255,.06);--bd:rgba(255,255,255,.12);--tx:#eaf0ff;--mut:#a9b6d6}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,Arial;color:var(--tx);background:
+    radial-gradient(900px 500px at 15% 10%,rgba(110,140,255,.22),transparent 60%),
+    radial-gradient(900px 500px at 85% 15%,rgba(40,220,190,.18),transparent 55%),
+    radial-gradient(700px 500px at 50% 90%,rgba(255,120,200,.14),transparent 60%),
+    var(--bg)}
+  .wrap{max-width:980px;margin:0 auto;padding:28px 18px}
+  .top{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;
+    padding:14px 16px;border:1px solid var(--bd);border-radius:18px;background:var(--card);backdrop-filter:blur(10px)}
+  .brand{display:flex;gap:12px;align-items:center}
+  .logo{width:40px;height:40px;border-radius:14px;background:linear-gradient(135deg,#6e8cff,#28dcbc)}
+  h1{font-size:16px;margin:0} .sub{font-size:12px;color:var(--mut);margin:0}
+  .spacer{height:16px}
+  .search{display:flex;gap:10px;align-items:center;max-width:520px;width:100%;
+    padding:10px 12px;border:1px solid var(--bd);border-radius:14px;background:rgba(255,255,255,.04)}
+  .search input{width:100%;border:0;outline:0;background:transparent;color:var(--tx);font-size:14px}
+  .pill{font-size:12px;color:var(--mut);border:1px solid var(--bd);padding:8px 10px;border-radius:999px;background:rgba(255,255,255,.03)}
+  .card{margin-top:16px;padding:16px;border:1px solid var(--bd);border-radius:18px;background:var(--card)}
+  .item{padding:12px;border:1px solid var(--bd);border-radius:16px;background:rgba(0,0,0,.12);margin:10px 0}
+  .item b{font-weight:800}
+  .formula{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;padding:10px 12px;border-radius:14px;
+    border:1px dashed rgba(255,255,255,.18);background:rgba(255,255,255,.03);overflow:auto}
+</style>
 </head>
 <body>
   <div class="wrap">
-    <div class="topbar">
+    <div class="top">
       <div class="brand">
         <div class="logo"></div>
-        <div>
-          <h1>My Personal Wiki</h1>
-          <p>Mutual Fund Notes</p>
-        </div>
+        <div><h1>My Personal Wiki</h1><p class="sub">Mutual Fund Notes</p></div>
       </div>
-
-      <div class="search" title="Search anything on this page">
-        🔎
-        <input id="q" type="text" placeholder="Search (e.g., NAV, SIP, ETF, Hedge fund)..." />
-      </div>
-
-      <div class="pill" id="countPill">0 results</div>
+      <div class="pill" id="cnt">0 results</div>
     </div>
 
-    <div class="grid">
-      <aside class="toc">
-        <h2>Contents</h2>
-        <a href="#mutualfund">Mutual Fund</a>
-        <a href="#nav">NAV</a>
-        <a href="#regulator">Regulator</a>
-        <a href="#disadvantages">Disadvantages</a>
-        <a href="#amc">AMC</a>
-        <a href="#repurchase">Re purchase Price</a>
-        <a href="#redemption">Redemption Price</a>
-        <a href="#nfo">NFO</a>
-        <a href="#types">Types of MF</a>
-        <a href="#openended">Open Ended</a>
-        <a href="#closeended">Close Ended</a>
-        <a href="#interval">Interval Funds</a>
-        <a href="#equity">Equity Funds</a>
-        <a href="#debt">Debt Fund</a>
-        <a href="#hybrid">Hybrid Funds</a>
-        <a href="#etf">ETF</a>
-        <a href="#fof">FOF</a>
-        <a href="#payout">MF Payout Options</a>
-        <a href="#sip">SIP</a>
-        <a href="#swp">SWP</a>
-        <a href="#stp">STP</a>
-        <a href="#dtp">DTP</a>
-        <a href="#hedge">Hedge Fund</a>
-        <a href="#corpus">Corpus</a>
-        <a href="#jobbers">Jobbers</a>
-        <a href="#alpha">Alpha</a>
-      </aside>
+    <div class="spacer"></div>
+    <div class="search">🔎 <input id="q" placeholder="Search (NAV, SIP, ETF, Hedge fund...)"></div>
 
-      <main class="content">
-        <div class="header">
-          <div>
-            <h2>Mutual Fund (Quick Notes)</h2>
-            <div class="meta">Personal-style wiki • Search + clean sections • All sub-headings in <b>bold</b></div>
-          </div>
-        </div>
-        <p class="note">Tip: Use the search box to instantly filter sections. Click any item in “Contents” to jump.</p>
+    <div class="card" id="list">
 
-        <section class="section" id="mutualfund" data-text="Mutual Fund pool of money investors shares bonds government securities fund managers income unit holders AMC price bought sold">
-          <h3><b>Mutual Fund →</b></h3>
-          <p>A Mutual fund is a pool of money collected from various investors and invest in capital market instruments such as shares, Bonds &amp; govt. securities. It is managed by professional fund managers. The income earned through these investment is shared by its unit holders in proportion to the number of units owned by them.</p>
-          <p><b>AMC →</b> It is the price at which unit of MF are bought &amp; sold</p>
-        </section>
+      <div class="item" data-text="Mutual Fund AMC pool of money investors shares bonds government securities fund managers income unit holders">
+        <b>Mutual Fund →</b>
+        A Mutual fund is a pool of money collected from various investors and invest in capital market instruments such as shares, Bonds &amp; govt. securities.
+        It is managed by professional fund managers. The income earned through these investment is shared by its unit holders in proportion to the number of units owned by them.
+        <br><br>
+        <b>AMC</b><br>
+        It is the price at which unit of MF are bought &amp; sold
+      </div>
 
-        <section class="section" id="nav" data-text="NAV market value per unit calculated daily cash securities portfolio liabilities outstanding shares formula">
-          <h3><b>NAV →</b></h3>
-          <p>It is a fund’s market value per unit. It is calculated on daily basis.</p>
-          <div class="formula">NAV = (Value of Cash &amp; Securities in fund portfolio - liabilities) / outstanding shares</div>
-        </section>
+      <div class="item" data-text="NAV market value per unit calculated daily cash securities portfolio liabilities outstanding shares">
+        <b>NAV →</b>
+        It is a fund’s market value per unit. It is calculated on daily basis.
+        <div class="formula">NAV = Value of Cash &amp; Securities in fund portfolio - liabilities
+———————————————
+outstanding shares</div>
+      </div>
 
-        <section class="section" id="regulator" data-text="Regulator SEBI RBI Companies Act stock exchange Ministry of finance">
-          <h3><b>Regulator →</b></h3>
-          <p>SEBI, (RBI, Companies Act, stock exchange, Min. of fin)</p>
-        </section>
+      <div class="item" data-text="Regulator SEBI RBI Companies Act stock exchange Ministry of finance">
+        <b>Regulator →</b> SEBI, (RBI, Companies Act, stock exchange, Min. of fin)
+      </div>
 
-        <section class="section" id="disadvantages" data-text="Disadvantages cost price uncertainty EOD NAV past performance">
-          <h3><b>DisAdvantages of MF →</b></h3>
-          <p>Cost, price uncertainty (EOD NAV), past performance</p>
-        </section>
+      <div class="item" data-text="Disadvantages cost price uncertainty EOD NAV past performance">
+        <b>DisAdvantages of MF →</b> Cost, price uncertainty (EOD NAV), past performance
+      </div>
 
-        <section class="section" id="amc" data-text="AMC business face manages all affairs mutual fund">
-          <h3><b>AMC →</b></h3>
-          <p>It is a business face of the MF, as it manages all affairs of MF.</p>
-        </section>
+      <div class="item" data-text="AMC business face manages all affairs">
+        <b>AMC →</b> It is a business face of the MF, as it manages all affairs of MF.
+      </div>
 
-        <section class="section" id="repurchase" data-text="Re purchase Price close ended repurchase units secondary market">
-          <h3><b>Re purchase Price →</b></h3>
-          <p>price at which close ended schemes repurchase its units that are trading in secondary market.</p>
-        </section>
+      <div class="item" data-text="Re purchase Price close ended repurchase units secondary market">
+        <b>Re purchase Price →</b> price at which close ended schemes repurchase its units that are trading in secondary market.
+      </div>
 
-        <section class="section" id="redemption" data-text="Redemption price selling units equals current NAV">
-          <h3><b>Redemption price →</b></h3>
-          <p>Price received by investor on selling units of MF schemes. It is usually equals to current NAV.</p>
-        </section>
+      <div class="item" data-text="Redemption price selling units equals current NAV">
+        <b>Redemption price →</b> Price received by investor on selling units of MF schemes. It is usually equals to current NAV.
+      </div>
 
-        <section class="section" id="nfo" data-text="NFO first time subscription new scheme AMC similar IPO equity shares">
-          <h3><b>NFO →</b></h3>
-          <p>It is the first time subscription offers for a new scheme launched by AMC. It is similar to IPO of equity shares.</p>
-        </section>
+      <div class="item" data-text="NFO first time subscription new scheme AMC similar IPO equity shares">
+        <b>NFO →</b> It is the first time subscription offers for a new scheme launched by AMC. It is similar to IPO of equity shares.
+      </div>
 
-        <section class="section" id="types" data-text="Types of MF flexibility open ended close ended interval fund asset classes equity debt hybrid">
-          <h3><b>Types of MF →</b></h3>
-          <ul>
-            <li><b>Based on Flexibility →</b> open ended / close ended / Interval Fund</li>
-            <li><b>Based on Asset classes →</b> Equity / Debt / Hybrid</li>
-          </ul>
-        </section>
+      <div class="item" data-text="Types of MF flexibility open ended close ended interval fund asset classes equity debt hybrid">
+        <b>Types of MF →</b><br>
+        <b>Based on Flexibility →</b> open ended / close ended / Interval Fund<br>
+        <b>Based on Asset classes →</b> Equity / Debt / Hybrid
+      </div>
 
-        <section class="section" id="openended" data-text="open ended continuous buy sell units enter exit convenience current NAV">
-          <h3><b>open ended →</b></h3>
-          <p>These funds buys &amp; sell units on a continuous basis, hence allow investors to enter &amp; exit the fund as per their convenience. The units are bought &amp; sell at current NAV.</p>
-        </section>
+      <div class="item" data-text="open ended continuous buy sell units enter exit convenience current NAV">
+        <b>open ended →</b>
+        These funds buys &amp; sell units on a continuous basis, hence allow investors to enter &amp; exit the fund as per their convenience.
+        The units are bought &amp; sell at current NAV.
+      </div>
 
-        <section class="section" id="closeended" data-text="close ended fixed number of units NFO period fixed maturity traded stock exchanges demand supply">
-          <h3><b>close ended →</b></h3>
-          <p>A close ended fund can sell fixed numbers of units only during its NFO period. It has a fixed maturity period. After NFO, it will be traded from stock exchanges only. Price determined by demand &amp; supply.</p>
-        </section>
+      <div class="item" data-text="close ended fixed numbers units NFO period fixed maturity traded stock exchanges demand supply">
+        <b>close ended →</b>
+        A close ended fund can sell fixed numbers of units only during its NFO period.
+        It has a fixed maturity period. After NFO, it will be traded from stock exchanges only.
+        Price determined by demand &amp; supply.
+      </div>
 
-        <section class="section" id="interval" data-text="Interval Funds combines open close ended largely close ended becomes open ended repurchase interval">
-          <h3><b>Interval Funds →</b></h3>
-          <p>It combines features of open &amp; close ended funds. It is largely close ended, but become open ended when fund Mgmt Co. offers to repurchase from existing unit holders during this interval.</p>
-        </section>
+      <div class="item" data-text="Interval Funds combines features open close ended largely close ended becomes open ended repurchase interval">
+        <b>Interval Funds →</b>
+        It combines features of open &amp; close ended funds. It is largely close ended, but become open ended when fund Mgmt Co.
+        offers to repurchase from existing unit holders during this interval.
+      </div>
 
-        <section class="section" id="equity" data-text="Equity funds corpus equities high risk high return exposure equity market small mid large cap sector index ELSS">
-          <h3><b>Equity funds →</b></h3>
-          <p>It invest most of its corpus in equities. It is high risk, high return due to exposure to equity market.</p>
-          <ul>
-            <li>small, mid, large cap</li>
-            <li>sector funds</li>
-            <li>index funds</li>
-            <li>Equity linked saving scheme (ELSS)</li>
-          </ul>
-        </section>
+      <div class="item" data-text="Equity funds corpus equities high risk high return exposure small mid large cap sector index funds ELSS">
+        <b>Equity funds →</b>
+        It invest most of its corpus in equities. It is high risk, high return due to exposure to equity market.
+        <br><br>
+        <b>small, mid, large cap</b><br>
+        <b>sector funds</b><br>
+        <b>index funds</b><br>
+        <b>Equity linked saving scheme (ELSS)</b>
+      </div>
 
-        <section class="section" id="debt" data-text="Debt fund debt market instruments bonds debentures government securities regular interest income gilt corporate bond">
-          <h3><b>Debt fund →</b></h3>
-          <p>It invest in debt market instruments like Bonds, Debentures &amp; govt. securities. It is generally preferred for regular interest income.</p>
-          <ul>
-            <li><b>Gilt fund →</b> Invest only in govt. securities for more than 1 year.</li>
-            <li><b>corporate Bond →</b> Invest in corporate Co’s. high interest rate</li>
-          </ul>
-        </section>
+      <div class="item" data-text="Debt fund bonds debentures government securities regular interest income gilt corporate bond">
+        <b>Debt fund →</b>
+        It invest in debt market instruments like Bonds, Debentures &amp; govt. securities. It is generally preferred for regular interest income.
+        <br><br>
+        <b>Gilt fund →</b> Invest only in govt. securities for more than 1 year.<br>
+        <b>corporate Bond →</b> Invest in corporate Co’s. high interest rate
+      </div>
 
-        <section class="section" id="hybrid" data-text="Hybrid funds combination equity debt gold high return equity safe return debt">
-          <h3><b>Hybrid funds →</b></h3>
-          <p>It invest in combination of equity, debt &amp; Gold. Gains high return from equity backed by safe return from Debt.</p>
-        </section>
+      <div class="item" data-text="Hybrid funds equity debt gold high return safe return">
+        <b>Hybrid funds →</b>
+        It invest in combination of equity, debt &amp; Gold. Gains high return from equity backed by safe return from Debt.
+      </div>
 
-        <section class="section" id="etf" data-text="ETF open ended traded stock exchange price determined underlying index assets real time unlike NAV close of day">
-          <h3><b>ETF →</b></h3>
-          <p>These are open ended funds, where units are traded on Stock exchange. The Price of units are determined by underlying index or Assets. It can be bought &amp; sold at any time on Stock exchange at real time prices unlike NAV @ close of day.</p>
-        </section>
+      <div class="item" data-text="ETF open ended traded stock exchange price underlying index assets real time unlike NAV close of day">
+        <b>ETF →</b>
+        These are open ended funds, where units are traded on Stock exchange. The Price of units are determined by underlying index or Assets.
+        It can be bought &amp; sold at any time on Stock exchange at real time prices unlike NAV @ close of day.
+      </div>
 
-        <section class="section" id="fof" data-text="FOF funds of funds invest in other mutual funds same fund house other fund houses">
-          <h3><b>FOF →</b></h3>
-          <p>Funds of funds, it invest either in other MF belonging to same fund house or belonging to other fund houses.</p>
-        </section>
+      <div class="item" data-text="FOF funds of funds invest other MF same fund house other fund houses">
+        <b>FOF →</b>
+        Funds of funds, it invest either in other MF belonging to same fund house or belonging to other fund houses.
+      </div>
 
-        <section class="section" id="payout" data-text="MF payout option growth option dividend option re-invested scheme interim cash flows payout regular income">
-          <h3><b>MF payout option →</b></h3>
-          <ul>
-            <li><b>Growth option →</b> The income received from dividend is re-invested in the scheme. It is suitable for investors who do not require interim cash flows.</li>
-            <li><b>Dividend option →</b> In this option, payout is made to investors from time to time. It gives regular income to investors</li>
-          </ul>
-        </section>
+      <div class="item" data-text="MF payout option Growth option Dividend option reinvested interim cash flows regular income">
+        <b>MF payout option</b><br><br>
+        <b>Growth option →</b> The income received from dividend is re-invested in the scheme. It is suitable for investors who do not require interim cash flows.<br><br>
+        <b>Dividend option →</b> In this option, payout is made to investors from time to time. It gives regular income to investors
+      </div>
 
-        <section class="section" id="sip" data-text="SIP systematic way investing monthly quarterly yearly benefit compounding">
-          <h3><b>SIP →</b></h3>
-          <p>SIP is a systematic way of investing money in MF, either monthly, quarterly or yearly. SIP gives the benefit of compounding.</p>
-        </section>
+      <div class="item" data-text="SIP systematic investing monthly quarterly yearly benefit compounding">
+        <b>SIP →</b> SIP is a systematic way of investing money in MF, either monthly, quarterly or yearly. SIP gives the benefit of compounding.
+      </div>
 
-        <section class="section" id="swp" data-text="SWP reverse of SIP invested lumpsum withdraw regularly fund">
-          <h3><b>SWP →</b></h3>
-          <p>SWP is reverse of SIP, It invested in lumpsum, SWP allows to withdraw regularly from the fund.</p>
-        </section>
+      <div class="item" data-text="SWP reverse of SIP invested lumpsum withdraw regularly">
+        <b>SWP →</b> SWP is reverse of SIP, It invested in lumpsum, SWP allows to withdraw regularly from the fund.
+      </div>
 
-        <section class="section" id="stp" data-text="STP Systematic Transfer plan automated way moving money from one MF to another">
-          <h3><b>STP →</b></h3>
-          <p>Systematic Transfer plan is an automated way of moving money from one MF to another.</p>
-        </section>
+      <div class="item" data-text="STP Systematic Transfer plan automated moving money one MF to another">
+        <b>STP →</b> Systematic Transfer plan is an automated way of moving money from one MF to another.
+      </div>
 
-        <section class="section" id="dtp" data-text="DTP Dividend transfer plan dividend earned transferred to another scheme same MF">
-          <h3><b>DTP →</b></h3>
-          <p>Dividend transfer plan Dividend earned transferred to another scheme of same MF.</p>
-        </section>
+      <div class="item" data-text="DTP Dividend transfer plan dividend earned transferred another scheme same MF">
+        <b>DTP →</b> Dividend transfer plan Dividend earned transferred to another scheme of same MF.
+      </div>
 
-        <section class="section" id="hedge" data-text="Hedge fund actively managed pooled investment vehicle HNI banks insurance long short returns AUM fee performance fee">
-          <h3><b>Hedge fund →</b></h3>
-          <ul>
-            <li><b>a)</b> In MF even small investors can invest but in Hedge fund only HNI’s, Banks, Insurance Co’s can invest.</li>
-            <li><b>b)</b> In MF fund managers are allowed to only long the position but hedge fund managers can go long or short &amp; earn good returns.</li>
-            <li><b>c)</b> MF charges fixed percentage of AUM as fee but HF will charge performance fee along with regular fee.</li>
-          </ul>
-        </section>
+      <div class="item" data-text="Hedge fund actively managed pooled investment vehicle HNI banks insurance long short AUM fee performance fee">
+        <b>Hedge fund →</b><br>
+        <b>a)</b> In MF even small investors can invest but in Hedge fund only HNI’s, Banks, Insurance Co’s can invest.<br>
+        <b>b)</b> In MF fund managers are allowed to only long the position but hedge fund managers can go long or short &amp; earn good returns.<br>
+        <b>c)</b> MF charges fixed percentage of AUM as fee but HF will charge performance fee along with regular fee.
+      </div>
 
-        <section class="section" id="corpus" data-text="Corpus fund generated kept existence sustenance organisation">
-          <h3><b>Corpus →</b></h3>
-          <p>The Fund generated &amp; kept for the existence and Sustenance of the organisation.</p>
-        </section>
+      <div class="item" data-text="Corpus fund generated kept existence sustenance organisation">
+        <b>Corpus →</b> The Fund generated &amp; kept for the existence and Sustenance of the organisation.
+      </div>
 
-        <section class="section" id="jobbers" data-text="Jobbers jobers held shares own account boost market liquidity matching investors buy sell orders brokers">
-          <h3><b>Jobbers →</b></h3>
-          <p>Jobers held shares in their own account and help boost market liquidity by matching investors buy and sell orders through their brokers.</p>
-        </section>
+      <div class="item" data-text="Jobbers held shares own account boost market liquidity matching investors buy sell orders brokers">
+        <b>Jobbers →</b> Jobers held shares in their own account and help boost market liquidity by matching investors buy and sell orders through their brokers.
+      </div>
 
-        <section class="section" id="alpha" data-text="Alpha actual returns benchmark returns">
-          <h3><b>Alpha →</b></h3>
-          <p>Actual Returns - Benchmark Returns</p>
-        </section>
+      <div class="item" data-text="Alpha actual returns benchmark returns">
+        <b>Alpha =</b> Actual Returns - Benchmark Returns
+      </div>
 
-      </main>
     </div>
   </div>
 
-  <script>
-    const input = document.getElementById('q');
-    const sections = Array.from(document.querySelectorAll('.section'));
-    const pill = document.getElementById('countPill');
-
-    function escapeHtml(s){
-      return s.replace(/[&<>"']/g, m => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-      }[m]));
-    }
-
-    function highlight(el, query){
-      // remove old marks
-      el.querySelectorAll('mark').forEach(m=>{
-        const t = document.createTextNode(m.textContent);
-        m.replaceWith(t);
-      });
-
-      if(!query) return;
-
-      const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
-        acceptNode(node){
-          if(!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
-          if(node.parentElement && node.parentElement.tagName === 'SCRIPT') return NodeFilter.FILTER_REJECT;
-          return NodeFilter.FILTER_ACCEPT;
-        }
-      });
-
-      const q = query.toLowerCase();
-      let node;
-      while((node = walk.nextNode())){
-        const text = node.nodeValue;
-        const idx = text.toLowerCase().indexOf(q);
-        if(idx >= 0){
-          const before = document.createTextNode(text.slice(0, idx));
-          const match = document.createElement('mark');
-          match.textContent = text.slice(idx, idx + query.length);
-          const after = document.createTextNode(text.slice(idx + query.length));
-          node.replaceWith(after);
-          after.parentNode.insertBefore(match, after);
-          after.parentNode.insertBefore(before, match);
-        }
-      }
-    }
-
-    function filter(){
-      const q = input.value.trim().toLowerCase();
-      let shown = 0;
-
-      sections.forEach(sec=>{
-        const hay = (sec.getAttribute('data-text') || sec.textContent).toLowerCase();
-        const ok = !q || hay.includes(q);
-
-        sec.classList.toggle('hidden', !ok);
-        if(ok){
-          shown++;
-          highlight(sec, q);
-        }
-      });
-
-      pill.textContent = shown + (shown === 1 ? " result" : " results");
-    }
-
-    input.addEventListener('input', filter);
-    filter();
-  </script>
+<script>
+  const q=document.getElementById('q'), items=[...document.querySelectorAll('.item')], cnt=document.getElementById('cnt');
+  function run(){
+    const s=q.value.trim().toLowerCase(); let n=0;
+    items.forEach(it=>{
+      const t=(it.dataset.text+" "+it.textContent).toLowerCase();
+      const ok=!s||t.includes(s);
+      it.style.display=ok?"":"none";
+      if(ok) n++;
+    });
+    cnt.textContent=n+" results";
+  }
+  q.addEventListener('input',run); run();
+</script>
 </body>
 </html>
