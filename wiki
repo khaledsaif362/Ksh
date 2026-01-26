@@ -6,7 +6,7 @@ NAV = Value of Cash & Securities in fund portfolio - liabilities
 outstanding shares
 Regulator → SEBI, (RBI, Companies Act, stock exchange, Min. of fin)
 DisAdvantages of MF → Cost, price uncertainty (EOD NAV), past performance
-AMC → It is a business face of the MF, as it manages all affairs of MF.
+AMC → It is a business face of the MF, as it manages all affairs of MF..
 Re purchase Price → price at which close ended schemes repurchase its units that are trading in secondary market.
 Redemption price → Price received by investor on selling units of MF schemes. It is usually equals to current NAV.
 NFO → It is the first time subscription offers for a new scheme launched by AMC. It is similar to IPO of equity shares.
