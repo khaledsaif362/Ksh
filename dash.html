@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Tester Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body { font-family: Arial, sans-serif; background:#f4f6f8; margin:0; }
+.header { background:#2f6f3e; color:#fff; padding:12px 16px; font-weight:bold; }
+.container { padding:15px; }
+.top-bar {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:10px;
+}
+button {
+  padding:6px 12px;
+  border:none;
+  background:#2c3e50;
+  color:#fff;
+  border-radius:4px;
+  cursor:pointer;
+}
+input {
+  padding:6px;
+  width:100%;
+  max-width:300px;
+}
+table {
+  width:100%;
+  border-collapse:collapse;
+  background:#fff;
+}
+th, td {
+  padding:8px;
+  border:1px solid #ddd;
+  text-align:center;
+}
+th {
+  background:#34495e;
+  color:#fff;
+}
+td.name {
+  text-align:left;
+  font-weight:bold;
+  color:#1a5276;
+  cursor:pointer;
+}
+.pending { color:#e67e22; font-weight:bold; }
+.progress { color:#2980b9; font-weight:bold; }
+.completed { color:#27ae60; font-weight:bold; }
+tfoot td {
+  background:#ecf0f1;
+  font-weight:bold;
+}
+
+/* MODAL */
+#patchModal {
+  display:none;
+  position:fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:rgba(0,0,0,0.5);
+  z-index:999;
+}
+#patchBox {
+  background:#fff;
+  max-width:500px;
+  margin:60px auto;
+  padding:15px;
+  border-radius:6px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">rupeeseed</div>
+
+<div class="container">
+
+<div class="top-bar">
+  <div id="lastUpdated">Last updated: --</div>
+  <button onclick="loadData()">Refresh</button>
+</div>
+
+<input type="text" id="search" placeholder="Search tester..." onkeyup="filterTable()">
+<br><br>
+
+<table id="dashboard">
+<thead>
+<tr>
+  <th>Tester</th>
+  <th>Pending</th>
+  <th>In Progress</th>
+  <th>Completed</th>
+  <th>Total</th>
+</tr>
+</thead>
+<tbody></tbody>
+<tfoot>
+<tr>
+  <td>GRAND TOTAL</td>
+  <td id="gtPending">0</td>
+  <td id="gtProgress">0</td>
+  <td id="gtCompleted">0</td>
+  <td id="gtTotal">0</td>
+</tr>
+</tfoot>
+</table>
+
+</div>
+
+<!-- PATCH MODAL -->
+<div id="patchModal">
+  <div id="patchBox">
+    <h3 id="modalTitle"></h3>
+    <table style="width:100%; border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th style="border:1px solid #ddd;padding:6px;">Patch</th>
+          <th style="border:1px solid #ddd;padding:6px;">Status</th>
+        </tr>
+      </thead>
+      <tbody id="patchBody"></tbody>
+    </table>
+    <br>
+    <button onclick="closeModal()">Close</button>
+  </div>
+</div>
+
+<script>
+const CSV_URL = "PASTE_ZOHO_PUBLISHED_CSV_URL_HERE";
+let rawRows = [];
+
+/* CSV PARSER (USES ONLY REQUIRED HEADERS) */
+function parseCSV(csv) {
+  const lines = csv.trim().split("\n");
+  const headers = lines[0].split(",").map(h => h.trim());
+
+  const iTester = headers.indexOf("Tester");
+  const iStatus = headers.indexOf("Status");
+  const iPatch  = headers.indexOf("Patch");
+
+  if (iTester === -1 || iStatus === -1) {
+    alert("Required headers (Tester, Status) not found");
+    return [];
+  }
+
+  return lines.slice(1).map(l => {
+    const c = l.split(",");
+    return {
+      tester: c[iTester]?.trim(),
+      status: c[iStatus]?.trim(),
+      patch : iPatch !== -1 ? c[iPatch]?.trim() : ""
+    };
+  });
+}
+
+/* LOAD DATA */
+function loadData() {
+  fetch(CSV_URL + "&_=" + Date.now())
+    .then(r => r.text())
+    .then(csv => {
+      rawRows = parseCSV(csv);
+      buildDashboard(rawRows);
+      document.getElementById("lastUpdated").innerText =
+        "Last updated: " + new Date().toLocaleTimeString();
+    });
+}
+
+/* BUILD SUMMARY */
+function buildDashboard(rows) {
+  let map = {};
+  let p=0,i=0,c=0;
+
+  rows.forEach(r => {
+    if (!r.tester || !r.status) return;
+
+    if (!map[r.tester]) map[r.tester] = {p:0,i:0,c:0};
+
+    if (r.status === "Pending") map[r.tester].p++;
+    if (r.status === "In Progress") map[r.tester].i++;
+    if (r.status === "Completed") map[r.tester].c++;
+  });
+
+  const tbody = document.querySelector("#dashboard tbody");
+  tbody.innerHTML = "";
+
+  Object.keys(map).forEach(t => {
+    const tp = map[t].p, ti = map[t].i, tc = map[t].c;
+    const total = tp + ti + tc;
+    p+=tp; i+=ti; c+=tc;
+
+    tbody.innerHTML += `
+      <tr>
+        <td class="name" onclick="showPatches('${t}')">${t}</td>
+        <td class="pending">${tp}</td>
+        <td class="progress">${ti}</td>
+        <td class="completed">${tc}</td>
+        <td>${total}</td>
+      </tr>`;
+  });
+
+  document.getElementById("gtPending").innerText = p;
+  document.getElementById("gtProgress").innerText = i;
+  document.getElementById("gtCompleted").innerText = c;
+  document.getElementById("gtTotal").innerText = p+i+c;
+}
+
+/* FILTER */
+function filterTable() {
+  const q = document.getElementById("search").value.toLowerCase();
+  document.querySelectorAll("#dashboard tbody tr").forEach(r=>{
+    r.style.display = r.innerText.toLowerCase().includes(q) ? "" : "none";
+  });
+}
+
+/* PATCH MODAL */
+function showPatches(tester) {
+  const body = document.getElementById("patchBody");
+  body.innerHTML = "";
+  document.getElementById("modalTitle").innerText =
+    tester + " - Pending & In Progress";
+
+  rawRows.forEach(r => {
+    if (r.tester === tester &&
+        (r.status === "Pending" || r.status === "In Progress")) {
+
+      body.innerHTML += `
+        <tr>
+          <td style="border:1px solid #ddd;padding:6px;">${r.patch}</td>
+          <td style="border:1px solid #ddd;padding:6px;">${r.status}</td>
+        </tr>`;
+    }
+  });
+
+  document.getElementById("patchModal").style.display = "block";
+}
+
+function closeModal() {
+  document.getElementById("patchModal").style.display = "none";
+}
+
+/* INIT */
+loadData();
+setInterval(loadData, 60000); // 1 min auto-refresh
+</script>
+
+</body>
+</html>
