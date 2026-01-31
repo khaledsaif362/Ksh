@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CSV Auto Form & Download</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
+    padding: 20px;
+}
+
+.card {
+    background: #ffffff;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+h2, h3 {
+    margin-top: 0;
+}
+
+label {
+    font-weight: bold;
+    display: block;
+    margin-top: 10px;
+}
+
+input {
+    width: 100%;
+    padding: 8px;
+    margin-top: 4px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+button {
+    margin-top: 15px;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.add { background: #1976d2; color: #fff; }
+.download { background: #2e7d32; color: #fff; }
+.clear { background: #c62828; color: #fff; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+}
+
+th {
+    background: #eeeeee;
+}
+</style>
+</head>
+
+<body>
+
+<h2>CSV Upload → Auto Form → Preview → Download</h2>
+
+<!-- Upload -->
+<div class="card">
+    <input type="file" accept=".csv" onchange="loadCSV(event)">
+</div>
+
+<!-- Form -->
+<div class="card" id="formCard" style="display:none;">
+    <h3>Enter Data (All fields optional)</h3>
+    <div id="dynamicForm"></div>
+    <button class="add" onclick="addRow()">Add Row</button>
+</div>
+
+<!-- Preview -->
+<div class="card" id="previewCard" style="display:none;">
+    <h3>Preview</h3>
+    <table id="previewTable">
+        <thead></thead>
+        <tbody></tbody>
+    </table>
+
+    <button class="download" onclick="downloadCSV()">Download CSV</button>
+    <button class="clear" onclick="clearAll()">Clear</button>
+</div>
+
+<script>
+let headers = [];
+let rows = [];
+let uploadedFileName = "updated.csv";
+
+// Load CSV
+function loadCSV(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    uploadedFileName = file.name;
+
+    // 🔑 FULL RESET (this fixes preview issue)
+    headers = [];
+    rows = [];
+    document.querySelector("#previewTable thead").innerHTML = "";
+    document.querySelector("#previewTable tbody").innerHTML = "";
+    document.getElementById("dynamicForm").innerHTML = "";
+
+    const reader = new FileReader();
+    reader.onload = e => {
+        const lines = e.target.result.trim().split(/\r?\n/);
+        headers = lines[0].split(",").map(h => h.trim());
+
+        createForm();
+        createTableHeader();
+
+        document.getElementById("formCard").style.display = "block";
+        document.getElementById("previewCard").style.display = "block";
+    };
+    reader.readAsText(file);
+}
+
+// Build form
+function createForm() {
+    const form = document.getElementById("dynamicForm");
+    form.innerHTML = "";
+
+    headers.forEach(h => {
+        const label = document.createElement("label");
+        label.textContent = h;
+
+        const input = document.createElement("input");
+        input.type = "text";
+
+        form.appendChild(label);
+        form.appendChild(input);
+    });
+}
+
+// Table header
+function createTableHeader() {
+    const thead = document.querySelector("#previewTable thead");
+    thead.innerHTML = "<tr>" + headers.map(h => `<th>${h}</th>`).join("") + "</tr>";
+}
+
+// Add row (optional fields)
+function addRow() {
+    const inputs = document.querySelectorAll("#dynamicForm input");
+    const row = [];
+
+    inputs.forEach(input => row.push(input.value.trim()));
+    rows.push(row);
+
+    renderTable();
+    inputs.forEach(i => i.value = "");
+}
+
+// Render preview
+function renderTable() {
+    const tbody = document.querySelector("#previewTable tbody");
+    tbody.innerHTML = "";
+
+    rows.forEach(r => {
+        const tr = document.createElement("tr");
+        r.forEach(c => {
+            const td = document.createElement("td");
+            td.textContent = c;
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    });
+}
+
+// Download with SAME uploaded filename
+function downloadCSV() {
+    if (headers.length === 0) {
+        alert("Upload CSV first");
+        return;
+    }
+
+    let csv = "\uFEFF" + headers.join(",") + "\n";
+    rows.forEach(r => csv += r.join(",") + "\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = uploadedFileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// Clear everything manually
+function clearAll() {
+    headers = [];
+    rows = [];
+    document.getElementById("formCard").style.display = "none";
+    document.getElementById("previewCard").style.display = "none";
+    document.getElementById("dynamicForm").innerHTML = "";
+    document.querySelector("#previewTable thead").innerHTML = "";
+    document.querySelector("#previewTable tbody").innerHTML = "";
+}
+</script>
+
+</body>
+</html>
