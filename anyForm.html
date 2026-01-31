@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>CSV / Excel Preview Tool</title>
+<title>Upload Fill & Download</title>
 
 <style>
 body {
@@ -18,10 +18,6 @@ body {
     border-radius: 12px;
     margin-bottom: 20px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-
-h2, h3 {
-    margin: 0 0 10px 0;
 }
 
 /* ===== FILE UPLOAD UI ===== */
@@ -64,24 +60,34 @@ h2, h3 {
     color: #2e7d32;
 }
 
-/* hide real input */
-input[type="file"] {
-    display: none;
+/* hide file input */
+input[type="file"] { display: none; }
+
+/* ===== FORM ROW STYLES ===== */
+.form-row {
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 10px;
 }
 
-/* FORM */
+.form-row-0 { background: #e3f2fd; }  /* light blue */
+.form-row-1 { background: #e8f5e9; }  /* light green */
+.form-row-2 { background: #fffde7; }  /* light yellow */
+.form-row-3 { background: #f3e5f5; }  /* light violet */
+.form-row-4 { background: #fce4ec; }  /* light pink */
+
 label {
     font-weight: 600;
     display: block;
-    margin-top: 10px;
 }
 
 input[type="text"] {
     width: 100%;
     padding: 8px;
-    margin-top: 4px;
+    margin-top: 6px;
     border: 1px solid #ccd2da;
     border-radius: 6px;
+    background: #ffffff;
 }
 
 /* BUTTONS */
@@ -106,7 +112,7 @@ button {
     cursor: pointer;
 }
 
-/* PREVIEW GRID */
+/* PREVIEW GRID (unchanged) */
 .preview-wrapper {
     border: 1px solid #e1e6ee;
     border-radius: 8px;
@@ -122,19 +128,16 @@ table {
     width: 100%;
     border-collapse: collapse;
     font-size: 14px;
-    background: #ffffff;
 }
 
 thead th {
     position: sticky;
     top: 0;
     background: #f3f6fa;
-    color: #37474f;
     padding: 10px;
     border: 1px solid #e6ebf1;
     text-align: left;
     font-weight: 600;
-    z-index: 1;
 }
 
 tbody td {
@@ -142,20 +145,19 @@ tbody td {
     border: 1px solid #e6ebf1;
     color: #455a64;
 }
-
-tbody tr:nth-child(even) {
-    background: #fafcff;
-}
-
-tbody tr:hover {
-    background: #eef4ff;
-}
 </style>
 </head>
 
 <body>
 
-<h2>Upload Fill & Download</h2>
+<h2 style="
+    background: linear-gradient(90deg, #00c853, #64dd17);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight:800;
+">
+    Upload Fill & Download
+</h2>
 
 <!-- UPLOAD -->
 <div class="card">
@@ -163,16 +165,16 @@ tbody tr:hover {
         <div class="upload-box">
             <div class="upload-icon">📁</div>
             <div class="upload-text">Click to upload file</div>
-            <div class="upload-sub">CSV, TXT, Excel (.xlsx), PDF</div>
+            <div class="upload-sub">CSV, TXT, Excel (.xlsx)</div>
         </div>
     </label>
     <input id="fileInput" type="file"
-           accept=".csv,.txt,.xlsx,.pdf"
+           accept=".csv,.txt,.xlsx"
            onchange="handleFile(event)">
     <div id="fileInfo" class="file-info"></div>
 </div>
 
-<!-- ADD ROW -->
+<!-- FORM -->
 <div class="card" id="formCard" style="display:none;">
     <h3>Add Row</h3>
     <div id="dynamicForm"></div>
@@ -223,7 +225,7 @@ function resetAll() {
     document.getElementById("previewCard").style.display = "none";
 }
 
-/* FILE HANDLER */
+/* FILE */
 function handleFile(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -235,7 +237,6 @@ function handleFile(e) {
     const ext = file.name.split(".").pop().toLowerCase();
     if (ext === "csv" || ext === "txt") readTextFile(file);
     else if (ext === "xlsx") readExcelFile(file);
-    else alert("PDF uploaded (preview not supported)");
 }
 
 /* CSV */
@@ -267,12 +268,21 @@ function readExcelFile(file) {
     reader.readAsArrayBuffer(file);
 }
 
-/* UI */
+/* BUILD FORM */
 function buildUI() {
     const form = document.getElementById("dynamicForm");
     form.innerHTML = "";
-    headers.forEach(h => {
-        form.innerHTML += `<label>${h}</label><input type="text">`;
+
+    headers.forEach((h, i) => {
+        const row = document.createElement("div");
+        row.className = "form-row form-row-" + (i % 5);
+
+        row.innerHTML = `
+            <label>${h}</label>
+            <input type="text">
+        `;
+
+        form.appendChild(row);
     });
 
     document.querySelector("#previewTable thead").innerHTML =
@@ -298,6 +308,7 @@ function deleteRow(i) {
 function renderTable() {
     const tbody = document.querySelector("#previewTable tbody");
     tbody.innerHTML = "";
+
     rows.forEach((r, i) => {
         const tr = document.createElement("tr");
         r.forEach(c => tr.innerHTML += `<td>${c}</td>`);
