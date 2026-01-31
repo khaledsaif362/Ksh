@@ -2,47 +2,95 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>CSV Auto Form & Download</title>
+<title>CSV / Excel Preview Tool</title>
 
 <style>
 body {
-    font-family: Arial, sans-serif;
-    background: #f4f6f8;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #f1f3f6;
     padding: 20px;
 }
 
+/* CARD */
 .card {
     background: #ffffff;
-    padding: 15px;
-    border-radius: 8px;
+    padding: 16px;
+    border-radius: 12px;
     margin-bottom: 20px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
 h2, h3 {
-    margin-top: 0;
+    margin: 0 0 10px 0;
 }
 
+/* ===== FILE UPLOAD UI ===== */
+.upload-box {
+    border: 2px dashed #cfd8dc;
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #fafcff;
+}
+
+.upload-box:hover {
+    background: #eef4ff;
+    border-color: #90caf9;
+}
+
+.upload-icon {
+    font-size: 36px;
+    color: #1976d2;
+    margin-bottom: 8px;
+}
+
+.upload-text {
+    font-size: 15px;
+    font-weight: 600;
+    color: #37474f;
+}
+
+.upload-sub {
+    font-size: 13px;
+    color: #78909c;
+    margin-top: 4px;
+}
+
+.file-info {
+    margin-top: 10px;
+    font-weight: 600;
+    color: #2e7d32;
+}
+
+/* hide real input */
+input[type="file"] {
+    display: none;
+}
+
+/* FORM */
 label {
-    font-weight: bold;
+    font-weight: 600;
     display: block;
     margin-top: 10px;
 }
 
-input {
+input[type="text"] {
     width: 100%;
     padding: 8px;
     margin-top: 4px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    border: 1px solid #ccd2da;
+    border-radius: 6px;
 }
 
+/* BUTTONS */
 button {
     margin-top: 15px;
-    padding: 10px 14px;
+    padding: 8px 14px;
     border: none;
-    border-radius: 4px;
-    font-weight: bold;
+    border-radius: 6px;
+    font-weight: 600;
     cursor: pointer;
 }
 
@@ -50,167 +98,232 @@ button {
 .download { background: #2e7d32; color: #fff; }
 .clear { background: #c62828; color: #fff; }
 
+.delete {
+    background: none;
+    border: none;
+    color: #d32f2f;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+/* PREVIEW GRID */
+.preview-wrapper {
+    border: 1px solid #e1e6ee;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.preview-scroll {
+    max-height: 320px;
+    overflow-y: auto;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 10px;
+    font-size: 14px;
+    background: #ffffff;
 }
 
-th, td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: center;
+thead th {
+    position: sticky;
+    top: 0;
+    background: #f3f6fa;
+    color: #37474f;
+    padding: 10px;
+    border: 1px solid #e6ebf1;
+    text-align: left;
+    font-weight: 600;
+    z-index: 1;
 }
 
-th {
-    background: #eeeeee;
+tbody td {
+    padding: 8px 10px;
+    border: 1px solid #e6ebf1;
+    color: #455a64;
+}
+
+tbody tr:nth-child(even) {
+    background: #fafcff;
+}
+
+tbody tr:hover {
+    background: #eef4ff;
 }
 </style>
 </head>
 
 <body>
 
-<h2>CSV Upload → Auto Form → Preview → Download</h2>
+<h2>CSV / Excel Preview Tool</h2>
 
-<!-- Upload -->
+<!-- UPLOAD -->
 <div class="card">
-    <input type="file" accept=".csv" onchange="loadCSV(event)">
+    <label for="fileInput">
+        <div class="upload-box">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">Click to upload file</div>
+            <div class="upload-sub">CSV, TXT, Excel (.xlsx), PDF</div>
+        </div>
+    </label>
+    <input id="fileInput" type="file"
+           accept=".csv,.txt,.xlsx,.pdf"
+           onchange="handleFile(event)">
+    <div id="fileInfo" class="file-info"></div>
 </div>
 
-<!-- Form -->
+<!-- ADD ROW -->
 <div class="card" id="formCard" style="display:none;">
-    <h3>Enter Data (All fields optional)</h3>
+    <h3>Add Row</h3>
     <div id="dynamicForm"></div>
     <button class="add" onclick="addRow()">Add Row</button>
 </div>
 
-<!-- Preview -->
+<!-- PREVIEW -->
 <div class="card" id="previewCard" style="display:none;">
     <h3>Preview</h3>
-    <table id="previewTable">
-        <thead></thead>
-        <tbody></tbody>
-    </table>
+
+    <div class="preview-wrapper">
+        <div class="preview-scroll">
+            <table id="previewTable">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
 
     <button class="download" onclick="downloadCSV()">Download CSV</button>
     <button class="clear" onclick="clearAll()">Clear</button>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
 <script>
 let headers = [];
 let rows = [];
-let uploadedFileName = "updated.csv";
+let uploadedFileName = "output.csv";
 
-// Load CSV
-function loadCSV(event) {
-    const file = event.target.files[0];
-    if (!file) return;
+/* CLEAN */
+function cleanValue(val) {
+    if (!val) return "";
+    return String(val)
+        .replace(/^\uFEFF/, "")
+        .replace(/^["']|["']$/g, "")
+        .trim();
+}
 
-    uploadedFileName = file.name;
-
-    // 🔑 FULL RESET (this fixes preview issue)
+/* RESET */
+function resetAll() {
     headers = [];
     rows = [];
+    document.getElementById("dynamicForm").innerHTML = "";
     document.querySelector("#previewTable thead").innerHTML = "";
     document.querySelector("#previewTable tbody").innerHTML = "";
-    document.getElementById("dynamicForm").innerHTML = "";
+    document.getElementById("formCard").style.display = "none";
+    document.getElementById("previewCard").style.display = "none";
+}
 
+/* FILE HANDLER */
+function handleFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    resetAll();
+    uploadedFileName = file.name.replace(/\.[^/.]+$/, "") + ".csv";
+    document.getElementById("fileInfo").textContent = "Selected: " + file.name;
+
+    const ext = file.name.split(".").pop().toLowerCase();
+    if (ext === "csv" || ext === "txt") readTextFile(file);
+    else if (ext === "xlsx") readExcelFile(file);
+    else alert("PDF uploaded (preview not supported)");
+}
+
+/* CSV */
+function readTextFile(file) {
     const reader = new FileReader();
     reader.onload = e => {
-        const lines = e.target.result.trim().split(/\r?\n/);
-        headers = lines[0].split(",").map(h => h.trim());
-
-        createForm();
-        createTableHeader();
-
-        document.getElementById("formCard").style.display = "block";
-        document.getElementById("previewCard").style.display = "block";
+        const lines = e.target.result.split(/\r?\n/).filter(l => l.trim());
+        headers = lines[0].split(",").map(cleanValue);
+        rows = lines.slice(1).map(l => l.split(",").map(cleanValue));
+        buildUI();
+        renderTable();
     };
     reader.readAsText(file);
 }
 
-// Build form
-function createForm() {
+/* EXCEL */
+function readExcelFile(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+        const wb = XLSX.read(new Uint8Array(e.target.result), { type: "array" });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+        headers = json[0].map(cleanValue);
+        rows = json.slice(1).map(r => r.map(c => cleanValue(c || "")));
+        buildUI();
+        renderTable();
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+/* UI */
+function buildUI() {
     const form = document.getElementById("dynamicForm");
     form.innerHTML = "";
-
     headers.forEach(h => {
-        const label = document.createElement("label");
-        label.textContent = h;
-
-        const input = document.createElement("input");
-        input.type = "text";
-
-        form.appendChild(label);
-        form.appendChild(input);
+        form.innerHTML += `<label>${h}</label><input type="text">`;
     });
+
+    document.querySelector("#previewTable thead").innerHTML =
+        "<tr>" + headers.map(h => `<th>${h}</th>`).join("") + "<th></th></tr>";
+
+    document.getElementById("formCard").style.display = "block";
+    document.getElementById("previewCard").style.display = "block";
 }
 
-// Table header
-function createTableHeader() {
-    const thead = document.querySelector("#previewTable thead");
-    thead.innerHTML = "<tr>" + headers.map(h => `<th>${h}</th>`).join("") + "</tr>";
-}
-
-// Add row (optional fields)
+/* DATA */
 function addRow() {
     const inputs = document.querySelectorAll("#dynamicForm input");
-    const row = [];
-
-    inputs.forEach(input => row.push(input.value.trim()));
-    rows.push(row);
-
-    renderTable();
+    rows.push([...inputs].map(i => cleanValue(i.value)));
     inputs.forEach(i => i.value = "");
+    renderTable();
 }
 
-// Render preview
+function deleteRow(i) {
+    rows.splice(i, 1);
+    renderTable();
+}
+
 function renderTable() {
     const tbody = document.querySelector("#previewTable tbody");
     tbody.innerHTML = "";
-
-    rows.forEach(r => {
+    rows.forEach((r, i) => {
         const tr = document.createElement("tr");
-        r.forEach(c => {
-            const td = document.createElement("td");
-            td.textContent = c;
-            tr.appendChild(td);
-        });
+        r.forEach(c => tr.innerHTML += `<td>${c}</td>`);
+        tr.innerHTML += `<td><button class="delete" onclick="deleteRow(${i})">🗑</button></td>`;
         tbody.appendChild(tr);
     });
 }
 
-// Download with SAME uploaded filename
+/* DOWNLOAD */
 function downloadCSV() {
-    if (headers.length === 0) {
-        alert("Upload CSV first");
-        return;
-    }
-
     let csv = "\uFEFF" + headers.join(",") + "\n";
     rows.forEach(r => csv += r.join(",") + "\n");
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-
     const a = document.createElement("a");
-    a.href = url;
+    a.href = URL.createObjectURL(blob);
     a.download = uploadedFileName;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
 }
 
-// Clear everything manually
+/* CLEAR */
 function clearAll() {
-    headers = [];
-    rows = [];
-    document.getElementById("formCard").style.display = "none";
-    document.getElementById("previewCard").style.display = "none";
-    document.getElementById("dynamicForm").innerHTML = "";
-    document.querySelector("#previewTable thead").innerHTML = "";
-    document.querySelector("#previewTable tbody").innerHTML = "";
+    resetAll();
+    document.getElementById("fileInfo").textContent = "";
 }
 </script>
 
