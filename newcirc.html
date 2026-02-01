@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Circuit Threshold Checker</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f1f3f6;
+  padding: 30px;
+}
+.card {
+  background: #fff;
+  padding: 25px;
+  max-width: 600px;
+  margin: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+label {
+  display: block;
+  margin-top: 12px;
+}
+input {
+  width: 100%;
+  padding: 8px;
+}
+button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background: #1976d2;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.result {
+  margin-top: 25px;
+  padding: 15px;
+  background: #f9f9f9;
+  border: 1px solid #ccc;
+}
+.blocked { color: red; font-weight: bold; }
+.unblocked { color: green; font-weight: bold; }
+.label { color: #0d47a1; font-weight: bold; }
+.range { color: #333; }
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2>Circuit Threshold Calculator</h2>
+
+  <label>Close Price
+    <input type="number" id="close" step="0.01">
+  </label>
+
+  <label>Lower Circuit Limit
+    <input type="number" id="lowerCkt" step="0.01">
+  </label>
+
+  <label>Upper Circuit Limit
+    <input type="number" id="upperCkt" step="0.01">
+  </label>
+
+  <label>Block Threshold %
+    <input type="number" id="blockPct" value="70">
+  </label>
+
+  <label>Unblock Threshold %
+    <input type="number" id="unblockPct" value="40">
+  </label>
+
+  <button onclick="calculate()">Calculate</button>
+
+  <div class="result" id="output"></div>
+</div>
+
+<script>
+function calculate() {
+  const close = parseFloat(document.getElementById('close').value);
+  const lower = parseFloat(document.getElementById('lowerCkt').value);
+  const upper = parseFloat(document.getElementById('upperCkt').value);
+  const blockPct = parseFloat(document.getElementById('blockPct').value);
+  const unblockPct = parseFloat(document.getElementById('unblockPct').value);
+
+  if (isNaN(close) || isNaN(lower) || isNaN(upper)) {
+    document.getElementById('output').innerHTML =
+      "<span class='blocked'>Please enter all valid values.</span>";
+    return;
+  }
+
+  // Threshold calculations
+  const buyBlockLTP = close - ((close - lower) * blockPct / 100);
+  const sellBlockLTP = close - ((close - upper) * blockPct / 100);
+
+  const buyUnblockLTP = close - ((close - lower) * unblockPct / 100);
+  const sellUnblockLTP = close - ((close - upper) * unblockPct / 100);
+
+  document.getElementById('output').innerHTML = `
+    <span class="label">Buy Orders Blocked When LTP ≤</span>
+    <span class="range">₹${buyBlockLTP.toFixed(2)}</span><br><br>
+
+    <span class="label">Sell Orders Blocked When LTP ≥</span>
+    <span class="range">₹${sellBlockLTP.toFixed(2)}</span><br><br>
+
+    <span class="label">Orders Unblocked When LTP is Between</span><br>
+    <span class="unblocked">
+      ₹${buyUnblockLTP.toFixed(2)} – ₹${sellUnblockLTP.toFixed(2)}
+    </span>
+  `;
+}
+</script>
+
+</body>
+</html>
