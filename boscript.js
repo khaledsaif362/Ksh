@@ -59,7 +59,7 @@ function generateContent(type, baseCode, count) {
         header = `RUPEE|CLT|${date}`;
         filename = 'client.txt';
         const clientName = clientNames[i];
-        rows.push(`${code}|${clientName}|${code}|HO|123456||iuy@gm.com|Borivali||||1234567890||||2|${pan}|NI|1234567890|560016|AXISBANK LTD.|Mumbai|A||N|||Y|E|||Y|07/07/1985|||R16|||||7|||`);
+        rows.push(`${code}|${clientName}|${code}|HO|123456||iuy@gm.com|Borivali|||1234567890|||||2|${pan}|NI|1234567890|560016|AXISBANK LTD.|Mumbai|A||N|||Y|E|||Y|07/07/1985|||R16|||||7|||`);
         break;
 
       case 'bank':
@@ -230,3 +230,4 @@ async function downloadAllFiles() {
 
   alert("All files downloaded successfully!");
 }
+
