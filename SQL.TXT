@@ -1,143 +1,253 @@
-
-CLIENT MASTER
-  SELECT * FROM ENTITY_MASTER WHERE ENTITY_CODE='SAJ12';
-
-NET POSITION
-  SELECT * FROM NET_POSITION_TABLE WHERE NPT_EXCH_ID='NSE' AND NPT_SEGMENT='C';
-  SELECT * FROM NET_POSITION_TABLE WHERE NPT_SEGMENT='C' AND NPT_EXCH_ID='NSE';
-
-ERROR LOG
-  SELECT * FROM FILE_ERROR_LOG;
-
-FILE UPLOADS
-  SELECT * FROM RMS_PROCESS_LOG;
-
-SYS PARAM
-  SELECT * FROM SYS_PARAMETERS;
-
-VIEW LIMIT
-  SELECT * FROM RMS_FUND_LIMIT;
-  SELECT * FROM RMS_FUND_LIMIT WHERE CLIENT_ID='AC103';
-  SELECT * FROM VIEW_CLIENT_LIMIT;
-
-LTP
-  SELECT * FROM L1_WATCH_ACTIVE WHERE L1_SCRIP_CODE = 11536;
-  SELECT * FROM EQ_L1_WATCH WHERE L1_SCRIP_CODE = "11536";
-
-VOLUME
-  SELECT * FROM DRV_L1_WATCH WHERE DL1_SCRIP_CODE =37834;
-  SELECT * FROM SECURITY_MASTER WHERE SM_EXCH_SYMBOL = 'GOLDM';
-  SELECT * FROM SECURITY_MASTER WHERE SM_SCRIP_CODE = 2169747;
-  SELECT * FROM BHAV_COPY WHERE BC_SCRIP_CODE='3045';
-
-HOLDINGS
-  SELECT * FROM RMS_CLIENT_SECURITY_LIMIT;
-
-DRV ORDER
-  SELECT * FROM DRV_ORDERS WHERE DRV_ORDER_NO LIKE '%3715';
-
-COM ORDER
-  SELECT * FROM COMM_ORDERS WHERE COMM_ORDER_NO LIKE '%2771';
-
-EQ ORDER
-  SELECT * FROM EQ_ORDERS WHERE EQ_ORDER_NO LIKE '%2418%';
-
-QL TEMPLATE
-  SELECT * FROM RMS_RISK_PROFILE_DET;
-
-EXPOSURE
-  SELECT *,SM_EXPOSER_PERC, SM_SELL_EXPOSER_PERC FROM SECURITY_MASTER WHERE SM_SCRIP_CODE=59229;
-
-SPAN
-  SELECT * FROM RMS_FNO_SPAN_MARGIN WHERE RSM_SECURITY_ID = '40702';
-
-VAR ELM
-  SELECT * FROM RMS_EQ_VAR_ELM WHERE SCRIP_ID= '3045';
-
-DELETE CF POSITION
-  DELETE FROM DRV_ORDERS WHERE DRV_CF_FLAG=-1;
-  SELECT * FROM DRV_ORDERS WHERE DRV_CF_FLAG=-1;
-
-MRV
-  SELECT * FROM MRV_ORDERS WHERE MRV_CF_FLAG=-1;
-
-GOLANG MAIL ID
-  SELECT * FROM GO_CLIENT_MAIL_INFO;
-
-SURVEILLANCE SCRIPTS
-  SELECT * FROM NSE_GSM_TEMP;
-  SELECT * FROM BSE_GSM_TEMP;
-  SELECT * FROM SECURITY_RMS_BLOCK_DETAIL WHERE SCRIP_CODE = '540519';
-
-CONFIG
-  SELECT * FROM RMS_SCREEN_COLUMN_CONFIG;
-  SELECT * FROM RMS_SCRIP_MARGIN_BASKET WHERE RSMB_BASKET_CODE= 'HIT';
-  SELECT * FROM RMS_SCRIP_MARGIN_BASKET WHERE RSMB_BASKET_CODE= 'HIT' AND RSMB_PRODUCT='F';
-  SELECT * FROM RMS_SCRIP_MARGIN_BASKET_FNO;
-
-EXCHANGE CONNECTION
-  SELECT * FROM EXCH_ADMINISTRATION_MASTER;
-
-MTF BUYBACK
-  SELECT RPM_MTF_BUY_BACK FROM RMS_RISK_PROFILE_MAST WHERE RPM_NAME='KTEST';
-
-SURVEILLANCE MESSAGES
-  SELECT * FROM SURVEILLANCE_MSG_DETAILS;
-
-CHANGE EXPIRY MANUALLY
-  SELECT * FROM SECURITY_MASTER WHERE SM_SCRIP_CODE='839212';
-  SELECT * FROM SEM_ACTIVE WHERE SM_SCRIP_CODE = '839212';
-  SELECT * FROM RMS_FNO_SPAN_MARGIN WHERE RSM_SECURITY_ID = '839212';
-
-T+5
-  SELECT ENTITY_SQ_OFF_MODE FROM ENTITY_MASTER WHERE ENTITY_CODE='F102';
-
-EARLY PAYIN
-  SELECT * FROM RMS_EARLY_PAYIN;
-
-
- PUTTY
-   -----
-
-				
-         OTP	 web ---enter	
-	         wslo	
-	         enter ll	
-	         vi loginOTPcheck.log	
-	              or	
-	         tail -f loginOTPcheck.log	
-		
-		
-       exit without saving	escape :q!	
-       save & exit	:wq	
- 
-       DB password	ITI_OMS_UAT:/home/rsapp/RMS_DELIVERY > vi DBconf.txt	
-		
-		
-		
-       start ApacheTomcat	RS_TEST_BORIVALI:/home/rsapp/Application/ApacheTomcat/bin > wsb1	
-	                        RS_TEST_BORIVALI:/home/rsapp/Application/ApacheTomcat1/bin > ./startup.sh	
-		
-       start redis		
-		
-       pkill -9 (process name)	
-		
-       log	lo> vi log.NseCMExchAdap	
-		
-       rsapp>	telnet 172.19.245.107 10262	
+	
+CLIENT MASTER	select * from ENTITY_MASTER where ENTITY_CODE='saj12';
+NET POSITION	SELECT * FROM NET_POSITION_TABLE WHERE NPT_EXCH_ID='NSE' AND NPT_SEGMENT='C';
+	select * from NET_POSITION_TABLE where NPT_SEGMENT='C' and NPT_EXCH_ID='NSE';
+ERROR LOG	SELECT * FROM FILE_ERROR_LOG;
+FILE UPLOADS	select * from RMS_PROCESS_LOG;
+SYS PARAM	select * from SYS_PARAMETERS;
+	
+VIEW LIMIT	select * from RMS_FUND_LIMIT;
+	select * from RMS_FUND_LIMIT where CLIENT_ID='ac103';
+	select * from VIEW_CLIENT_LIMIT;
+	
+LTP	select * from L1_WATCH_ACTIVE where L1_SCRIP_CODE = 11536;
+	select * from EQ_L1_WATCH where L1_SCRIP_CODE = "11536";
+volume	select * from DRV_L1_WATCH where DL1_SCRIP_CODE =37834;
+	
+	SELECT * FROM SECURITY_MASTER WHERE SM_EXCH_SYMBOL = 'goldm';
+	SELECT * FROM SECURITY_MASTER WHERE SM_SCRIP_CODE = 2169747;
+	select * from BHAV_COPY where BC_SCRIP_CODE='3045';
+	
+HOLDINGS	select * from RMS_CLIENT_SECURITY_LIMIT;
+	
+DRV ORDER	select * from DRV_ORDERS where DRV_ORDER_NO like '%3715';
+COM ORDER	select * from COMM_ORDERS where COMM_ORDER_NO like '%2771';
+EQ ORDER	SELECT * FROM EQ_ORDERS WHERE EQ_ORDER_NO LIKE '%2418%';
+	
+QL TEMPLATE	SELECT * FROM RMS_RISK_PROFILE_DET;
 	
 	
-   KAFKA 	
-       command to check kafka running or not   pf kafka
-       PATH	                               cd /home/rsapp/Application/KafkaServer	
-	                                       cd Application/KafkaServer	
-       to start kafka	                       ./RestartKafka.sh	
+	
+	select * from L1_WATCH_ACTIVE where L1_SCRIP_CODE = 500110;
+	select * from L1_WATCH_ACTIVE where L1_SCRIP_CODE = 2049;
+	select * from EQ_L1_WATCH where L1_SCRIP_CODE = "500110";
+	select * from EQ_L1_WATCH where L1_SCRIP_CODE = "2049";
+	
+	
+EXPOSURE	select *,SM_EXPOSER_PERC, SM_SELL_EXPOSER_PERC from SECURITY_MASTER where SM_SCRIP_CODE=59229
+	
+	
+DELETE CF position	delete FROM DRV_ORDERS WHERE DRV_CF_FLAG=-1;
+	select * FROM DRV_ORDERS WHERE DRV_CF_FLAG=-1;
+	
+	select * from RMS_FNO_SPAN_MARGIN WHERE RSM_SECURITY_ID = '40702';
+	
+VAR ELM	select * from RMS_EQ_VAR_ELM where SCRIP_ID= '3045';
+	
+	
+MRV	select * from MRV_ORDERS where mrv_cf_flag=-1;
+	
+	
+Golang mail id	SELECT * FROM GO_CLIENT_MAIL_INFO;
+	
+check blocked survillence scrips	SELECT * FROM NSE_GSM_TEMP;
+	SELECT * FROM BSE_GSM_TEMP;
+	SELECT * FROM SECURITY_RMS_BLOCK_DETAIL WHERE SCRIP_CODE = '540519';
+	
+CONFIG	SELECT * FROM RMS_SCREEN_COLUMN_CONFIG;
+	
+	
+	select * from RMS_SCRIP_MARGIN_BASKET where RSMB_BASKET_CODE= 'hit';
+	select * from RMS_SCRIP_MARGIN_BASKET where RSMB_BASKET_CODE= 'hit' and RSMB_PRODUCT='F';
+	SELECT * FROM RMS_SCRIP_MARGIN_BASKET_FNO
+	
+Exchange connection	select * from EXCH_ADMINISTRATION_MASTER;
+	
+MTF BUYBACK	SELECT RPM_MTF_BUY_BACK FROM RMS_RISK_PROFILE_MAST WHERE RPM_NAME='KTEST';
+	
+	select * FROM SURVEILLANCE_MSG_DETAILS;
+	
+	
+To change expiry manually	select * from SECURITY_MASTER where SM_SCRIP_CODE='839212';
+	SELECT * FROM SEM_ACTIVE WHERE SM_SCRIP_CODE = '839212';
+	select * from RMS_FNO_SPAN_MARGIN WHERE RSM_SECURITY_ID = '839212';
+	
+	
+T+5	SELECT ENTITY_SQ_OFF_MODE FROM ENTITY_MASTER WHERE ENTITY_CODE='F102';
+	
+EARLY PAYIN	select * from RMS_EARLY_PAYIN;
+	
+	select FNDEC ('ENC-E554A13E992774E92C6008F5B125354E');
+	
+	
+Delete Database	SHOW BINARY LOGS;
+	PURGE BINARY LOGS TO 'binlog.000107';
+	
+Expression editor	ToDecimal([BaseDelta]) / ToDecimal([NetQuantity])
+	
+	
+	
+	
+MWPL	SELECT * FROM DRV_BHAV_COPY WHERE DBC_SCRIP_CODE= '26000';
+	SELECT *  FROM RMS_MEMWISE_UPLOADED_LIMIT;
+	SELECT * FROM RMS_MEMBER_FNO_POS_LIMIT_DETAIL;
+	SELECT * FROM RMS_CLIENTWISE_UPLOADED_LIMIT;
+	SELECT * FROM RMS_CLIENT_FNO_POS_LIMIT_DETAIL;
+	select * from RMS_FNO_DELTA;
+	select * from RMS_RISK_PROFILE_MAST where RPM_CODE= 'R16';
+	select * from SECURITY_MASTER where SM_SCRIP_CODE='44285';
+	select * from L1_WATCH_ACTIVE where L1_SCRIP_CODE = 44285;
+	select * from BAN_NET_POSITION;
+	SELECT * FROM RMS_FNO_DELTA WHERE rfd_symbol LIKE '%SAIL%' AND RFD_STRIKE_PRICE= '140';
+	
+	
+MCX	select * from SECURITY_MASTER where SM_EXCHANGE='NCDEX';
+	select * from RMS_FNO_SPAN_MARGIN where RSM_EXCHANGE='NCDEX';
+	select * from DRV_BHAV_COPY where DBC_EXCHANGE= 'ncdex';
+	select * from RMS_MCX_EXP_MARGIN;
+	
+File uploader	select * from GO_FILEUPLOAD_CONFIG;
+	
+	
+	SHOW processlist;
+	
+	EAM_VERSION_NO needs to change by 100
+	
+Pledge approved list	select * from RMS_APPROVE_PLEDG_SCRIPT;
 
-       PATH	                               cd /home/rsapp/Application/Exec/ShellScripts	
-	                                       cd Application/Exec/ShellScripts	
-	Old data delete                        ./KafkaQueDelete.sh	
-	Fetch from DB                          ./KafkaRecon.sh	
+
+
+
+
+
+		
+	SUDO CRONTAB -l	
+	lo	log path
+	ll *_*	to search
+	A	
+	X	back
+	S	status
+	cd ..	one step back (backspace)
+	df -h	check Storage
 		
 		
 		
-         go>	./InMemRedis MCX M	
+OTP	web ---enter	
+	wslo	
+	enter ll	
+	vi loginOTPcheck.log	
+	or	
+	tail -f loginOTPcheck.log	
+		
+		
+exit without saving	escape :q!	
+save & exit	:wq	
+DB password	ITI_OMS_UAT:/home/rsapp/RMS_DELIVERY > vi DBconf.txt	
+	Escape G	
+		
+		
+		
+start ApacheTomcat	RS_TEST_BORIVALI:/home/rsapp/Application/ApacheTomcat/bin > wsb1	
+	RS_TEST_BORIVALI:/home/rsapp/Application/ApacheTomcat1/bin > ./startup.sh	
+		
+		
+		
+	pkill -9 (process name)	
+		
+log	lo> vi log.NseCMExchAdap	
+		
+rsapp>	telnet 172.19.245.107 10262	
+		
+KAFKA	pf kafka	command to check kafka running or not
+PATH	cd /home/rsapp/Application/KafkaServer	
+	cd Application/KafkaServer	
+	./RestartKafka.sh	to start kafka
+PATH	cd /home/rsapp/Application/Exec/ShellScripts	
+	cd Application/Exec/ShellScripts	
+	./KafkaQueDelete.sh	Old data delete
+	./KafkaRecon.sh	Fetch from DB
+		
+		
+		
+go>	./InMemRedis MCX M	
+	./InMemRedis NSE D	
+		
+		
+golang		
+		
+		
+		
+		
+		
+IPO	/home/rsapp/Rupee_GO_Service/rs-web-ipoorders >	
+	cd Rupee_GO_Service/rs-web-ipoorders	
+	Go_Run.sh	
+		
+	 ps -aef|grep -i Rupee_GO_Service	
+		
+		
+Go file uploader	cd Rupee_GO_Service/rs-web-fileupload	
+		
+		
+	/home/rsapp/Rupee_GO_Service > ./RestartGoService.sh start	
+		
+Deployment process	paste the patch in rsapp>deployment from winscp	
+	go to putty path	
+	rsapp>deployment	
+	ll	
+	chmod 775 patchname	
+	cp patchname release	
+	./Deployment.sh	
+	password: rupee@123	
+		
+		
+	:/home/rsapp/Application/ApacheTomcat/webapps/RupeeSeedWSUE/WEB-INF/classes >	
+		
+stop broadcast	NseCMBcastAdap	
+		
+		
+	sl (enter)	
+	/home/rsapp/Application/Exec/ShellScripts/	
+	cd Application/Exec/ShellScripts	
+	./AutoStartSystem.sh	./AutoStartExch.sh
+To delete	./DelLog.sh	
+		
+How to start SLBM Exhc		
+	s>stop	
+	NseSLBMExchAdap	
+	s>start	
+	NseSLBMExchAdap	
+		
+to check connection	 ShowConnStatus.sh	
+		
+		
+To check Notifier status	pf notifier	
+		
+To start notifier	1. go to path	
+	:/home/rsapp/Rupee_GO_OMS/rs-oms-notifier >	
+	cd Rupee_GO_OMS/rs-oms-notifier	
+	2. Run Go_Run.sh	
+	./Go_Run.sh	
+		
+start redis	cd redis/Installed/bin	
+	./StartUpRedis.sh	
+		
+		
+MWPL	cd Rupee_GO_Service/rs-web-miniadmin	
+	./Go_Run.sh	
+		
+	cd Rupee_GO_Job_Service/rs-job-memberposlimit	
+	./Go_Run.sh	
+		
+check logs	Rupee_GO_Job_Service/Log/20260130 > vi rs-job-memberposlimit-GoLog.log	
+		
+		
+	after oms stop	
+	KillJunk.sh	
+	CleanIPCS	
+		
+	table/alter/insert	
+		
+		
+vpn	vi log.McxCOMBoxAdap	
+	 telnet 192.168.195.12 19106	
