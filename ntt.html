@@ -2,68 +2,91 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Circuit Threshold Checker</title>
-
-<!-- ✅ External CSS LINK -->
-<link rel="stylesheet" href="style.css">
+<title>Circuit Threshold</title>
 
 <style>
-/* Base layout (agar style.css load na ho to bhi kaam kare) */
 body {
   font-family: Arial, sans-serif;
-  background: #f1f3f6;
-  padding: 30px;
+  background: #f2f2f2;
+  padding: 20px;
 }
 
 .card {
-  background: #fff;
-  padding: 25px;
-  max-width: 600px;
+  max-width: 420px;
   margin: auto;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  padding: 18px;
+}
+
+.card h2 {
+  background: #0b7a0b;
+  color: #fff;
+  padding: 12px;
+  text-align: center;
   border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  font-size: 18px;
+  margin-bottom: 18px;
 }
 
 label {
   display: block;
-  margin-top: 12px;
+  margin-bottom: 12px;
+  color: #0b7a0b;
+  font-size: 14px;
 }
 
 input {
-  width: 240px;
-  padding: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #9ccc9c;
 }
 
 button {
-  margin-top: 20px;
-  padding: 10px 20px;
-  background: #1976d2;
-  color: #f7f7f7;
+  width: 100%;
+  background: #0b7a0b;
+  color: #fff;
+  padding: 10px;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
+  font-size: 15px;
   cursor: pointer;
+  margin-top: 10px;
 }
 
 .result {
-  margin-top: 30px;
-  padding: 20px;
+  margin-top: 18px;
+  padding: 14px;
+  border-radius: 8px;
   border: 1px solid #ccc;
-  background-color: #f7f7f7;
-  line-height: 1.6;
+  background: #f9f9f9;
+  font-size: 14px;
 }
 
-/* ---- CSS FROM 2nd CODE ---- */
-.blocked { color: red; font-weight: bold; }
-.unblocked { color: green; font-weight: bold; }
-.label { color: blue; font-weight: bold; }
-.range { color: #555; }
+/* 🔥 COLOR RULES */
+.buy {
+  color: #1565c0; /* BLUE */
+  font-weight: bold;
+}
+
+.sell {
+  color: #d32f2f; /* RED */
+  font-weight: bold;
+}
+
+.unblock {
+  color: #2e7d32; /* GREEN */
+  font-weight: bold;
+}
 </style>
 </head>
 
 <body>
 
 <div class="card">
-  <h2>Circuit Threshold Calculator</h2>
+  <h2>Circuit Threshold</h2>
 
   <label>Close Price
     <input type="number" id="close" step="0.01">
@@ -87,7 +110,9 @@ button {
 
   <button onclick="calculate()">Calculate</button>
 
-  <div class="result" id="output"></div>
+  <div class="result" id="output">
+    Enter values and click Calculate
+  </div>
 </div>
 
 <script>
@@ -100,27 +125,28 @@ function calculate() {
 
   if (isNaN(close) || isNaN(lower) || isNaN(upper)) {
     document.getElementById('output').innerHTML =
-      "<span class='blocked'>Please enter all valid values.</span>";
+      "<span class='sell'>Please enter all valid values.</span>";
     return;
   }
 
-  const buyBlockLTP = close - ((close - lower) * blockPct / 100);
-  const sellBlockLTP = close + ((upper - close) * blockPct / 100);
-
-  const buyUnblockLTP = close - ((close - lower) * unblockPct / 100);
-  const sellUnblockLTP = close + ((upper - close) * unblockPct / 100);
+  const buyBlock = close - ((close - lower) * blockPct / 100);
+  const sellBlock = close + ((upper - close) * blockPct / 100);
+  const buyUnblock = close - ((close - lower) * unblockPct / 100);
+  const sellUnblock = close + ((upper - close) * unblockPct / 100);
 
   document.getElementById('output').innerHTML = `
-    <span class="label">Buy Orders Blocked (≤):</span>
-    <span class="blocked">₹${buyBlockLTP.toFixed(2)}</span><br><br>
+    <div class="buy">
+      🔵 BUY blocked when LTP less than ${buyBlock.toFixed(2)}
+    </div><br>
 
-    <span class="label">Sell Orders Blocked (≥):</span>
-    <span class="blocked">₹${sellBlockLTP.toFixed(2)}</span><br><br>
+    <div class="sell">
+      🔴 SELL blocked when LTP greater than ${sellBlock.toFixed(2)}
+    </div><br>
 
-    <span class="label">Orders Unblocked Between:</span>
-    <span class="unblocked">
-      ₹${buyUnblockLTP.toFixed(2)} – ₹${sellUnblockLTP.toFixed(2)}
-    </span>
+    <div class="unblock">
+      🟢 UNBLOCK when LTP is between
+      ${buyUnblock.toFixed(2)} to ${sellUnblock.toFixed(2)}
+    </div>
   `;
 }
 </script>
