@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Peak Margin – Incremental Buyback</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f2f2f2;
+  padding: 20px;
+}
+
+.card {
+  max-width: 600px;
+  margin: auto;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  padding: 18px;
+}
+
+.header {
+  background: #0b7a0b;
+  color: #fff;
+  text-align: center;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 18px;
+}
+
+label {
+  display: block;
+  margin-top: 10px;
+  color: #0b7a0b;
+}
+
+input {
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #9ccc9c;
+}
+
+button {
+  width: 100%;
+  margin-top: 16px;
+  padding: 10px;
+  background: #0b7a0b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+  font-size: 14px;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+th {
+  background: #e8f5e9;
+}
+
+.good { color: #2e7d32; font-weight: bold; }
+.need { color: #ef6c00; font-weight: bold; }
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <div class="header">Peak Margin – Incremental Buyback</div>
+
+  <label>Sell Quantity
+    <input type="number" id="sellQty" value="10">
+  </label>
+
+  <label>Sell Price
+    <input type="number" id="sellPrice" value="100">
+  </label>
+
+  <label>Peak Margin %
+    <input type="number" id="peakPct" value="20">
+  </label>
+
+  <label>Available Cash (₹)
+    <input type="number" id="cash" value="0">
+  </label>
+
+  <label>Already Bought Qty
+    <input type="number" id="prevBuy" value="8">
+  </label>
+
+  <label>New Buy Qty
+    <input type="number" id="newBuy" value="1">
+  </label>
+
+  <button onclick="calc()">Calculate</button>
+
+  <div id="output"></div>
+</div>
+
+<script>
+function calc() {
+  const SQ = +sellQty.value;
+  const P = +sellPrice.value;
+  const PM = +peakPct.value;
+  const cash = +cashEl.value;
+  const prevBuy = +prevBuyEl.value;
+  const newBuy = +newBuyEl.value;
+
+  const sellValue = SQ * P;
+  const peakBlocked = sellValue * PM / 100;
+  const usableExposure = sellValue - peakBlocked + cash;
+
+  const totalBuyQty = prevBuy + newBuy;
+  const totalBuyValue = totalBuyQty * P;
+
+  const requiredMargin = Math.max(0, totalBuyValue - usableExposure);
+
+  output.innerHTML = `
+    <table>
+      <tr><th>Item</th><th>Value</th></tr>
+      <tr><td>Sell Value</td><td>₹${sellValue}</td></tr>
+      <tr><td>Peak Blocked</td><td>₹${peakBlocked}</td></tr>
+      <tr><td><b>Usable Exposure</b></td><td><b>₹${usableExposure}</b></td></tr>
+      <tr><td>Previous Buy Qty</td><td>${prevBuy}</td></tr>
+      <tr><td>New Buy Qty</td><td>${newBuy}</td></tr>
+      <tr><td><b>Total Buy Qty</b></td><td><b>${totalBuyQty}</b></td></tr>
+      <tr><td>Total Buy Value</td><td>₹${totalBuyValue}</td></tr>
+      <tr>
+        <td><b>Additional Margin Required</b></td>
+        <td class="${requiredMargin > 0 ? 'need' : 'good'}">
+          ₹${requiredMargin}
+        </td>
+      </tr>
+    </table>
+  `;
+}
+
+const sellQty = document.getElementById("sellQty");
+const sellPrice = document.getElementById("sellPrice");
+const peakPct = document.getElementById("peakPct");
+const cashEl = document.getElementById("cash");
+const prevBuyEl = document.getElementById("prevBuy");
+const newBuyEl = document.getElementById("newBuy");
+const output = document.getElementById("output");
+</script>
+
+</body>
+</html>
