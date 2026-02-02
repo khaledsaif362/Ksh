@@ -12,7 +12,7 @@ body {
 }
 
 .card {
-  max-width: 520px;
+  max-width: 560px;
   margin: auto;
   background: #ffffff;
   border-radius: 14px;
@@ -61,14 +61,38 @@ button {
   border-radius: 12px;
   border: 1px solid #ddd;
   background: #fafafa;
-  line-height: 1.6;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th {
+  background: #e8f5e9;
+  text-align: left;
+  padding: 8px;
+  border: 1px solid #c8e6c9;
+}
+
+td {
+  padding: 8px;
+  border: 1px solid #ddd;
+}
+
+.good {
+  color: #2e7d32;
+  font-weight: bold;
+}
+
+.need {
+  color: #ef6c00;
+  font-weight: bold;
 }
 
 .sell { color: #d32f2f; font-weight: bold; }
 .buy { color: #1565c0; font-weight: bold; }
-.need { color: #ef6c00; font-weight: bold; }
-.muted { color: #555; }
-hr { border: none; border-top: 1px solid #ddd; margin: 10px 0; }
 </style>
 </head>
 
@@ -104,35 +128,74 @@ hr { border: none; border-top: 1px solid #ddd; margin: 10px 0; }
 
 <script>
 function check() {
-  const sellQty   = Number(document.getElementById("sellQty").value);
-  const sellPrice= Number(document.getElementById("sellPrice").value);
-  const peakPct  = Number(document.getElementById("peakPct").value);
-  const cash     = Number(document.getElementById("cash").value);
-  const buyQty   = Number(document.getElementById("buyQty").value);
+  const sellQty = Number(sellQtyEl.value);
+  const sellPrice = Number(sellPriceEl.value);
+  const peakPct = Number(peakPctEl.value);
+  const cash = Number(cashEl.value);
+  const buyQty = Number(buyQtyEl.value);
 
   const sellValue = sellQty * sellPrice;
   const peakBlocked = sellValue * peakPct / 100;
   const buyValue = buyQty * sellPrice;
-
-  // 🔒 Only peak is blocked, rest allowed
   const usableExposure = sellValue - peakBlocked + cash;
   const requiredMargin = Math.max(0, buyValue - usableExposure);
 
-  document.getElementById("output").innerHTML = `
-    <div class="sell">🔴 Sold: ${sellQty} @ ₹${sellPrice}</div>
-    <div class="muted">Peak Margin Blocked: ₹${peakBlocked.toFixed(2)}</div>
-    <div class="muted">Available Cash: ₹${cash.toFixed(2)}</div>
-
-    <hr>
-
-    <div class="buy">🔵 Buy Attempt: ${buyQty} qty</div>
-    <div class="muted">Buy Value: ₹${buyValue.toFixed(2)}</div>
-
-    <div class="need">
-      Required Additional Margin: ₹${requiredMargin.toFixed(2)}
-    </div>
+  output.innerHTML = `
+    <table>
+      <tr>
+        <th>Item</th>
+        <th>Calculation</th>
+        <th>Amount (₹)</th>
+      </tr>
+      <tr>
+        <td class="sell">Sell Value</td>
+        <td>${sellQty} × ${sellPrice}</td>
+        <td>${sellValue}</td>
+      </tr>
+      <tr>
+        <td>Peak Margin Blocked</td>
+        <td>${sellValue} × ${peakPct}%</td>
+        <td>${peakBlocked}</td>
+      </tr>
+      <tr>
+        <td>Remaining After Peak</td>
+        <td>${sellValue} − ${peakBlocked}</td>
+        <td>${sellValue - peakBlocked}</td>
+      </tr>
+      <tr>
+        <td>Available Cash</td>
+        <td>Given</td>
+        <td>${cash}</td>
+      </tr>
+      <tr>
+        <td class="good"><b>Total Buying Power</b></td>
+        <td>Remaining + Cash</td>
+        <td><b>${usableExposure}</b></td>
+      </tr>
+      <tr>
+        <td class="buy">Buy Order Value</td>
+        <td>${buyQty} × ${sellPrice}</td>
+        <td>${buyValue}</td>
+      </tr>
+      <tr>
+        <td class="${requiredMargin > 0 ? 'need' : 'good'}">
+          <b>Additional Margin Required</b>
+        </td>
+        <td>Buy − Buying Power</td>
+        <td class="${requiredMargin > 0 ? 'need' : 'good'}">
+          <b>${requiredMargin}</b>
+        </td>
+      </tr>
+    </table>
   `;
 }
+
+const sellQtyEl = document.getElementById("sellQty");
+const sellPriceEl = document.getElementById("sellPrice");
+const peakPctEl = document.getElementById("peakPct");
+const cashEl = document.getElementById("cash");
+const buyQtyEl = document.getElementById("buyQty");
+const output = document.getElementById("output");
 </script>
 
 </body>
