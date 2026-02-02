@@ -124,16 +124,16 @@ function calculate() {
 
   document.getElementById('output').innerHTML = `
     <div class="buy">
-      🔵 BUY Orders BLOCKED when LTP less than ₹${buyBlockLTP.toFixed(2)}
+      🔵 BUY Orders BLOCKED when LTP less than ${buyBlockLTP.toFixed(2)}
     </div><br>
 
     <div class="sell">
-      🔴 SELL Orders BLOCKED when LTP greater than ₹${sellBlockLTP.toFixed(2)}
+      🔴 SELL Orders BLOCKED when LTP greater than ${sellBlockLTP.toFixed(2)}
     </div><br>
 
     <div class="unblock">
       🟢 Orders UNBLOCKED when LTP is between
-      ₹${buyUnblockLTP.toFixed(2)} – ₹${sellUnblockLTP.toFixed(2)}
+      ₹${buyUnblockLTP.toFixed(2)} to ${sellUnblockLTP.toFixed(2)}
     </div>
   `;
 }
