@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Peak Margin – Required Margin</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f2f2f2;
+  padding: 20px;
+}
+
+.card {
+  max-width: 520px;
+  margin: auto;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  padding: 18px;
+}
+
+.header {
+  background: #0b7a0b;
+  color: #fff;
+  text-align: center;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 18px;
+}
+
+label {
+  display: block;
+  margin-top: 12px;
+  color: #0b7a0b;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #9ccc9c;
+}
+
+button {
+  width: 100%;
+  margin-top: 18px;
+  padding: 12px;
+  background: #0b7a0b;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+.result {
+  margin-top: 20px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  background: #fafafa;
+  line-height: 1.6;
+}
+
+.sell { color: #d32f2f; font-weight: bold; }
+.buy { color: #1565c0; font-weight: bold; }
+.need { color: #ef6c00; font-weight: bold; }
+.muted { color: #555; }
+hr { border: none; border-top: 1px solid #ddd; margin: 10px 0; }
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <div class="header">Peak Margin – Required Margin</div>
+
+  <label>Sell Quantity
+    <input type="number" id="sellQty" value="10">
+  </label>
+
+  <label>Sell Price
+    <input type="number" id="sellPrice" value="100">
+  </label>
+
+  <label>Peak Margin %
+    <input type="number" id="peakPct" value="20">
+  </label>
+
+  <label>Available Cash (₹)
+    <input type="number" id="cash" value="0">
+  </label>
+
+  <label>Buy Quantity Attempt
+    <input type="number" id="buyQty" value="10">
+  </label>
+
+  <button onclick="check()">Check</button>
+
+  <div class="result" id="output"></div>
+</div>
+
+<script>
+function check() {
+  const sellQty   = Number(document.getElementById("sellQty").value);
+  const sellPrice= Number(document.getElementById("sellPrice").value);
+  const peakPct  = Number(document.getElementById("peakPct").value);
+  const cash     = Number(document.getElementById("cash").value);
+  const buyQty   = Number(document.getElementById("buyQty").value);
+
+  const sellValue = sellQty * sellPrice;
+  const peakBlocked = sellValue * peakPct / 100;
+  const buyValue = buyQty * sellPrice;
+
+  // 🔒 Only peak is blocked, rest allowed
+  const usableExposure = sellValue - peakBlocked + cash;
+  const requiredMargin = Math.max(0, buyValue - usableExposure);
+
+  document.getElementById("output").innerHTML = `
+    <div class="sell">🔴 Sold: ${sellQty} @ ₹${sellPrice}</div>
+    <div class="muted">Peak Margin Blocked: ₹${peakBlocked.toFixed(2)}</div>
+    <div class="muted">Available Cash: ₹${cash.toFixed(2)}</div>
+
+    <hr>
+
+    <div class="buy">🔵 Buy Attempt: ${buyQty} qty</div>
+    <div class="muted">Buy Value: ₹${buyValue.toFixed(2)}</div>
+
+    <div class="need">
+      Required Additional Margin: ₹${requiredMargin.toFixed(2)}
+    </div>
+  `;
+}
+</script>
+
+</body>
+</html>
