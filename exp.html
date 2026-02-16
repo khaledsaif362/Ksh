@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Spread / Hedge Exposure</title>
+
+<style>
+body{
+  font-family: Arial;
+  background:#eef6ff;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+
+.card{
+  background:white;
+  padding:25px;
+  border-radius:12px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.15);
+  width:340px;
+}
+
+input{
+  width:100%;
+  padding:10px;
+  margin:8px 0;
+  font-size:16px;
+}
+
+.result{
+  margin-top:15px;
+  line-height:1.9;
+  font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+<h3>Spread / Hedge Exposure</h3>
+
+<input id="mar" type="number" placeholder="Nifty Mar Value">
+<input id="apr" type="number" placeholder="Nifty Apr Value">
+
+<div class="result">
+Spread Gross Value: <span id="gross">0</span><br>
+Spread Net Value: <span id="net">0</span><br>
+Exposure Value: <span id="expo">0</span>
+</div>
+
+</div>
+
+<script>
+function calculate(){
+
+  let mar = Number(document.getElementById("mar").value) || 0;
+  let apr = Number(document.getElementById("apr").value) || 0;
+
+  // Excel logic
+  let gross = mar + apr;
+  let net = Math.abs(mar - apr);
+
+  let exposure =
+    ((gross - net) / 2) * 0.02 * 0.34
+    + (net * 0.02);
+
+  document.getElementById("gross").textContent = gross.toFixed(2);
+  document.getElementById("net").textContent = net.toFixed(2);
+  document.getElementById("expo").textContent = exposure.toFixed(2);
+}
+
+document.getElementById("mar").oninput = calculate;
+document.getElementById("apr").oninput = calculate;
+</script>
+
+</body>
+</html>
