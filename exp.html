@@ -10,6 +10,7 @@ body{
   font-family:"Segoe UI", Arial, sans-serif;
   margin:0;
   background:#f5f5f5;
+  padding-top:60px;   /* 👈 TOP SPACE (2–3 lines) */
 }
 
 /* ===== HEADER ===== */
@@ -155,7 +156,7 @@ tfoot td{
 <thead>
 <tr>
 <th>Type</th>
-<th>Detailed Steps</th>
+<th>Calculations</th>
 <th>Exposure</th>
 <th>Remove</th>
 </tr>
@@ -216,27 +217,30 @@ function submitData(){
 
     const gross = A + B;
     const net = Math.abs(A - B);
-    const hedged = (gross - net) / 2;
+    const spreadPortion = (gross - net) / 2;
 
-    const hedgeExp = hedged * 0.02 * 0.34;
-    const unhedgedExp = net * 0.02;
+    const spreadExposure = spreadPortion * 0.02 * 0.34;
+    const balanceExposure = net * 0.02;
 
-    exposure = hedgeExp + unhedgedExp;
+    exposure = spreadExposure + balanceExposure;
 
     steps = `
 1) 1st Contract = ${A}<br>
 2) 2nd Contract = ${B}<br><br>
 
-3) Gross = ${A} + ${B} = <b>${gross}</b><br>
-4) Net Difference = |${A} − ${B}| = <b>${net}</b><br><br>
+3) Gross Spread = ${A} + ${B} = ${gross}<br>
+4) Net Spread = ${A} − ${B} = ${net}<br><br>
 
-5) Hedged Quantity = (${gross} − ${net}) / 2 = <b>${hedged}</b><br>
-6) Hedge Exposure = ${hedged} × 2% × 34% = <b>${hedgeExp.toFixed(2)}</b><br><br>
+5) Gross Exp = (${gross} − ${net}) / 2 = ${spreadPortion}<br>
+   <br>&nbsp;&nbsp
 
-7) Unhedged Quantity = ${net}<br>
-8) Unhedged Exposure = ${net} × 2% = <b>${unhedgedExp.toFixed(2)}</b><br><br>
+   = ${spreadPortion} × 2% × 34% = <b>${spreadExposure.toFixed(2)}</b><br><br>
 
-<b>Final Exposure = ${hedgeExp.toFixed(2)} + ${unhedgedExp.toFixed(2)} = ${exposure.toFixed(2)}</b>
+6) Net Exp = ${net}<br><br>&nbsp&nbsp
+
+   = ${net} × 2% = <b>${balanceExposure.toFixed(2)}</b><br><br>
+
+<b>Final Exposure = ${spreadExposure.toFixed(2)} + ${balanceExposure.toFixed(2)} = ${exposure.toFixed(2)}</b>
 `;
   }
 
