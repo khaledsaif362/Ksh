@@ -12,7 +12,7 @@ body{
   background:#eef2f5;
   display:flex;
   justify-content:center;
-  padding:100px 10px 40px;  /* ⭐ TOP SPACE ADDED */
+  padding:100px 10px 40px;
 }
 
 .wrapper{
@@ -36,11 +36,13 @@ body{
   box-shadow:0 10px 25px rgba(0,0,0,0.12);
 }
 
+/* ENTRY BAR */
+
 .entry{
   display:flex;
   gap:10px;
   align-items:center;
-  overflow-x:auto;
+  flex-wrap:wrap;
   margin-bottom:20px;
 }
 
@@ -50,6 +52,7 @@ input, select{
   border-radius:8px;
   border:1px solid #cfd8dc;
   min-width:120px;
+  flex:1 1 120px;
 }
 
 select{
@@ -64,9 +67,12 @@ button{
   font-weight:700;
   border:none;
   border-radius:8px;
-  padding:11px 20px;
+  padding:11px 22px;
   cursor:pointer;
+  flex:0 0 auto;
 }
+
+/* PREVIEW CARD */
 
 .preview-card{
   border-radius:12px;
@@ -75,16 +81,26 @@ button{
   box-shadow:0 4px 10px rgba(0,0,0,0.06);
 }
 
+/* ⭐ TRUE INLINE HEADER */
+
 .preview-header{
   background:#f1f8e9;
   padding:14px 18px;
   font-size:18px;
   font-weight:700;
   color:#2e7d32;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
 }
+
+/* checkbox inline tweak */
+
+.preview-header input{
+  margin-left:8px;
+  transform:scale(1.2);
+  vertical-align:middle;
+  cursor:pointer;
+}
+
+/* TABLE */
 
 table{
   width:100%;
@@ -150,7 +166,8 @@ tfoot td{
 <div class="entry">
 
 <select id="type" onchange="changeType()">
-  <option value="Future">FUTURE</option>
+  <option value="FutIdx">FUTIDX</option>
+  <option value="FutStk">FUTSTK</option>
   <option value="Option">OPTION</option>
 </select>
 
@@ -169,8 +186,7 @@ tfoot td{
 <div class="preview-card">
 
 <div class="preview-header">
-  Preview
-  <input type="checkbox" id="detailed" onchange="togglePreview()">
+  Preview <input type="checkbox" id="detailed" onchange="togglePreview()">
 </div>
 
 <table id="calcTable">
@@ -178,7 +194,7 @@ tfoot td{
 <thead>
 <tr>
 <th>Type</th>
-<th>Calculations</th>
+<th>Calculations / Inputs</th>
 <th>Exposure</th>
 <th>Remove</th>
 </tr>
@@ -208,14 +224,14 @@ let total = 0;
 
 function changeType(){
 
-  if(type.value === "Future"){
-    exp.style.display = "none";
-    price2.style.display = "";
-    qty2.style.display = "";
-  }else{
+  if(type.value === "Option"){
     exp.style.display = "";
     price2.style.display = "none";
     qty2.style.display = "none";
+  }else{
+    exp.style.display = "none";
+    price2.style.display = "";
+    qty2.style.display = "";
   }
 }
 
@@ -231,8 +247,12 @@ function submitData(){
 
   let exposure = 0;
   let calcHTML = "";
+  let inputHTML = "";
 
-  if(t === "Future"){
+  if(t === "FutIdx" || t === "FutStk"){
+
+    const percent = (t === "FutStk") ? 0.035 : 0.02;
+    const percentText = (percent*100).toFixed(1);
 
     const V1 = p1 * q1;
     const V2 = p2 * q2;
@@ -241,10 +261,13 @@ function submitData(){
     const net = Math.abs(V1 - V2);
     const spread = (gross - net) / 2;
 
-    const grossExp = spread * 0.02 * 0.34;
-    const netExp = net * 0.02;
+    const grossExp = spread * percent * 0.34;
+    const netExp = net * percent;
 
     exposure = grossExp + netExp;
+
+    inputHTML =
+      `Price1=${p1}, Qty1=${q1}<br>Price2=${p2}, Qty2=${q2}`;
 
     calcHTML = `
 <table class="inner-table">
@@ -253,9 +276,9 @@ function submitData(){
 <tr><td>3</td><td>Gross Spread = ${V1} + ${V2} = ${gross}</td></tr>
 <tr><td>4</td><td>Net Spread = ${V1} − ${V2} = ${net}</td></tr>
 <tr><td>5</td><td>Gross Exp = (${gross} − ${net}) / 2 = ${spread}<br>
-= ${spread} × 2% × 34% = ${grossExp.toFixed(2)}</td></tr>
+= ${spread} × ${percentText}% × 34% = ${grossExp.toFixed(2)}</td></tr>
 <tr><td>6</td><td>Net Exp = ${net}<br>
-= ${net} × 2% = ${netExp.toFixed(2)}</td></tr>
+= ${net} × ${percentText}% = ${netExp.toFixed(2)}</td></tr>
 <tr><td></td><td><b>Final Exposure = ${grossExp.toFixed(2)} + ${netExp.toFixed(2)} = ${exposure.toFixed(2)}</b></td></tr>
 </table>`;
   }
@@ -264,6 +287,9 @@ function submitData(){
 
     const contract = p1 * q1;
     exposure = contract * expP / 100;
+
+    inputHTML =
+      `Price=${p1}, Qty=${q1}<br>Exp%=${expP}`;
 
     calcHTML = `
 <table class="inner-table">
@@ -280,7 +306,11 @@ function submitData(){
 
   row.innerHTML = `
     <td>${t}</td>
-    <td class="calc-cell" data-detail='${encodeURIComponent(calcHTML)}'>-</td>
+    <td class="calc-cell"
+        data-detail='${encodeURIComponent(calcHTML)}'
+        data-input='${encodeURIComponent(inputHTML)}'>
+        ${inputHTML}
+    </td>
     <td>${exposure.toFixed(2)}</td>
     <td><button class="remove-btn" onclick="removeRow(this, ${exposure})">X</button></td>
   `;
@@ -301,7 +331,7 @@ function togglePreview(){
 
     cell.innerHTML = show
       ? decodeURIComponent(cell.dataset.detail)
-      : "-";
+      : decodeURIComponent(cell.dataset.input);
 
   });
 }
