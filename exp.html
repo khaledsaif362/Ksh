@@ -2,79 +2,295 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Spread / Hedge Exposure</title>
+<title>Exposure Calculator</title>
 
 <style>
+
 body{
-  font-family: Arial;
-  background:#eef6ff;
+  font-family:"Segoe UI", Arial, sans-serif;
+  margin:0;
+  background:#f5f5f5;
+}
+
+/* ===== HEADER ===== */
+
+.header{
+  background:#2e7d32;
+  color:white;
+  padding:18px 28px;
+  font-size:22px;
+  font-weight:600;
+}
+
+/* ===== MAIN AREA ===== */
+
+.container{
+  padding:30px;
+}
+
+/* ===== ENTRY BAR ===== */
+
+.entry{
   display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
+  gap:12px;
+  margin-bottom:25px;
 }
 
-.card{
+select,input{
+  padding:11px;
+  font-size:15px;
+  border-radius:6px;
+  border:1px solid #ccc;
+  flex:1;
+}
+
+button{
+  padding:11px 20px;
+  font-size:15px;
+  border:none;
+  border-radius:6px;
+  background:#2e7d32;
+  color:white;
+  cursor:pointer;
+  font-weight:600;
+}
+
+button:hover{
+  background:#1b5e20;
+}
+
+/* ===== PREVIEW CARD ===== */
+
+.preview-card{
   background:white;
-  padding:25px;
-  border-radius:12px;
-  box-shadow:0 10px 25px rgba(0,0,0,0.15);
-  width:340px;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.12);
+  overflow:hidden;
 }
 
-input{
+.preview-header{
+  background:#e8f5e9;
+  padding:14px 18px;
+  font-size:18px;
+  font-weight:600;
+  color:#2e7d32;
+}
+
+/* ===== TABLE ===== */
+
+table{
   width:100%;
-  padding:10px;
-  margin:8px 0;
-  font-size:16px;
+  border-collapse:collapse;
 }
 
-.result{
-  margin-top:15px;
-  line-height:1.9;
-  font-weight:bold;
+th,td{
+  border:1px solid #e0e0e0;
+  padding:10px;
+  text-align:center;
+  vertical-align:top;
 }
+
+th{
+  background:#2e7d32;
+  color:white;
+}
+
+tr:nth-child(even){
+  background:#fafafa;
+}
+
+/* ===== TOTAL ROW ===== */
+
+tfoot td{
+  font-weight:700;
+  background:#f1f8e9;
+}
+
+/* REMOVE BUTTON */
+
+.remove-btn{
+  background:#c62828;
+  padding:6px 12px;
+  font-size:13px;
+  border-radius:4px;
+  border:none;
+  color:white;
+  cursor:pointer;
+}
+
 </style>
+
 </head>
 
 <body>
 
-<div class="card">
+<div class="header">Exposure Calculator</div>
 
-<h3>Spread / Hedge Exposure</h3>
+<div class="container">
 
-<input id="mar" type="number" placeholder="Nifty Mar Value">
-<input id="apr" type="number" placeholder="Nifty Apr Value">
+<!-- ===== ENTRY ===== -->
 
-<div class="result">
-Spread Gross Value: <span id="gross">0</span><br>
-Spread Net Value: <span id="net">0</span><br>
-Exposure Value: <span id="expo">0</span>
+<div class="entry">
+
+<select id="type" onchange="changeType()">
+  <option value="future">Future</option>
+  <option value="option">Option</option>
+</select>
+
+<input id="v1" type="number" placeholder="1st Contract">
+<input id="v2" type="number" placeholder="2nd Contract">
+
+<button onclick="submitData()">Submit</button>
+
+</div>
+
+<!-- ===== PREVIEW ===== -->
+
+<div class="preview-card">
+
+<div class="preview-header">Preview</div>
+
+<table id="calcTable">
+
+<thead>
+<tr>
+<th>Type</th>
+<th>Detailed Steps</th>
+<th>Exposure</th>
+<th>Remove</th>
+</tr>
+</thead>
+
+<tbody></tbody>
+
+<tfoot>
+<tr>
+<td colspan="2" style="text-align:right;">Total Exposure</td>
+<td id="total">0</td>
+<td></td>
+</tr>
+</tfoot>
+
+</table>
+
 </div>
 
 </div>
 
 <script>
-function calculate(){
 
-  let mar = Number(document.getElementById("mar").value) || 0;
-  let apr = Number(document.getElementById("apr").value) || 0;
+let total = 0;
 
-  // Excel logic
-  let gross = mar + apr;
-  let net = Math.abs(mar - apr);
+const typeEl = document.getElementById("type");
+const v1El = document.getElementById("v1");
+const v2El = document.getElementById("v2");
 
-  let exposure =
-    ((gross - net) / 2) * 0.02 * 0.34
-    + (net * 0.02);
+/* ===== CHANGE TYPE ===== */
 
-  document.getElementById("gross").textContent = gross.toFixed(2);
-  document.getElementById("net").textContent = net.toFixed(2);
-  document.getElementById("expo").textContent = exposure.toFixed(2);
+function changeType(){
+
+  if(typeEl.value === "future"){
+    v1El.placeholder = "1st Contract";
+    v2El.placeholder = "2nd Contract";
+  }else{
+    v1El.placeholder = "Contract Value";
+    v2El.placeholder = "Exp %";
+  }
 }
 
-document.getElementById("mar").oninput = calculate;
-document.getElementById("apr").oninput = calculate;
+/* ===== SUBMIT ENTRY ===== */
+
+function submitData(){
+
+  const type = typeEl.value;
+  const A = Number(v1El.value) || 0;
+  const B = Number(v2El.value) || 0;
+
+  if(A === 0 && B === 0) return;
+
+  let exposure = 0;
+  let steps = "";
+
+  // ===== FUTURE SPREAD =====
+  if(type === "future"){
+
+    const gross = A + B;
+    const net = Math.abs(A - B);
+    const hedged = (gross - net) / 2;
+
+    const hedgeExp = hedged * 0.02 * 0.34;
+    const unhedgedExp = net * 0.02;
+
+    exposure = hedgeExp + unhedgedExp;
+
+    steps = `
+1) 1st Contract = ${A}<br>
+2) 2nd Contract = ${B}<br><br>
+
+3) Gross = ${A} + ${B} = <b>${gross}</b><br>
+4) Net Difference = |${A} − ${B}| = <b>${net}</b><br><br>
+
+5) Hedged Quantity = (${gross} − ${net}) / 2 = <b>${hedged}</b><br>
+6) Hedge Exposure = ${hedged} × 2% × 34% = <b>${hedgeExp.toFixed(2)}</b><br><br>
+
+7) Unhedged Quantity = ${net}<br>
+8) Unhedged Exposure = ${net} × 2% = <b>${unhedgedExp.toFixed(2)}</b><br><br>
+
+<b>Final Exposure = ${hedgeExp.toFixed(2)} + ${unhedgedExp.toFixed(2)} = ${exposure.toFixed(2)}</b>
+`;
+  }
+
+  // ===== OPTION =====
+  else{
+
+    exposure = A * B / 100;
+
+    steps = `
+1) Contract Value = ${A}<br>
+2) Exposure % = ${B}%<br><br>
+
+Exposure = Contract × Exposure% / 100<br>
+         = ${A} × ${B} / 100<br>
+         = <b>${exposure.toFixed(2)}</b>
+`;
+  }
+
+  total += exposure;
+
+  const tbody = document.querySelector("#calcTable tbody");
+
+  const row = tbody.insertRow();
+
+  row.innerHTML = `
+    <td>${type.toUpperCase()}</td>
+    <td style="text-align:left">${steps}</td>
+    <td>${exposure.toFixed(2)}</td>
+    <td><button class="remove-btn" onclick="removeRow(this, ${exposure})">X</button></td>
+  `;
+
+  document.getElementById("total").textContent =
+    total.toFixed(2);
+
+  // Clear inputs
+  v1El.value = "";
+  v2El.value = "";
+  v1El.focus();
+}
+
+/* ===== REMOVE ROW ===== */
+
+function removeRow(btn, exposure){
+
+  const row = btn.parentElement.parentElement;
+
+  row.remove();
+
+  total -= exposure;
+
+  document.getElementById("total").textContent =
+    total.toFixed(2);
+}
+
 </script>
 
 </body>
