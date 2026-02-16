@@ -12,7 +12,7 @@ body{
   background:#eef2f5;
   display:flex;
   justify-content:center;
-  padding:60px 10px;
+  padding:100px 10px 40px;  /* ⭐ TOP SPACE ADDED */
 }
 
 .wrapper{
@@ -41,7 +41,7 @@ body{
   gap:10px;
   align-items:center;
   overflow-x:auto;
-  margin-bottom:22px;
+  margin-bottom:20px;
 }
 
 input, select{
@@ -81,12 +81,14 @@ button{
   font-size:18px;
   font-weight:700;
   color:#2e7d32;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
 }
 
 table{
   width:100%;
   border-collapse:collapse;
-  font-size:14px;
 }
 
 th, td{
@@ -114,8 +116,6 @@ tfoot td{
   border-radius:6px;
   cursor:pointer;
 }
-
-/* INNER CALC TABLE */
 
 .inner-table{
   width:100%;
@@ -168,7 +168,10 @@ tfoot td{
 
 <div class="preview-card">
 
-<div class="preview-header">Preview</div>
+<div class="preview-header">
+  Preview
+  <input type="checkbox" id="detailed" onchange="togglePreview()">
+</div>
 
 <table id="calcTable">
 
@@ -229,7 +232,6 @@ function submitData(){
   let exposure = 0;
   let calcHTML = "";
 
-  // ===== FUTURE =====
   if(t === "Future"){
 
     const V1 = p1 * q1;
@@ -258,11 +260,9 @@ function submitData(){
 </table>`;
   }
 
-  // ===== OPTION =====
   else{
 
     const contract = p1 * q1;
-
     exposure = contract * expP / 100;
 
     calcHTML = `
@@ -276,20 +276,34 @@ function submitData(){
   total += exposure;
 
   const tbody = document.querySelector("#calcTable tbody");
-
   const row = tbody.insertRow();
 
   row.innerHTML = `
     <td>${t}</td>
-    <td>${calcHTML}</td>
+    <td class="calc-cell" data-detail='${encodeURIComponent(calcHTML)}'>-</td>
     <td>${exposure.toFixed(2)}</td>
     <td><button class="remove-btn" onclick="removeRow(this, ${exposure})">X</button></td>
   `;
+
+  togglePreview();
 
   document.getElementById("total").textContent =
     total.toFixed(2);
 
   price1.value = qty1.value = price2.value = qty2.value = exp.value = "";
+}
+
+function togglePreview(){
+
+  const show = document.getElementById("detailed").checked;
+
+  document.querySelectorAll(".calc-cell").forEach(cell => {
+
+    cell.innerHTML = show
+      ? decodeURIComponent(cell.dataset.detail)
+      : "-";
+
+  });
 }
 
 function removeRow(btn, exposure){
