@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SPAN Margin Calculator</title>
+
+<style>
+body{
+  font-family:Segoe UI;
+  background:#0f172a;
+  color:#e5e7eb;
+  padding:20px;
+}
+
+.container{
+  max-width:1200px;
+  margin:auto;
+  background:#111827;
+  padding:20px;
+  border-radius:10px;
+  box-shadow:0 0 20px #000;
+}
+
+h1{
+  text-align:center;
+  color:#60a5fa;
+}
+
+input{
+  padding:8px;
+  margin:5px;
+  border-radius:6px;
+  border:none;
+}
+
+button{
+  background:#2563eb;
+  color:white;
+  border:none;
+  padding:10px 20px;
+  border-radius:6px;
+  cursor:pointer;
+  margin:10px 5px;
+}
+
+button:hover{background:#1d4ed8;}
+
+.export{background:#059669;}
+.add{background:#d97706;}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:20px;
+}
+
+th,td{
+  border:1px solid #374151;
+  padding:8px;
+  text-align:center;
+}
+
+th{
+  background:#1f2937;
+  color:#93c5fd;
+}
+
+.totalBox{
+  margin-top:20px;
+  font-size:18px;
+  text-align:right;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>SPAN Margin Calculator</h1>
+
+<label>Upload SPAN File</label><br>
+<input type="file" id="spanFile"><br>
+
+<label>Upload POSITION File (Optional)</label><br>
+<input type="file" id="posFile"><br>
+
+<hr>
+
+<h3>Manual Position Entry</h3>
+
+<input type="text" id="manualCode" placeholder="Scrip Code">
+<input type="number" id="manualQty" placeholder="Qty">
+
+<button class="add" onclick="addManual()">Add Position</button>
+
+<div id="manualList"></div>
+
+<hr>
+
+<button onclick="calculate()">Calculate SPAN</button>
+<button class="export" onclick="exportExcel()">Export Excel</button>
+
+<div id="output"></div>
+
+</div>
+
+<script>
+
+let manualPositions = [];
+let resultRows = [];
+
+function parse(text){
+  return text.trim().split(/\r?\n/)
+    .map(r => r.split(/,|\t/).map(v=>v.trim()));
+}
+
+// ===== ADD MANUAL POSITION =====
+
+function addManual(){
+
+  const code = document.getElementById("manualCode").value.trim();
+  const qty  = Math.abs(parseFloat(document.getElementById("manualQty").value));
+
+  if(!code || isNaN(qty)){
+    alert("Enter valid code & qty");
+    return;
+  }
+
+  manualPositions.push([code, qty]);
+
+  document.getElementById("manualCode").value="";
+  document.getElementById("manualQty").value="";
+
+  showManual();
+}
+
+function showManual(){
+
+  let html="<b>Manual Positions:</b><br>";
+
+  manualPositions.forEach(p=>{
+    html += `${p[0]} → ${p[1]}<br>`;
+  });
+
+  document.getElementById("manualList").innerHTML = html;
+}
+
+// ===== MAIN CALCULATION =====
+
+function calculate(){
+
+  const spanFile = document.getElementById("spanFile").files[0];
+
+  if(!spanFile){
+    alert("Upload SPAN file");
+    return;
+  }
+
+  Promise.all([
+    spanFile.text(),
+    document.getElementById("posFile").files[0]?.text()
+  ]).then(([spanTxt, posTxt])=>{
+
+    const spanData = parse(spanTxt);
+    const spanHeader = spanData[0];
+
+    const spanCodeCol = spanHeader.indexOf("RSM_SECURITY_ID");
+
+    // 🔥 ONLY RSM_SPAN_1 → RSM_SPAN_16
+    const spanCols = [];
+
+    for(let i=1;i<=16;i++){
+      const idx = spanHeader.indexOf("RSM_SPAN_" + i);
+      if(idx !== -1) spanCols.push(idx);
+    }
+
+    const spanMap = {};
+
+    // ===== BUILD SPAN MAP =====
+
+    spanData.slice(1).forEach(r=>{
+
+      const code = r[spanCodeCol];
+      if(!code) return;
+
+      let worstRaw = 0;
+
+      spanCols.forEach(c=>{
+        const val = parseFloat(r[c]);
+        if(!isNaN(val)){
+          worstRaw = Math.max(worstRaw, Math.abs(val));
+        }
+      });
+
+      // ✅ Values already in rupees — NO scaling
+      spanMap[code] = worstRaw;
+    });
+
+    // ===== GET POSITIONS =====
+
+    let positions = [...manualPositions];
+
+    if(posTxt){
+
+      const posData = parse(posTxt);
+      const posHeader = posData[0];
+
+      const posCodeCol = posHeader.indexOf("Scrip Code");
+      const qtyCol     = posHeader.indexOf("Net Qty");
+
+      posData.slice(1).forEach(r=>{
+        const code = r[posCodeCol];
+        const qty  = Math.abs(parseFloat(r[qtyCol]));
+        if(code && !isNaN(qty)) positions.push([code, qty]);
+      });
+    }
+
+    // ===== CALCULATE =====
+
+    let total = 0;
+
+    let html = `
+    <table>
+      <tr>
+        <th>Scrip Code</th>
+        <th>Qty</th>
+        <th>SPAN</th>
+        <th>SCRIP SPAN</th>
+      </tr>`;
+
+    resultRows = [];
+
+    positions.forEach(p=>{
+
+      const code = p[0];
+      const qty  = p[1];
+
+      if(spanMap[code]){
+
+        const spanUnit = spanMap[code];
+        const span = spanUnit * qty;
+
+        total += span;
+
+        html += `
+        <tr>
+          <td>${code}</td>
+          <td>${qty}</td>
+          <td>${spanUnit.toFixed(2)}</td>
+          <td>${span.toFixed(2)}</td>
+        </tr>`;
+
+        resultRows.push([code, qty, spanUnit, span]);
+      }
+
+    });
+
+    html += `</table>
+      <div class="totalBox">
+        <b>Total SPAN:  ${total.toFixed(2)}</b>
+      </div>`;
+
+    document.getElementById("output").innerHTML = html;
+
+  });
+}
+
+// ===== EXPORT =====
+
+function exportExcel(){
+
+  if(resultRows.length===0){
+    alert("No data");
+    return;
+  }
+
+  let csv = "Scrip Code,Qty,SpanUnit,SPAN\n";
+
+  resultRows.forEach(r=>{
+    csv += r.join(",") + "\n";
+  });
+
+  const blob = new Blob([csv],{type:"text/csv"});
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "span_report.csv";
+  a.click();
+}
+
+</script>
+</body>
+</html>
