@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SPAN + Exposure Calculator</title>
+
+<style>
+body{
+  font-family:Segoe UI;
+  background:#0f172a;
+  color:#e5e7eb;
+  padding:20px;
+}
+
+.container{
+  max-width:1500px;
+  margin:auto;
+  background:#111827;
+  padding:20px;
+  border-radius:10px;
+  box-shadow:0 0 20px #000;
+}
+
+h1{text-align:center;color:#60a5fa;}
+
+input{
+  padding:8px;
+  margin:5px;
+  border-radius:6px;
+  border:none;
+}
+
+button{
+  background:#2563eb;
+  color:white;
+  border:none;
+  padding:10px 18px;
+  border-radius:6px;
+  cursor:pointer;
+  margin:5px;
+}
+
+button:hover{background:#1d4ed8;}
+
+.add{background:#d97706;}
+.clear{background:#dc2626;}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:20px;
+}
+
+th,td{
+  border:1px solid #374151;
+  padding:8px;
+  text-align:center;
+}
+
+th{
+  background:#1f2937;
+  color:#93c5fd;
+}
+
+.removeBtn{
+  background:#dc2626;
+  border:none;
+  color:white;
+  padding:6px 12px;
+  border-radius:5px;
+  cursor:pointer;
+}
+
+.totalBox{
+  margin-top:20px;
+  font-size:18px;
+  text-align:right;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>SPAN + Exposure Calculator</h1>
+
+<label>Upload SPAN File</label><br>
+<input type="file" id="spanFile" accept=".csv,.txt"><br>
+
+<label>Upload POSITION File (Optional)</label><br>
+<input type="file" id="posFile" accept=".csv"><br>
+
+<hr>
+
+<h3>Manual Position Entry</h3>
+
+<input id="mCode" placeholder="Scrip Code">
+<input id="mLTP" type="number" placeholder="LTP">
+<input id="mQty" type="number" placeholder="Qty">
+
+<button class="add" onclick="addManual()">Add Position</button>
+
+<div id="manualList"></div>
+
+<hr>
+
+<button onclick="calculate()">Calculate Margins</button>
+<button class="clear" onclick="clearAll()">Clear All</button>
+
+<div id="output"></div>
+
+</div>
+
+<script>
+
+let manualPositions = [];
+let allPositions = [];
+let spanMap = {};
+
+// ===== UTIL =====
+
+function parse(text){
+  return text.trim().split(/\r?\n/)
+    .map(r => r.split(/,|\t/).map(v=>v.trim()));
+}
+
+function findCol(header, names){
+  for(let i=0;i<header.length;i++){
+    const h = header[i].toLowerCase().replace(/\s+/g,"");
+    for(const n of names){
+      if(h === n.toLowerCase().replace(/\s+/g,""))
+        return i;
+    }
+  }
+  return -1;
+}
+
+// ===== MANUAL ENTRY =====
+
+function addManual(){
+
+  const code = mCode.value.trim();
+  const ltp  = +mLTP.value;
+  const qty  = Math.abs(+mQty.value);
+
+  if(!code || !ltp || !qty){
+    alert("Enter Code, LTP and Qty");
+    return;
+  }
+
+  manualPositions.push({code,ltp,qty});
+
+  mCode.value = mLTP.value = mQty.value = "";
+
+  showManual();
+}
+
+function showManual(){
+
+  manualList.innerHTML =
+    "<b>Manual Positions:</b><br>" +
+    manualPositions.map(p =>
+      `${p.code} | LTP:${p.ltp} | Qty:${p.qty}`
+    ).join("<br>");
+}
+
+// ===== MAIN CALC =====
+
+function calculate(){
+
+  const spanFileObj = spanFile.files[0];
+
+  if(!spanFileObj){
+    alert("Upload SPAN file");
+    return;
+  }
+
+  Promise.all([
+    spanFileObj.text(),
+    posFile.files[0]?.text()
+  ]).then(([spanTxt, posTxt])=>{
+
+    // ===== BUILD SPAN MAP =====
+
+    const spanData = parse(spanTxt);
+    const sh = spanData[0];
+
+    const codeCol = sh.indexOf("RSM_SECURITY_ID");
+    const instCol = sh.indexOf("RSM_INSTRUMENT");
+    const symCol  = sh.indexOf("RSM_SYMBOL_NAME");
+
+    const spanCols = [];
+    for(let i=1;i<=16;i++){
+      const idx = sh.indexOf("RSM_SPAN_" + i);
+      if(idx !== -1) spanCols.push(idx);
+    }
+
+    spanMap = {};
+
+    spanData.slice(1).forEach(r=>{
+
+      const code = r[codeCol];
+      if(!code) return;
+
+      let worst = 0;
+
+      spanCols.forEach(c=>{
+        const v = Math.abs(+r[c]);
+        if(v > worst) worst = v;
+      });
+
+      spanMap[code] = {
+        spanUnit: worst,
+        inst: r[instCol],
+        symbol: r[symCol] || "-"
+      };
+    });
+
+    // ===== COLLECT POSITIONS =====
+
+    allPositions = [...manualPositions];
+
+    if(posTxt){
+
+      const posData = parse(posTxt);
+      const ph = posData[0];
+
+      const codeColP = findCol(ph,
+        ["Scrip Code","ScripCode","SecurityID","Code"]);
+
+      const qtyColP = findCol(ph,
+        ["Net Qty","NetQty","Qty","Quantity"]);
+
+      const ltpColP = findCol(ph,
+        ["LTP","LastPrice","Price","Close"]);
+
+      if(codeColP !== -1 &&
+         qtyColP !== -1 &&
+         ltpColP !== -1){
+
+        posData.slice(1).forEach(r=>{
+
+          const code = r[codeColP];
+          const qty  = Math.abs(+r[qtyColP]);
+          const ltp  = Math.abs(+r[ltpColP]);
+
+          if(code && qty)
+            allPositions.push({code,ltp,qty});
+        });
+      }
+    }
+
+    renderTable();
+  });
+}
+
+// ===== RENDER TABLE =====
+
+function renderTable(){
+
+  let totalSpan = 0;
+  let totalExposure = 0;
+
+  let html = `
+  <table>
+    <tr>
+      <th>Scrip Code</th>
+      <th>Symbol</th>
+      <th>Qty</th>
+      <th>LTP</th>
+      <th>SPAN</th>
+      <th>Scrip SPAN</th>
+      <th>Exposure %</th>
+      <th>Exposure</th>
+      <th>Span+Exp</th>
+      <th>Remove</th>
+    </tr>`;
+
+  allPositions.forEach((p,i)=>{
+
+    const info = spanMap[p.code];
+    if(!info) return;
+
+    const span = info.spanUnit * p.qty;
+
+    const percent =
+      info.inst === "FUTSTK" ? 3.5 : 2;
+
+    const exposure =
+      p.ltp * p.qty * percent / 100;
+
+    const total = span + exposure;
+
+    totalSpan += span;
+    totalExposure += exposure;
+
+    html += `
+    <tr>
+      <td>${p.code}</td>
+      <td>${info.symbol}</td>
+      <td>${p.qty}</td>
+      <td>${p.ltp.toFixed(2)}</td>
+      <td>${info.spanUnit.toFixed(2)}</td>
+      <td>${span.toFixed(2)}</td>
+      <td>${percent}%</td>
+      <td>${exposure.toFixed(2)}</td>
+      <td><b>${total.toFixed(2)}</b></td>
+      <td>
+        <button class="removeBtn"
+          onclick="removeRow(${i})">X</button>
+      </td>
+    </tr>`;
+  });
+
+  html += `</table>
+    <div class="totalBox">
+      <b>Total SPAN: ${totalSpan.toFixed(2)}</b><br>
+      <b>Total Exposure: ${totalExposure.toFixed(2)}</b><br>
+      <b>Total Margin: ${(totalSpan+totalExposure).toFixed(2)}</b>
+    </div>`;
+
+  output.innerHTML = html;
+}
+
+// ===== REMOVE ROW =====
+
+function removeRow(index){
+  allPositions.splice(index,1);
+  renderTable();
+}
+
+// ===== CLEAR ALL =====
+
+function clearAll(){
+
+  manualPositions = [];
+  allPositions = [];
+  spanMap = {};
+
+  manualList.innerHTML = "";
+  output.innerHTML = "";
+
+  spanFile.value = "";
+  posFile.value = "";
+}
+
+</script>
+</body>
+</html>
