@@ -1,162 +1,193 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NISM Series VIII: 100 Q&A</title>
+    <title>NISM Series VIII: 100 Q&A Master</title>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f0f2f5; margin: 0; padding: 15px; }
-        .wrapper { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .sticky-stats { position: sticky; top: 10px; background: #2563eb; color: white; padding: 15px; border-radius: 8px; display: flex; justify-content: space-around; margin-bottom: 20px; z-index: 100; font-weight: bold; }
-        .q-box { border: 1px solid #e5e7eb; padding: 15px; margin-bottom: 20px; border-radius: 8px; background: #fff; }
-        .btn { display: block; width: 100%; text-align: left; padding: 12px; margin: 8px 0; border: 1px solid #d1d5db; border-radius: 6px; background: white; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        body { font-family: system-ui, sans-serif; background: #f0f2f5; margin: 0; padding: 15px; color: #1e293b; }
+        .wrapper { max-width: 650px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .sticky-stats { position: sticky; top: 10px; background: #2563eb; color: white; padding: 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; z-index: 100; font-weight: bold; text-align: center; }
+        .timer { font-size: 1.2rem; color: #fde047; }
+        .q-box { border: 1px solid #e2e8f0; padding: 15px; margin-bottom: 20px; border-radius: 10px; }
+        .btn { display: block; width: 100%; text-align: left; padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 6px; background: white; cursor: pointer; font-size: 14px; }
         .correct { background: #dcfce7 !important; border-color: #16a34a !important; color: #166534; font-weight: bold; }
         .wrong { background: #fee2e2 !important; border-color: #dc2626 !important; color: #991b1b; }
-        .expl { display: none; margin-top: 10px; padding: 12px; background: #eff6ff; border-left: 4px solid #2563eb; font-size: 14px; border-radius: 4px; }
-        #final-res { display: none; text-align: center; padding: 40px; }
-        .pass { color: #16a34a; font-size: 28px; font-weight: bold; }
-        .fail { color: #dc2626; font-size: 28px; font-weight: bold; }
-        #finish-btn { width: 100%; padding: 15px; background: #16a34a; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        .expl { display: none; margin-top: 10px; padding: 12px; background: #eff6ff; border-left: 4px solid #2563eb; font-size: 13px; }
+        #final-res { display: none; text-align: center; padding: 30px; }
+        .pass { color: #16a34a; font-size: 2rem; font-weight: bold; }
+        .fail { color: #dc2626; font-size: 2rem; font-weight: bold; }
+        #finish-btn { width: 100%; padding: 15px; background: #16a34a; color: white; border: none; border-radius: 8px; font-size: 1.2rem; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
-
 <div class="wrapper">
     <div class="sticky-stats">
-        <span>Score: <span id="score">0</span>/100</span>
-        <span>Progress: <span id="prog">0</span>/100</span>
+        <div style="display:flex; justify-content: space-around;">
+            <span>Score: <span id="score">0.00</span>/100</span>
+            <span>Progress: <span id="prog">0</span>/100</span>
+        </div>
+        <div class="timer">Time Remaining: <span id="clock">02:00:00</span></div>
     </div>
-
-    <div id="quiz-root">Loading 100 Questions...</div>
-
+    <div id="quiz-root"></div>
     <button id="finish-btn" onclick="endExam()">Finish & Show Result</button>
-
     <div id="final-res">
         <h1 id="status"></h1>
-        <p id="total" style="font-size: 20px;"></p>
-        <button onclick="location.reload()" style="padding: 10px 20px; margin-top: 20px;">Restart Exam</button>
+        <p id="total-score" style="font-size: 1.5rem;"></p>
+        <p id="breakdown" style="color: #64748b;"></p>
+        <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px;">Restart Exam</button>
     </div>
 </div>
 
 <script>
-// Data split into smaller chunks for better mobile loading
+let rawScore = 0, wrongCount = 0, answered = 0, timeLeft = 7200;
+
 const qData = [
-    {q:"Derivatives value is derived from:", o:["Exchange","Broker","Underlying Asset","Government"], c:2, e:"Value depends on the price of an underlying asset like stocks or index."},
-    {q:"Standardized contracts are:", o:["Forwards","Futures","OTC Options","Swaps"], c:1, e:"Futures are standardized by the exchange for public trading."},
-    {q:"Basis is:", o:["Spot minus Futures","Futures minus Spot","Strike minus Spot","Premium"], c:0, e:"Basis = Cash (Spot) Price - Futures Price."},
-    {q:"In Backwardation:", o:["Futures > Spot","Spot > Futures","Basis is 0","Market is closed"], c:1, e:"Backwardation occurs when the spot price is higher than the futures price."},
-    {q:"Mark-to-Market (MTM) happens:", o:["Monthly","Daily","Weekly","Only at expiry"], c:1, e:"Daily settlement ensures transparency and risk management."},
-    {q:"Who pays margins in Options?", o:["Buyer only","Seller only","Both","None"], c:1, e:"Only the writer (seller) pays margins because they have unlimited risk."},
-    {q:"European options exercise:", o:["Anytime","Only at Expiry","Twice a month","None"], c:1, e:"Index options in India are European and only exercisable on expiry day."},
-    {q:"Theta measures:", o:["Price change","Volatility","Time Decay","Interest rates"], c:2, e:"Theta represents the erosion of value as time passes."},
-    {q:"Vega measures sensitivity to:", o:["Time","Interest","Volatility","Price"], c:2, e:"Vega tracks price changes relative to implied volatility."},
-    {q:"Maximum profit for a Call Buyer:", o:["Strike Price","The Premium","Unlimited","Limited"], c:2, e:"Theoretically, a stock price can rise infinitely."},
-    {q:"Impact cost represents:", o:["Profit","Liquidity","Tax","Margin"], c:1, e:"Low impact cost indicates a highly liquid market."},
-    {q:"Delta of ATM option is approx:", o:["0","1","0.5","-0.5"], c:2, e:"At-the-money options have a delta close to 0.5."},
-    {q:"Gamma is change in:", o:["Price","Delta","Vega","Theta"], c:1, e:"Gamma measures the rate of change of Delta."},
-    {q:"Span Margin is used for:", o:["Option premiums","Initial Margin calculation","Broker fees","STT"], c:1, e:"SPAN is the portfolio-based margin system used by exchanges."},
-    {q:"A Long Straddle means:", o:["Buy Call + Buy Put","Sell Call + Sell Put","Buy Call only","Sell Put only"], c:0, e:"Used when high volatility is expected in either direction."},
-    {q:"Maximum loss for Option Seller:", o:["Premium","Strike Price","Unlimited","Limited"], c:2, e:"Sellers take the risk of unlimited price movement."},
-    {q:"Beta is a measure of:", o:["Unsystematic risk","Systematic risk","Liquidity","Profit"], c:1, e:"Beta measures market-related (systematic) risk."},
-    {q:"Contango means:", o:["Futures > Spot","Spot > Futures","Market is flat","Zero volatility"], c:0, e:"Normal market condition where futures trade at a premium to spot."},
-    {q:"Rho measures sensitivity to:", o:["Volatility","Interest Rates","Time","Dividends"], c:1, e:"Rho tracks the impact of interest rate changes."},
-    {q:"Shorting futures is a _____ strategy.", o:["Bullish","Bearish","Neutral","Low risk"], c:1, e:"Selling futures profits from falling prices."},
-    {q:"Intrinsic value of OTM call is:", o:["100","50","Zero","Negative"], c:2, e:"Out-of-the-money options have zero intrinsic value."},
-    {q:"STT on Option Sale is on:", o:["Strike Price","Notional Value","Premium","Total Profit"], c:2, e:"STT is calculated on the premium amount for option sales."},
-    {q:"Cash & Carry arbitrage happens when:", o:["Futures > Fair Value","Futures < Fair Value","Spot is Zero","Market is down"], c:0, e:"Buy Spot and Sell Futures to lock in the difference."},
-    {q:"Settlement Guarantee Fund is for:", o:["Paying dividends","Handling defaults","Marketing","IT costs"], c:1, e:"Ensures trades are settled even if a member defaults."},
-    {q:"L.C. Gupta committee was for:", o:["Insurance","Derivatives","Banking","IPO rules"], c:1, e:"Recommended the introduction of financial derivatives in India."},
-    {q:"Stock futures expiry in India:", o:["Last Friday","Last Thursday","First Monday","None"], c:1, e:"The standard monthly expiration is the last Thursday."},
-    {q:"A Butterfly spread uses:", o:["2 options","3 options","4 options","1 option"], c:2, e:"Involves buying/selling 4 options at 3 different strikes."},
-    {q:"Haircut is applied to:", o:["Cash","Collateral Securities","Profit","Tax"], c:1, e:"A deduction applied to the value of pledged shares used as margin."},
-    {q:"Open Interest (OI) is:", o:["Total Volume","Outstanding contracts","Total Profit","Broker count"], c:1, e:"Number of contracts that have not yet been closed or expired."},
-    {q:"Deep ITM Call Delta is near:", o:["0","0.5","1","-1"], c:2, e:"Deep ITM calls move 1-to-1 with the underlying asset."},
-    {q:"Calendar Spread uses:", o:["Same strike, different months","Different strikes, same month","Different stocks","Same price"], c:0, e:"Horizontal spread using different expiration dates."},
-    {q:"A Bear Put Spread is a:", o:["Bullish strategy","Bearish strategy","Neutral strategy","High risk"], c:1, e:"Buying a higher strike put and selling a lower strike put."},
-    {q:"Protective Put is:", o:["Buy Stock + Buy Put","Sell Stock + Buy Call","Sell Put","Buy Call"], c:0, e:"Buying insurance for a stock you own."},
-    {q:"Covered Call is:", o:["Long Stock + Short Call","Short Stock + Long Call","Only Put","None"], c:0, e:"Selling a call against a stock you hold to earn premium."},
-    {q:"Assignment risk belongs to:", o:["Option Buyer","Option Seller","Exchange","Broker"], c:1, e:"Only writers (sellers) are assigned exercise obligations."},
-    {q:"SCRA 1956 regulates:", o:["Banks","Securities Contracts","Insurance","Real Estate"], c:1, e:"The primary act for stock and derivative contracts."},
-    {q:"Churning means:", o:["Hedged trade","Excessive trading for commission","Long term hold","Arbitrage"], c:1, e:"Unethical practice by brokers to generate more fees."},
-    {q:"Insider Trading is:", o:["Recommended","Illegal","Allowed for brokers","Only for CEOs"], c:1, e:"Trading on non-public information is a legal offense."},
-    {q:"Unique Client Code (UCC) is by:", o:["SEBI","Broker","RBI","Investor"], c:1, e:"Brokers must assign a UCC to every client."},
-    {q:"Portfolio Beta helps in:", o:["Tax","Hedging with Index","Buying stocks","Dividends"], c:1, e:"Used to calculate the number of index contracts needed for a hedge."},
-    {q:"Tick size for Nifty is:", o:["0.01","0.05","0.10","0.25"], c:1, e:"The minimum price movement allowed."},
-    {q:"Put/Call ratio > 1 suggests:", o:["Extreme Bullishness","Bearishness/Hedging","Market is closed","High volume"], c:1, e:"More puts being bought often signals cautious or bearish sentiment."},
-    {q:"Index options in India are:", o:["American","European","Both","None"], c:1, e:"Nifty and Bank Nifty options are European style."},
-    {q:"Initial Margin protects against:", o:["Tax","Potential future losses","Broker fees","Dividends"], c:1, e:"Collected at the start of the trade to cover risk."},
-    {q:"Assignment happens:", o:["Daily","Only if Buyer exercises","Weekly","Monthly"], c:1, e:"When a buyer exercises the right, a random seller is assigned."},
-    {q:"Theta is highest for:", o:["ITM","OTM","ATM","Deep ITM"], c:2, e:"At-the-money options decay the fastest near expiry."},
-    {q:"Which greek is 1 for stock?", o:["Gamma","Delta","Vega","Theta"], c:1, e:"A stock's delta is always 1 relative to itself."},
-    {q:"Vertical Spread uses:", o:["Different Strikes","Different Expiries","Different Months","None"], c:0, e:"Stacking strikes in the same expiration month."},
-    {q:"Max loss of Long Call:", o:["Unlimited","Strike Price","Premium Paid","Zero"], c:2, e:"The buyer can only lose what they paid (premium)."},
-    {q:"Put buyer expects price to:", o:["Rise","Fall","Stay same","Double"], c:1, e:"Put buyers are bearish."},
-    {q:"Clearing Member (SCM) clears:", o:["Only own trades","Own + Client trades","Only Banks","Only SEBI"], c:1, e:"Self-Clearing Members handle their own and their clients' accounts."},
-    {q:"Contract Note is issued within:", o:["24 Hours","48 Hours","7 Days","1 Month"], c:0, e:"Must be sent to client within 24 hours of trade."},
-    {q:"Front Running is:", o:["Legal","Illegal","Mandatory","Free"], c:1, e:"Trading ahead of a large client order is an unfair practice."},
-    {q:"PMLA 2002 refers to:", o:["Margins","Money Laundering","Listing","Dividends"], c:1, e:"Prevention of Money Laundering Act."},
-    {q:"Disclosed Quantity minimum:", o:["1%","10%","50%","100%"], c:1, e:"At least 10% of the order must be visible to the market."},
-    {q:"Derivatives are _____ assets.", o:["Fixed","Wasting","Permanent","Safe"], c:1, e:"They have an expiry and lose value over time (Time decay)."},
-    {q:"What is a Lot?", o:["Total profit","Standardized quantity","Broker group","Price"], c:1, e:"Fixed number of units in one contract (e.g., Nifty lot)."},
-    {q:"Limit Order specifies:", o:["Only Quantity","Max/Min Price","Time","Broker"], c:1, e:"The trader sets the exact price for execution."},
-    {q:"Exposure margin is:", o:["In addition to SPAN","Instead of SPAN","Only for OTM","Free"], c:0, e:"Total Margin = SPAN + Exposure."},
-    {q:"Volatility Smile is a graph of:", o:["Price vs Time","IV vs Strike","Volume vs OI","None"], c:1, e:"Shows implied volatility for different strikes."},
-    // More questions follow pattern for brevity in this single block
+    {q:"What is the negative marking for a wrong answer in NISM VIII?", o:["None","10%","25%","50%"], c:2, e:"0.25 marks deducted per wrong answer."},
+    {q:"Derivatives value is derived from:", o:["Exchange","Broker","Underlying Asset","Government"], c:2, e:"Price depends on an underlying asset."},
+    {q:"Basis is defined as:", o:["Spot - Futures","Futures - Spot","Strike - Spot","Premium"], c:0, e:"Basis = Cash Price - Futures Price."},
+    {q:"If Spot > Futures, it is:", o:["Contango","Backwardation","Convergence","Divergence"], c:1, e:"Positive basis is Backwardation."},
+    {q:"MTM settlement happens:", o:["Monthly","Weekly","Daily","Expiry"], c:2, e:"Daily settlement is mandatory."},
+    {q:"Who has obligation but no right?", o:["Buyer","Seller/Writer","Exchange","Broker"], c:1, e:"Sellers are obligated if buyer exercises."},
+    {q:"European options exercise:", o:["Anytime","Only at Expiry","Weekly","Monthly"], c:1, e:"Nifty options are European style."},
+    {q:"Theta measures:", o:["Volatility","Price","Time Decay","Interest"], c:2, e:"Theta = Time decay."},
+    {q:"Vega measures sensitivity to:", o:["Time","Interest","Volatility","Price"], c:2, e:"Vega tracks volatility changes."},
+    {q:"Max profit for Long Call buyer:", o:["Premium","Strike","Unlimited","Zero"], c:2, e:"Theoretically unlimited rise possible."},
+    {q:"Initial Margin uses system:", o:["LIFO","SPAN","Fixed 10%","Moving Avg"], c:1, e:"SPAN is the portfolio risk system."},
+    {q:"Impact cost measures:", o:["Risk","Profit","Liquidity","Tax"], c:2, e:"Lower cost = Higher liquidity."},
+    {q:"Delta of ATM call is approx:", o:["0","1","0.5","-1"], c:2, e:"ATM has 50% chance of ITM."},
+    {q:"Higher Volatility makes options:", o:["Cheaper","Costlier","No change","Zero"], c:1, e:"Volatility adds 'uncertainty' value."},
+    {q:"Long Straddle expectation:", o:["Quiet market","High Volatility","Slow rise","Market crash"], c:1, e:"Needs a big move in either direction."},
+    {q:"Central counterparty is:", o:["SEBI","Clearing Corp","RBI","Trading Member"], c:1, e:"CC handles all settlement risk."},
+    {q:"Beta measures:", o:["Unsystematic risk","Systematic risk","Credit risk","Default"], c:1, e:"Beta = Market related risk."},
+    {q:"The Far Month contract is:", o:["Current","Next","Month after Next","End of Year"], c:2, e:"The 3rd month in the cycle."},
+    {q:"STT on Option Sale is on:", o:["Strike","Notional","Premium","Profit"], c:2, e:"Calculated on the premium value."},
+    {q:"Gamma measures change in:", o:["Theta","Delta","Vega","Rho"], c:1, e:"Gamma is Delta's acceleration."},
+    {q:"Nifty 50 uses which method?", o:["Price Weight","Market Cap","Free-float Market Cap","Equal Weight"], c:2, e:"Standard for major Indian indices."},
+    {q:"Protective Put is:", o:["Long Stock + Long Put","Short Stock + Long Put","Long Call","Short Put"], c:0, e:"Insurance for a portfolio."},
+    {q:"Covered Call is:", o:["Long Stock + Short Call","Long Stock + Long Call","Short Put","None"], c:0, e:"Generating income from holdings."},
+    {q:"Which greek is 1 for stock?", o:["Gamma","Delta","Vega","Theta"], c:1, e:"A stock moves exactly with itself."},
+    {q:"Rho measures sensitivity to:", o:["Price","Time","Interest Rates","Volatility"], c:2, e:"Focuses on cost of carry/rates."},
+    {q:"Bull Call Spread:", o:["Buy Low, Sell High","Sell Low, Buy High","Buy 2 Calls","Sell 2 Puts"], c:0, e:"Directional spread to lower cost."},
+    {q:"Assignment happens to:", o:["Buyers","Sellers","Brokers","Exchange"], c:1, e:"Buyers exercise, Sellers get assigned."},
+    {q:"Tick size for Nifty is:", o:["0.01","0.05","0.10","0.25"], c:1, e:"Minimum price movement."},
+    {q:"Open Interest increases when:", o:["Old parties exit","New parties enter","Volume drops","Price stays same"], c:1, e:"New contracts are created."},
+    {q:"Haircut is applied to:", o:["Cash","Collateral","Profit","Tax"], c:1, e:"Deduction on pledged security value."},
+    {q:"Short Strangle involves:", o:["Buying OTM","Selling OTM","Buying ATM","None"], c:1, e:"Profit from range-bound market."},
+    {q:"Intrinsic Value of OTM Call:", o:["Strike-Spot","Spot-Strike","Zero","Negative"], c:2, e:"OTM options have zero intrinsic value."},
+    {q:"Span margins revised:", o:["Once","Daily","6 times/day","Weekly"], c:2, e:"Standard intraday risk monitoring."},
+    {q:"Front Running is:", o:["Legal","Illegal","Mandatory","For VIPs"], c:1, e:"Trading ahead of client orders."},
+    {q:"SCRA 1956 covers:", o:["Banks","Securities","Insurance","Real Estate"], c:1, e:"Primary act for derivatives."},
+    {q:"Contract Note issued in:", o:["24 Hrs","48 Hrs","7 Days","Monthly"], c:0, e:"T+1 transparency rule."},
+    {q:"Churning is:", o:["Hedging","Excessive trading","Investing","Arbitrage"], c:1, e:"Unethical fee generation."},
+    {q:"Unique Client Code from:", o:["SEBI","Broker","RBI","Investor"], c:1, e:"Brokers assign the UCC."},
+    {q:"Portfolio Beta helps in:", o:["Tax","Index Hedging","Buying gold","Dividends"], c:1, e:"Determines hedge ratio."},
+    {q:"Deep ITM Delta is near:", o:["0","0.5","1","-1"], c:2, e:"Behaves like the underlying stock."},
+    {q:"Cash & Carry Arbitrage:", o:["Futures > Fair Value","Futures < Fair Value","Spot is Zero","Market down"], c:0, e:"Buy Spot, Sell Futures."},
+    {q:"L.C. Gupta committee for:", o:["Insurance","Derivatives","Banking","IPO"], c:1, e:"Introduced derivatives in India."},
+    {q:"Stock futures expiry:", o:["Last Friday","Last Thursday","First Monday","None"], c:1, e:"Monthly expiry day."},
+    {q:"Butterfly spread uses:", o:["2 options","3 options","4 options","1"], c:2, e:"Neutral 4-option strategy."},
+    {q:"Put/Call ratio > 1 suggests:", o:["Bullish","Bearish/Hedging","Closed","Neutral"], c:1, e:"Signals cautious market sentiment."},
+    {q:"Exposure margin is:", o:["In SPAN","Added to SPAN","Instead of SPAN","Free"], c:1, e:"Total = SPAN + Exposure."},
+    {q:"Volatility Smile graph:", o:["Price/Time","IV/Strike","Vol/OI","None"], c:1, e:"Shows IV across different strikes."},
+    {q:"PMLA 2002 refers to:", o:["Margins","Money Laundering","Listing","Dividends"], c:1, e:"Anti-money laundering laws."},
+    {q:"Disclosed Quantity min:", o:["1%","10%","50%","100%"], c:1, e:"10% visibility rule."},
+    {q:"Derivatives are:", o:["Fixed","Wasting assets","Permanent","Safe"], c:1, e:"They have an expiration date."},
+    {q:"What is a Lot?", o:["Profit","Standard quantity","Broker group","Price"], c:1, e:"Fixed units per contract."},
+    {q:"Limit Order specifies:", o:["Quantity","Max/Min Price","Time","Broker"], c:1, e:"Trader controls execution price."},
+    {q:"Rho of a call is usually:", o:["Negative","Positive","Zero","High"], c:1, e:"Call value rises with rates."},
+    {q:"Theta is highest for:", o:["ITM","OTM","ATM","Deep ITM"], c:2, e:"ATM decays fastest near expiry."},
+    {q:"Stock split results in:", o:["Cancellation","Adjustment","Profit","No change"], c:1, e:"Strike/Lot size are adjusted."},
+    {q:"SCM clears:", o:["Own only","Own + Client","Banks only","SEBI only"], c:1, e:"Self-Clearing Member duties."},
+    {q:"Custodian trades by:", o:["Brokers","PCM","Exchange","RBI"], c:1, e:"Professional Clearing Members."},
+    {q:"Wash trades are:", o:["Legal","Illegal/Artificial","Good","For taxes"], c:1, e:"Fake trades for manipulation."},
+    {q:"Nifty lot size:", o:["25","50","75","100"], c:1, e:"Standard contract multiplier."},
+    {q:"Beta > 1 means stock is:", o:["Less volatile","More volatile","Stable","Falling"], c:1, e:"Higher than market risk."},
+    {q:"Time value formula:", o:["Premium - IV","Strike - Spot","Volatility","None"], c:0, e:"TV is the external value."},
+    {q:"NISM-8 mandatory for:", o:["Investors","Dealers","Accountants","HR"], c:1, e:"Requirement for market access."},
+    {q:"SEBI formed in:", o:["1988/1992","2000","2005","1950"], c:0, e:"Market regulator."},
+    {q:"Min contract value:", o:["1L","5L","10L","2L"], c:1, e:"SEBI lot size minimum."},
+    {q:"Trading hours:", o:["9-3:30","9:15-3:30","10-4","24H"], c:1, e:"Standard equity session."},
+    {q:"Bear Put Spread:", o:["Bullish","Bearish","Neutral","Arbitrage"], c:1, e:"Profit from falling markets."},
+    {q:"Final settlement Stocks:", o:["Cash","Physical","Optional","Bonds"], c:1, e:"Delivery mandatory since 2019."},
+    {q:"Wash trading used for:", o:["Hedging","Manipulation","Investing","Tax"], c:1, e:"Artificial volume creation."},
+    {q:"MTM settlement is:", o:["T+0","T+1","T+2","Monthly"], c:0, e:"Daily cash flow."},
+    {q:"Box spread is for:", o:["Bullish","Bearish","Arbitrage","Volatility"], c:2, e:"Interest rate lock strategy."},
+    {q:"Put writer is:", o:["Bullish","Bearish","Neutral","None"], c:0, e:"Expects price to stay above strike."},
+    {q:"Gamma highest at:", o:["ITM","OTM","ATM","Expiry"], c:2, e:"ATM sensitivity max."},
+    {q:"Theta accelerates at:", o:["Near expiry","Far expiry","None","Open"], c:0, e:"Value decays faster near end."},
+    {q:"Arbitrageur seeks:", o:["Risk","Risk-free profit","Dividends","Taxes"], c:1, e:"Exploits price differences."},
+    {q:"Vega is highest at:", o:["ITM","OTM","ATM","Expiry"], c:2, e:"ATM is volatility sensitive."},
+    {q:"Option Buyer max loss:", o:["Unlimited","Premium","Strike","Zero"], c:1, e:"Limited to cost paid."},
+    {q:"Futures buyer expects:", o:["Rise","Fall","Quiet","Crash"], c:0, e:"Bullish position."},
+    {q:"SGF maintained by:", o:["SEBI","Clearing Corp","RBI","NSE"], c:1, e:"Default protection fund."},
+    {q:"KYC is mandatory for:", o:["Rich","All","Brokers","Foreigners"], c:1, e:"Standard opening requirement."},
+    {q:"Insider trading fine:", o:["1L","25Cr or 3x profit","1Cr","Free"], c:1, e:"Strict SEBI penalty."},
+    {q:"Front Month is:", o:["Current month","Next","Far","Last year"], c:0, e:"The near month contract."},
+    {q:"Options premium has:", o:["IV only","IV + TV","Vol only","Fixed"], c:1, e:"Intrinsic + Time value."},
+    {q:"If interest rates rise:", o:["Call falls","Call rises","Put rises","No change"], c:1, e:"Cost of carry increases."},
+    {q:"Dividends affect calls:", o:["Positively","Negatively","None","Doubles"], c:1, e:"Stock price drops on ex-div."},
+    {q:"American options can:", o:["Exercise anytime","Only at expiry","Weekly","None"], c:0, e:"Flexible exercise style."},
+    {q:"Index futures settled:", o:["Cash","Delivery","Bonds","None"], c:0, e:"Cash settlement only."},
+    {q:"Open interest tells:", o:["Liquidity","Market size","Direction","None"], c:1, e:"Total contracts open."},
+    {q:"Clearing bank handles:", o:["STT","Fund transfers","Broking","SEBI fines"], c:1, e:"Member cash flows."},
+    {q:"Vertical spread uses:", o:["Diff Strike","Diff Expiry","Diff Stock","None"], c:0, e:"Strikes in same month."},
+    {q:"Horizontal spread is:", o:["Strike diff","Expiry diff","Broker diff","None"], c:1, e:"Calendar spread."},
+    {q:"Assignment is random?", o:["Yes","No","For VIPs","Daily"], c:0, e:"Algorithm-based random choice."},
+    {q:"Unsystematic risk is:", o:["Market risk","Company specific","Interest risk","Political"], c:1, e:"Can be diversified away."},
+    {q:"Naked writing risk:", o:["None","Limited","Unlimited","Fixed"], c:2, e:"No hedge protection."},
+    {q:"Ratio spread uses:", o:["Equal options","Unequal options","Only puts","Only calls"], c:1, e:"Different number of contracts."},
+    {q:"STT on Future Buy:", o:["0.01%","Zero","0.1%","0.25%"], c:1, e:"Zero for buying, charged on selling."},
+    {q:"Contract period max:", o:["1 month","3 months","6 months","1 year"], c:1, e:"Standard Near/Next/Far cycle."},
+    {q:"Trading Member clears own?", o:["Yes","No","Sometimes","RBI only"], c:1, e:"Only if also a Clearing Member."},
+    {q:"Anti-money laundering:", o:["PMLA","SEBI","SCRA","Companies Act"], c:0, e:"Law of the land."},
+    {q:"Settlement day T+1 for:", o:["Dividends","MTM","Delivery","None"], c:1, e:"Daily cash flow requirement."},
+    {q:"Max loss for Option Seller:", o:["Premium","Strike","Unlimited","Limited"], c:2, e:"High risk trading."}
 ];
 
-// Filling up to 100 for logic
-while(qData.length < 100) {
-    qData.push({
-        q: "Review question on NISM Chapter " + (Math.floor(qData.length/10)+1),
-        o: ["Review Required", "Correct", "Standard", "None"],
-        c: 1,
-        e: "Please review the specific regulatory update for this section in the 2026 handbook."
-    });
-}
-
-let score = 0, answered = 0;
+const timerInt = setInterval(() => {
+    timeLeft--;
+    let h=Math.floor(timeLeft/3600), m=Math.floor((timeLeft%3600)/60), s=timeLeft%60;
+    document.getElementById('clock').innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+    if(timeLeft<=0) { clearInterval(timerInt); endExam(); }
+}, 1000);
 
 function render() {
     const root = document.getElementById('quiz-root');
-    root.innerHTML = '';
-    qData.forEach((item, i) => {
-        const div = document.createElement('div');
-        div.className = 'q-box';
-        div.innerHTML = `
-            <p><strong>${i+1}. ${item.q}</strong></p>
-            ${item.o.map((opt, oi) => `<button class="btn q${i}" onclick="check(${i}, ${oi})">${opt}</button>`).join('')}
-            <div id="expl${i}" class="expl"><strong>Explanation:</strong> ${item.e}</div>
-        `;
-        root.appendChild(div);
+    qData.forEach((it, i) => {
+        const d = document.createElement('div');
+        d.className = 'q-box';
+        d.innerHTML = `<p><strong>${i+1}. ${it.q}</strong></p>` + 
+            it.o.map((o, oi) => `<button class="btn q${i}" onclick="check(${i},${oi})">${o}</button>`).join('') +
+            `<div id="expl${i}" class="expl"><strong>Explanation:</strong> ${it.e}</div>`;
+        root.appendChild(d);
     });
 }
 
 function check(qi, oi) {
-    const btns = document.querySelectorAll(`.q${qi}`);
-    if (btns[0].disabled) return;
-    const correct = qData[qi].c;
-    btns[oi].classList.add(oi === correct ? 'correct' : 'wrong');
-    if (oi !== correct) btns[correct].classList.add('correct');
-    if (oi === correct) score++;
+    const bs = document.querySelectorAll(`.q${qi}`);
+    if (bs[0].disabled) return;
+    const c = qData[qi].c;
+    if (oi === c) { bs[oi].classList.add('correct'); rawScore++; }
+    else { bs[oi].classList.add('wrong'); bs[c].classList.add('correct'); wrongCount++; }
     answered++;
-    Array.from(btns).forEach(b => b.disabled = true);
-    document.getElementById(`expl${qi}`).style.display = 'block';
-    document.getElementById('score').innerText = score;
+    document.getElementById('score').innerText = (rawScore - (wrongCount * 0.25)).toFixed(2);
     document.getElementById('prog').innerText = answered;
+    Array.from(bs).forEach(b => b.disabled = true);
+    document.getElementById(`expl${qi}`).style.display = 'block';
 }
 
 function endExam() {
-    window.scrollTo(0,0);
+    clearInterval(timerInt); window.scrollTo(0,0);
     document.getElementById('quiz-root').style.display = 'none';
     document.getElementById('finish-btn').style.display = 'none';
-    const res = document.getElementById('final-res');
-    res.style.display = 'block';
+    const res = document.getElementById('final-res'); res.style.display = 'block';
+    let f = parseFloat((rawScore - (wrongCount * 0.25)).toFixed(2));
     const st = document.getElementById('status');
-    st.innerText = score >= 60 ? "PASS! 🎉" : "FAIL ❌";
-    st.className = score >= 60 ? "pass" : "fail";
-    document.getElementById('total').innerText = `Final Score: ${score} / 100`;
+    st.innerText = f>=60?"PASSED! 🎉":"FAILED ❌"; st.className = f>=60?"pass":"fail";
+    document.getElementById('total-score').innerText = `Final Marks: ${f}/100`;
+    document.getElementById('breakdown').innerText = `Correct: ${rawScore} | Wrong: ${wrongCount} | Penalty: -${(wrongCount*0.25).toFixed(2)}`;
 }
-
 window.onload = render;
 </script>
 </body>
