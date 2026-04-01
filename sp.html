@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Supabase Test</title>
+</head>
+
+<body>
+
+<h2>Supabase Test</h2>
+
+<input id="name" placeholder="Name">
+<input id="email" placeholder="Email">
+
+<br><br>
+
+<button onclick="saveData()">Save</button>
+<button onclick="loadData()">Load</button>
+
+<div id="output"></div>
+
+<script type="module">
+
+// 🔥 Import Supabase (FIXED for mobile)
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+// 🔥 INIT SUPABASE
+const supabase = createClient(
+  "https://hnmztjkxyhientgvkqi.supabase.co",
+  "sb_publishable_ke0D5Y9O11n2v08uDSnnNA_sxEdyuDI"
+);
+
+// 🔥 DEBUG
+alert("Script Loaded ✅");
+
+// 🔥 SAVE FUNCTION (must attach to window)
+window.saveData = function() {
+  alert("Save clicked ✅");
+
+  const name = document.getElementById("name").value;
+  const email = document.getElementById("email").value;
+
+  if (!name || !email) {
+    alert("Enter name & email");
+    return;
+  }
+
+  supabase.from("users").insert([{ name, email }])
+    .then(res => {
+      if (res.error) {
+        alert("Error: " + res.error.message);
+      } else {
+        alert("Saved successfully ✅");
+      }
+    });
+};
+
+// 🔥 LOAD FUNCTION
+window.loadData = function() {
+  alert("Load clicked ✅");
+
+  supabase.from("users").select("*")
+    .then(res => {
+      if (res.error) {
+        alert("Error: " + res.error.message);
+        return;
+      }
+
+      document.getElementById("output").innerHTML =
+        res.data.map(d => `<p>${d.name} - ${d.email}</p>`).join("");
+    });
+};
+
+</script>
+
+</body>
+</html>
