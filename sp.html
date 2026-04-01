@@ -2,6 +2,7 @@
 <html>
 <head>
   <title>Supabase Test</title>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
@@ -18,57 +19,66 @@
 
 <div id="output"></div>
 
-<script type="module">
+<script>
 
-// 🔥 Import Supabase (FIXED for mobile)
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+// ✅ Fix for mobile browser
+window.process = { env: {} };
 
-// 🔥 INIT SUPABASE
+// ✅ Correct Supabase init
+const { createClient } = window.supabase;
+
 const supabase = createClient(
-  "https://hnmztjkxyhientgvkqi.supabase.co",
+  "https://hnmztjkxyihientgvkqi.supabase.co",
   "sb_publishable_ke0D5Y9O11n2v08uDSnnNA_sxEdyuDI"
 );
 
-// 🔥 DEBUG
-alert("Script Loaded ✅");
+// ✅ SAVE DATA
+async function saveData() {
+  try {
+    const name = document.getElementById("name").value;
+    const email = document.getElementById("email").value;
 
-// 🔥 SAVE FUNCTION (must attach to window)
-window.saveData = function() {
-  alert("Save clicked ✅");
+    if (!name || !email) {
+      alert("Enter name & email");
+      return;
+    }
 
-  const name = document.getElementById("name").value;
-  const email = document.getElementById("email").value;
+    const { error } = await supabase
+      .from("users")
+      .insert([{ name, email }]);
 
-  if (!name || !email) {
-    alert("Enter name & email");
-    return;
+    if (error) throw error;
+
+    alert("Saved successfully ✅");
+
+  } catch (err) {
+    console.error(err);
+    alert("Error: " + err.message);
   }
+}
 
-  supabase.from("users").insert([{ name, email }])
-    .then(res => {
-      if (res.error) {
-        alert("Error: " + res.error.message);
-      } else {
-        alert("Saved successfully ✅");
-      }
-    });
-};
+// ✅ LOAD DATA
+async function loadData() {
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .select("*");
 
-// 🔥 LOAD FUNCTION
-window.loadData = function() {
-  alert("Load clicked ✅");
+    if (error) throw error;
 
-  supabase.from("users").select("*")
-    .then(res => {
-      if (res.error) {
-        alert("Error: " + res.error.message);
-        return;
-      }
+    if (!data.length) {
+      document.getElementById("output").innerHTML = "No data found";
+      return;
+    }
 
-      document.getElementById("output").innerHTML =
-        res.data.map(d => `<p>${d.name} - ${d.email}</p>`).join("");
-    });
-};
+    document.getElementById("output").innerHTML =
+      data.map(d => `<p>${d.name} - ${d.email}</p>`).join("");
+
+  } catch (err) {
+    console.error(err);
+    alert("Error: " + err.message);
+  }
+}
 
 </script>
 
