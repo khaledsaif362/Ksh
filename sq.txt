@@ -1,0 +1,843 @@
+	TFM--4.0								
+	creation formats in 66.6 build patch								
+									
+		for intraday & mtm sq off, clearing member check in sysparam	intraday sq off will run based on clearing exchange assigned						
+									
+		CO BO margin will be charged on SPAN only	if in basket sl range is high, then that margin will also be charge						
+		if want to increase span, then it can be done from margin factor and exposure from file only							
+		SL range CO BO 3.0 & 5.0-- will take from default profile,, 4.0--will take from basket							
+		profile level % will be shown in front end order placing and basket level % will be applicable for order placing							
+		CO margin for equity will be higher of basket & VAR							
+		CO margin for der will be SPAN only, no higher							
+		VAR file need to update inorder to charge high basket/var or next day change applicable							
+		CO-SL range will take from LTP							
+		CO							
+		CO margin will be charged var or atleast 20% (if higher margin is disabled)							
+									
+									
+									
+									
+									
+		In BO, 1st leg traded, and If cancelled any order then sl order will get traded and limit order will get cancelled							
+									
+		enable asm stages 0,1							
+		product wise blocking--all	it will block for all product and all stages except 0,1	0,1 is enable for all products					
+			if cnc is SET, then remaining all product stage orders will go						
+		You need to mention products in which you want to block asm/gsm securities. In case you don't want to block for intraday product then you need to remove "I" from that field and select "C,M,V,B" only for other product							
+		generally I,M,V,B will be kept….so cnc will be enable for all stages and for I m v b only the stages given will be enabled							
+									
+		in Orderwise brokerage-will be irrespective of value, flat will be charged							
+		in value wise, minimum of flat or order value % will be charged							
+									
+									
+		OPTION BUY PREMIUM FOR OPTION BUY	carryforward buy position is sold today, then whatever premium received will be allowed to trade in option buy only						
+		OPTION SELL PREMIUM OF OPTION BUY	premium amount received on fresh sell						
+		Deduct option sell premium of CF position	option buy value will be reduced from Available bal	sell cf position is there,, squared off,, value received will be reduced from available ledger					
+				loss in option during day will also show in this column					
+									
+									
+		OPTION SELL PREMIUM MULTIPLIER	ALWAYS-100,, sold option premium value. 						
+		buy option multiplier for option index	to provide trading limit,,it is in factor,, like 0.5 means 2 times(only intraday product)						
+		buy option multiplier for option stock	to provide trading limit,,it is in factor,, like 0.5 means 2 times(only intraday product)						
+									
+		cash to collateral	if unticked, total collateral value will be allowed to be used						
+			if ticked & set 100% means, only upto SOD collateral will be allowed						
+			if SOD is greater than collateral, then total collat will be available for trading, irrespective of % set						
+									
+		cash to collateral	cash=sod+bankholding						
+									
+		AUTO/MANUAL SQ OFF							
+									
+	22222								
+	47515	hedge benefit 	1st order buy traded--margin 105000						
+			allow hedge benefit ticked in profile						
+			2nd order sell placed ---margin not required,hedge benefit will come						
+									
+			allow hedge benefit if un-ticked in profile						
+			2nd order sell placed-require more 105000 fund						
+									
+			after both orders gets traded, then utilized margin will be hedge benefit margin approx 30K						
+									
+		Syspar order level hedge	higher margin should be maintained,, both leg can be be opened here, margin for pending will be 105000,after trade only 30k will happen						
+									
+			bcoz after trade only, hedge break can be eliminated from syspar setting						
+									
+									
+		T2T allowed intraday	if unticked will allow only once to sell or buy						
+			if ticked, will allow once buy & once sell (compliance)	it will allow buy fresh in cnc if ledger is available					
+									
+									
+		PHYSICAL EXPIRY BLOCK	physical margin will be charged on monthly expiry option stock						
+			FORMAT- I for intrady,,,,M- for margin,,, if product not set both products will be blocked						
+									
+									
+									
+									
+		IN the money physical margin	for fresh position, margin will be charged directly						
+			for existing position, margin will change on span recompute						
+									
+			1st day 10%, 25 , 45, 70, 100			eq stock price*fut lot size*varelm%/100	40%		
+		116206.0185	stock==ltp*lot size*var+elm	SBIN		125685	50274		
+		81344.21295	101*5200*20%------105040*70%---73528						
+			73528+premium=physical margin	premium	75000	45511.2	120511.2		
+			indx==indx span+premium						
+			117000+35100---152100						
+									
+						109440	10944		
+		MTFT_SELL_WITH_MTFT_COLL	if enable-yes, then mtft holding can be sold without fresh fund required						
+		MTF SELL WITH VAR ELM 	FIX 20% OR VARELM		108000	10944	118944		
+									
+		MTF POSITION	VAR+3 times of elm	fo scrips					
+			VAR+5 times of elm	non fo scrips					
+		MTF- 0% IN profile master means--it will block whole selling value in utilised margin							
+		100% means--it will release total margin & utilised will be 0							
+									
+		Total Balance	realised profit will get added in total bal, but not availbale for trading						
+									
+									
+									
+		MTM WATCH, total bal will be different if option position is there							
+									
+									
+	COLLATERAL	COLLATERAL_PERC_FLAG(HAIRCUT % OR HLD FILE %)	YES - will take from holding file						
+			NO- will take from exchange file	0 & 100 % will not provide any collateral					
+									
+		COLLATERAL CALCUATE ACCORDING TO LTP OR CLOSE PRICE	NO-LTP						
+			YES-CLOSING OR LTP whichever is lower						
+									
+									
+									
+		FO Margin adhoc in view limit	if set adhoc in FO Margin adhoc, then it will give extra limit in this segment above common adhoc						
+									
+		SYS_OPT_FUT_BLK_CHECK	If set as YES, only upto future value set in limit window will only allow for future trading(issue with 0)						
+									
+									
+									
+									
+	PEAK MARGIN	peak margin is calculated as 20% or var(whichever is higher)	PEAK MARGIN-OPEN POSITION PEAK MARGIN	AMOUNT					
+				AVAIL BAL-AMOUNT	available for buy back				
+									
+									
+									
+	MPP	net position se square off karega to lagega							
+		MTM auto square off/Intraday auto square off par ni lagta hai							
+									
+									
+		IOC order is only for limit & mkt orders							
+									
+									
+									
+		mtm % = loss*100/t bal							
+									
+			3.0	4.O					
+	FILE UPLOAD	INC HOLDING	will replace that particulR record	INCR HOLD FILE WILL ADD HOLDING TO EXISTING HOLDINGS					
+		INCR LIMIT	will add to SOD for given particular client	INCR LIMIT FILE WILL ADD TO EXISTING BAL					
+									
+		gross receivable--total cnc sell value							
+		receivable--80% or as set							
+									
+									
+	*	OPT_MARG_BLOCK_ON_CLOSE_PRICE	for uploading position file & price for both buy/sell						
+									
+			no--avg price stored in database						
+			yes-closing price						
+									
+	*	Consider Buy Avg Zero During Position Upload	yes-will upload option position as 0						
+			no-will upload asper OPT_MARG_BLOCK_ON_CLOSE_PRICE check						
+									
+									
+									
+		UNCLEAR ledger just to display if unticked							
+									
+		unclear limit file upload	column 9 (FILLER1)						
+		INCR LIMIT	10th column is bank hold						
+									
+	higher margin	if kept as NA in syspar & assign basket, then margin will be charged from basket							
+									
+	BOD download 	after security upload, bhavcopy need to upload							
+									
+									
+	BSE IBC ICA ASM GSM	it will take from bse security and gets saved in ASM>BSE>REG							
+									
+									
+		Enable survillence measure	w column						
+			now changed to j column						
+									
+	BSE IBC	https://member.bseindia.com/	IBRC.CSV						
+									
+		Freeze quantity for FO---security file	AO column						
+									
+									
+	Position upload file names	nse fo	nse cd						
+		NCL_FO_PS03	NCL_BFX_PS03						
+		NCL_FO_PS04							
+									
+		bse fo	bse cd						
+		ICCL_FO_PS03	ICCL_BFX_PS03						
+									
+									
+									
+	SPREAD/HEDGE	(spread gross value-spread net value/2)*exposure %*.34+spread net value*exp %							
+									
+		nifty mar	900000						
+		nifty apr	896105						
+		spread gross value	1796105						
+									
+		spread net value	3895						
+									
+									
+		(spread gross value-spread net value)/2	896105						
+			17922.1						
+			6093.514						
+		exposure value	6171.414						
+									
+									
+									
+			6171.414						
+									
+	STRIKE_PRICE_RANGE_ENABLE_PRODCT								
+		NA	if kept as "NA", then strike price will be checked for ALL products	Block orders					
+		I	if kept as "I", then strike price wont be checked for Intrady product and checks for remaining products	Allow orders					
+		I,M	if kept as "I,M", then strike price wont be checked for Intrady,Margin product and checks for remaining products	Allow orders					
+									
+									
+		Adhoc margin wont get calculated in margin shortfall							
+									
+	Intraday Product by Default	YES-will allow to place INTRADAY order							
+		NO- will not allow to place INTRADY order for all clients	it will work for only equity, if any scrip is assigned in basket-it allow orders for that particular scrip						
+									
+									
+									
+									
+									
+4.0	DAY MTF	MTF TO OTHER PRODUCT/other product to mtf	ALLOWED						
+	CARRYF	MTF TO OTHER PRODUCT	NOT ALLOWED						
+									
+3.0	DAY/CF	MTF to any product	NOT ALLOWED						
+		any product to MTF	NOT ALLOWED						
+									
+	sequence of holding sell	MRG HLD(clear hld then pledge) T1							
+	sequence of Limit	collat, Receivable, SOD							
+	sequence of payout								
+									
+	Threshold	if price going up, then fresh Selling will be blocked	select * from L1_WATCH_ACTIVE where L1_SCRIP_CODE = 11536;						
+		if price going down, then fresh Buying will be blocked	select * from EQ_L1_WATCH where L1_SCRIP_CODE = "11536";	update in both nse/bse					
+									
+			UPDATE L1_WATCH_ACTIVE SET L1_LTP = 780 WHERE L1_SCRIP_CODE = 590024;						
+			UPDATE EQ_L1_WATCH SET L1_LTP = 780 WHERE L1_SCRIP_CODE = 590024;						
+									
+									
+		CHANGE STATUS FOR CLOSE IPO	YES- closed ipo wont show in masters						
+		Allow margin 100% by default	YES-for margin product,100% margin will be charged,,,,if basket is assigned then it will charge only basket defined margin						
+									
+									
+									
+	QL & order limit	first it will check profile then it will check QL							
+									
+									
+		Enable disable POA checks for admin	YES--will not allow to sell holding						
+			NO-will allow to sell holding without POA also						
+									
+									
+	CREDIT COLUMN/PROFIT	OPT sell premium	1.fresh sell  2.cf buy positio sold today						
+									
+	DEBIT COLUMN/LOSS	OPT buy premium utilize	1.CF sold position buy today						
+									
+									
+									
+		CF							
+									
+		MTM ----  LTP*QTY= Unrealized P/l 	-3532.5						
+		Net position ---- Sell Avg - LTP = Unrealized P/l							
+		Limit --- Prev close - LTP = Unrealized P/l							
+		Margin shortfall---Prev close - LTP = Unrealized P/l							
+									
+		Day							
+									
+		MTM --- Sell avg-LTP= Unrealized P/l	-467.5						
+		Net position  --- Sell Avg - LTP = Unrealized P/l							
+		Limit -- - Sell Avg - LTP = Unrealized P/l							
+									
+		CF+Day							
+		MTM - Avg Premium - Whole negative = Unrealized P/l							
+		Net position  - Sell Avg - LTP = Unrealized P/l							
+		Limit - Prev close - LTP = Unrealized P/l (CF)+ Sell Avg - LTP = Unrealized P/l(Day)							
+									
+									
+		EXPOSURE future	will charge OTH % only, if scrip is not available then default 3.5(same for all 3 month contracts)						
+									
+									
+									
+	Consider RMS margin To show margin shortfall	NO-Total margin will calculate based on exchange defined margin							
+		YES-Total margin will calculate based on user defined (basket) margin							
+									
+									
+		PS03 FILE	EQDCC						
+	ICCL PS03	J	D						
+		K	BN						
+		P	A						
+		Q	BB						
+									
+									
+	SCRIP BLOCK	TRUE---TO remove scrip							
+		FALSE-TO add scrip						PS03 FILE	EQDCC
+							ICCL PS03	J	D
+								K	BN
+								P	A
+		NSEMF, BSEMF						Q	BB
+									
+									
+									
+exposure in mcx	FUTURE	(del+tende+addit+exp) and span							
+	OPTION	only exp and span							
+									
+									
+									
+									
+									
+	CE	strike price < underlying	ITM						
+		strike price > underlying	OTM						
+									
+									
+	PE	strike price < underlying	OTM						
+		strike price > underlying	ITM						
+									
+									
+	DP ID	8 DIGITS							
+	DP Name	CDSL/NSDL							
+both ben id & ent bo id will be same	BEN ID	16 digits	will check during ipo (DP ID+ CLIENT ID)	CDSL					
+	entity BO ID	16 digits	will check during EDIS						
+									
+									
+	OI	sysparameter	it is in lot size	if we keep 9, min OI should be nifty 50*9= 450					
+				in f6 window, OI will be in quantity					
+									
+	corporate action	factor in admin should be given based on strike price (whether div/multiple/subtract/addition)							
+									
+									
+	200% Margin	ASM from 5th stage							
+		GSM from 4th stage							
+									
+									
+									
+	Disabled	can login but just view							
+	Suspend	cannot login and no one can place orders							
+	OFFLINE	can login but just view and dealers can place orders	allowing to cancel orders						
+									
+									
+	UDIFF	opening long qty+ op buy trade qty= it will ad  up and show in netposition							
+		avg price will be taken from op buy trade value for options							
+									
+									
+	MCX COMMODITY	Hedge benefit 							
+		Exposure margin	fully charged						
+		SPAN	charged 25 % of both contracts						
+									
+									
+	SIP 	Period is in month basis							
+		if trading holiday, then next day							
+									
+									
+									
+EXPOSURE	ael_12082024	OTH, OTM optstocks monthly	NSE-DRV_EXPOSURE (ael_04092024)---new working, only this file getting uploaded---*						
+	ael_NIFTY_Options	OTH, OTM Nifty monthly	*						
+	F_AEL_OPT_CONTRACTS_20052025	only OTM all expiry	OPTINDX	All ITM options will be charged 2%					
+				strikes out of the money by more than 10% from the previous day closing underlying price, the applicable Extreme Loss Margin is 3%. 					
+				contracts with residual maturity of more than 9 months, the applicable Extreme Loss Margin is 5% for both ITM/OTM contracts	26501.64				
+EOD/BOD BATCH	BP_SCHEDULE_TIME	will trigger on given time and generate next schedule_date			26405.225				
+	BP_DATE	This date will be same as GTD date in DRV_ORDERS/COM ORDERS	OPSTOCK	All ITM options will be charged 3.5% + adhoc margin given in the file (ael_DDMMYYYY)					
+				short single stock options contracts that are deep out of the money (i.e., strikes out of the money by more than 30% from the previous day closing underlying price), the applicable Extreme Loss Margin is 5.25% + adhoc margin given in the file (ael_DDMMYYYY)					
+									
+CP CODE	058061224I								
+									
+									
+DRV_L1 WATCH	data comes from broadcast								
+									
+									
+BSE DER	only eos allowed, no day								
+									
+KAFKA	tick								
+	untick	d2c							
+									
+									
+MCX Devolvement margin	25%, 50% and 100% of the future margin	The strike price of the devolved options contract is the buy average for take delivery or the sell average for give delivery of the futures contract							
+	applicable for-all ITM option contracts								
+									
+									
+	Tender period – A period that starts 5 working days prior to the expiry of the futures contract								
+									
+									
+									
+MF Holding	upload MF SCHEME MASTER & then NAV MASTER txt files from https://www.bsestarmf.in								
+	then holdings can be uploaded								
+									
+Dealer creation	B-HO								
+	BR-PUNE								
+									
+underlying	futstk/optstk  will be cash underlying stock	physical/additional will calc on eq ltp							
+	futindx/optindx will be future								
+									
+NEAT	NEAT_TRADE_REPORT_FO.csv								
+NEAT format link	circular 61813, 61814								
+BOLT format link	https://www.bseindia.com/boltpluslivesetup.aspx 								
+	https://www.bseindia.com/nta.aspx 								
+									
+									
+	Intraday/MTM square off sent as 0								
+									
+									
+Report for all clients traded	RMS_LIMIT_DETAIL								
+									
+									
+	free	mrg me chadana	margin-80%						
+	COLLATERAL	dp me	cnc-0%						
+									
+	CFS is available on only free stock								
+									
+									
+OLD	net option	premium+PHYSICAL 							
+	Total margin	SPAN+EXP+VAR+MTFVAR							
+	MARGIN SHORTFALL	Total bal- (SPAN+EXP+VAR+MTFVAR+NET OPTION)							
+									
+NEW	net option	ONLY premium							
+	Total margin	SPAN+EXP+VAR+MTFVAR+PHY							
+	MARGIN SHORTFALL	Total bal- (SPAN+EXP+VAR+MTFVAR+NET OPTION+PHY)							
+									
+Mirae Report	SEGWISE_LIMIT_UTLZ								
+									
+									
+POP up MTM message on admin	sysparameter> surveilliance admin	give user id of admin							
+									
+									
+Physical expiry neat report	Optstk only ITM buy/ sell of current month								
+	Futstock buy/sell of current month								
+	only margin product								
+	will be in format like NEAT_TRADE_REPORT_FO	*NEAT_TRADE_REPORT_FO will generate 							
+									
+	addit/phys margin will be charged on order price 								
+									
+									
+HAIRCUT	haircut 0 & 100 will provide collateral value as 0								
+	haircut 10% means 90% collateral value will be provided								
+									
+									
+wrong location order placed	penalty 100 per order								
+									
+									
+									
+NRI SCRIP BLOCK	Will act as scrip block								
+									
+									
+									
+									
+26-08-2025	ADHOC RELEASE: Consolidated patch for Fund Allocation in GoLang								
+	ADHOC RELEASE: Consolidated patch for Fund Allocation in GoLang 路 master 路 Backend_QA_Releases / Backend_Deliveries / FundAllocation 路 GitLab								
+									
+									
+	0086695: Intraday Monitoring of Position Limits								
+									
+									
+									
+	Broadcast----to upload file								
+	socket----for prices on marketwatch								
+									
+									
+									
+									
+pledge approved format	RUPEE|PLE_APPRV_SCRIP|20260121	select * from RMS_APPROVE_PLEDG_SCRIPT;							
+									
+									
+									
+									
+									
+									
+									
+									
+	MDS	for broadcast							
+	pub	for stored services like 52week high,low							
+									
+									
+									
+	Exch calc exposure on previous close, RS on ltp								
+	exch calc span on bod file , RS uploads all files (setting)								
+									
+									
+									
+EUR NRI	only INE and EQ series are allowed								
+									
+	                IF V_RPM_EUR_NRI_SCRIP_BLOCK='Y' AND CHRSEGMENT = 'E' AND CHRCLIENTTYPE = '2' THEN								
+	                                        								
+	                        IF (V_SM_SECURITY_TYPE_FLG IN ('DB','GS','MF') AND V_EXCHANGE ='BSE') OR (CHARSEM_ISIN_CODE NOT LIKE 'INE%' AND V_EXCHANGE ='BSE') OR (CHAR_TRADING_GROUP='IF' AND V_SM_SECURITY_TYPE_FLG IN ('EQ') AND V_EXCHANGE ='BSE') THEN								
+	                                                        								
+	                                SET ZSTATUS = 'E00558';								
+	                                SET ZREJREASON=CONCAT(V_EXCHANGE, ',', CHRSEM_INSTRUMENT_NAME, ',', ZSCRIP_CODE, ',',CHAR_TRADING_GROUP, ',',CLIENT_ID, ',',ORDBUYSELL, ',',V_ORDQTY, ',',(CASE WHEN V_PRODUCTCODE='V' THEN 'CO' WHEN V_PRODUCTCODE='B' THEN 'BO' ELSE V_PRODUCTCODE END),',',NUMORDAMT, ',','SCRIP BLOCK FOR EUROPEAN-NRI');								
+	                                LEAVE RMS_VALIDATE_MAIN;								
+	                                                                								
+	                        END IF;								
+	                        								
+	                        IF (CHAR_TRADING_GROUP NOT IN ('BE','EQ','SM','ST') AND V_EXCHANGE ='NSE') OR (CHAR_TRADING_GROUP IN ('BE','EQ','SM','ST') AND V_EXCHANGE ='NSE' AND CHARSEM_ISIN_CODE LIKE 'INF%') THEN								
+	                                                        								
+	                                SET ZSTATUS = 'E00558';								
+	                                SET ZREJREASON=CONCAT(V_EXCHANGE, ',', CHRSEM_INSTRUMENT_NAME, ',', ZSCRIP_CODE, ',',CHAR_TRADING_GROUP, ',',CLIENT_ID, ',',ORDBUYSELL, ',',V_ORDQTY, ',',(CASE WHEN V_PRODUCTCODE='V' THEN 'CO' WHEN V_PRODUCTCODE='B' THEN 'BO' ELSE V_PRODUCTCODE END),',',NUMORDAMT, ',','SCRIP BLOCK FOR EUROPEAN-NRI');								
+	                                LEAVE RMS_VALIDATE_MAIN;								
+	                                                                        								
+	                        END IF;								
+
+
+
+
+
+
+
+
+
+
+
+
+
+---------------------------------------------------------------------
+
+
+
+
+			
+CLIENT MASTER	select * from ENTITY_MASTER where ENTITY_CODE='saj12';		preloginuat.mstock.com
+NET POSITION	SELECT * FROM NET_POSITION_TABLE WHERE NPT_EXCH_ID='NSE' AND NPT_SEGMENT='C';		wtradeuat.mstock.com
+	select * from NET_POSITION_TABLE where NPT_SEGMENT='C' and NPT_EXCH_ID='NSE';		shreevarahi.com
+ERROR LOG	SELECT * FROM FILE_ERROR_LOG;		
+FILE UPLOADS	select * from RMS_PROCESS_LOG;		
+SYS PARAM	select * from SYS_PARAMETERS;	TPIN	324624
+		PAN	AATPU
+VIEW LIMIT	select * from RMS_FUND_LIMIT;	BO ID	1209290009734575
+	select * from RMS_FUND_LIMIT where CLIENT_ID='ac103';		
+	select * from VIEW_CLIENT_LIMIT;		
+			
+LTP	select * from L1_WATCH_ACTIVE where L1_SCRIP_CODE = 11536;		
+	select * from EQ_L1_WATCH where L1_SCRIP_CODE = "11536";		
+volume	select * from DRV_L1_WATCH where DL1_SCRIP_CODE =37834;		
+			
+	SELECT * FROM SECURITY_MASTER WHERE SM_EXCH_SYMBOL = 'goldm';		
+	SELECT * FROM SECURITY_MASTER WHERE SM_SCRIP_CODE = 2169747;		
+	select * from BHAV_COPY where BC_SCRIP_CODE='3045';		
+			
+HOLDINGS	select * from RMS_CLIENT_SECURITY_LIMIT;		
+			
+DRV ORDER	select * from DRV_ORDERS where DRV_ORDER_NO like '%3715';		
+COM ORDER	select * from COMM_ORDERS where COMM_ORDER_NO like '%2771';		
+EQ ORDER	SELECT * FROM EQ_ORDERS WHERE EQ_ORDER_NO LIKE '%2418%';		
+			
+QL TEMPLATE	SELECT * FROM RMS_RISK_PROFILE_DET;		
+			
+			
+			
+	select * from L1_WATCH_ACTIVE where L1_SCRIP_CODE = 500110;		
+	select * from L1_WATCH_ACTIVE where L1_SCRIP_CODE = 2049;		
+	select * from EQ_L1_WATCH where L1_SCRIP_CODE = "500110";		
+	select * from EQ_L1_WATCH where L1_SCRIP_CODE = "2049";		
+	select *,SM_CHECKS from SEM_ACTIVE where SM_SCRIP_CODE = "23507";		
+			
+EXPOSURE	select *,SM_EXPOSER_PERC, SM_SELL_EXPOSER_PERC from SECURITY_MASTER where SM_SCRIP_CODE=59229		
+			
+			
+DELETE CF position	delete FROM DRV_ORDERS WHERE DRV_CF_FLAG=-1;		
+	select * FROM DRV_ORDERS WHERE DRV_CF_FLAG=-1;		
+			
+	select * from RMS_FNO_SPAN_MARGIN WHERE RSM_SECURITY_ID = '40702';		
+			
+VAR ELM	select * from RMS_EQ_VAR_ELM where SCRIP_ID= '3045';		
+			
+			
+MRV	select * from MRV_ORDERS where mrv_cf_flag=-1;		
+			
+			
+Golang mail id	SELECT * FROM GO_CLIENT_MAIL_INFO;		
+			
+check blocked survillence scrips	SELECT * FROM NSE_GSM_TEMP;		
+	SELECT * FROM BSE_GSM_TEMP;		
+	SELECT * FROM SECURITY_RMS_BLOCK_DETAIL WHERE SCRIP_CODE = '540519';		
+			
+CONFIG	SELECT * FROM RMS_SCREEN_COLUMN_CONFIG;		
+			
+			
+	select * from RMS_SCRIP_MARGIN_BASKET where RSMB_BASKET_CODE= 'hit';		
+	select * from RMS_SCRIP_MARGIN_BASKET where RSMB_BASKET_CODE= 'hit' and RSMB_PRODUCT='F';		
+	SELECT * FROM RMS_SCRIP_MARGIN_BASKET_FNO		
+			
+Exchange connection	select * from EXCH_ADMINISTRATION_MASTER;		
+			
+MTF BUYBACK	SELECT RPM_MTF_BUY_BACK FROM RMS_RISK_PROFILE_MAST WHERE RPM_NAME='KTEST';		
+			
+	select * FROM SURVEILLANCE_MSG_DETAILS;		
+			
+			
+To change expiry manually	select * from SECURITY_MASTER where SM_SCRIP_CODE='839212';		
+	SELECT * FROM SEM_ACTIVE WHERE SM_SCRIP_CODE = '839212';		
+	select * from RMS_FNO_SPAN_MARGIN WHERE RSM_SECURITY_ID = '839212';		
+			
+			
+T+5	SELECT ENTITY_SQ_OFF_MODE FROM ENTITY_MASTER WHERE ENTITY_CODE='F102';		
+			
+EARLY PAYIN	select * from RMS_EARLY_PAYIN;		
+			
+	select FNDEC ('ENC-E554A13E992774E92C6008F5B125354E');		
+			
+			
+Delete Database	SHOW BINARY LOGS;		
+	PURGE BINARY LOGS TO 'binlog.000107';		
+			
+Expression editor	ToDecimal([BaseDelta]) / ToDecimal([NetQuantity])		
+			
+			
+			
+			
+MWPL	SELECT * FROM DRV_BHAV_COPY WHERE DBC_SCRIP_CODE= '26000';		
+	SELECT *  FROM RMS_MEMWISE_UPLOADED_LIMIT;		
+	SELECT * FROM RMS_MEMBER_FNO_POS_LIMIT_DETAIL;		
+	SELECT * FROM RMS_CLIENTWISE_UPLOADED_LIMIT;		
+	SELECT * FROM RMS_CLIENT_FNO_POS_LIMIT_DETAIL;		
+	select * from RMS_FNO_DELTA;		
+	select * from RMS_RISK_PROFILE_MAST where RPM_CODE= 'R16';		
+	select * from SECURITY_MASTER where SM_SCRIP_CODE='44285';		
+	select * from L1_WATCH_ACTIVE where L1_SCRIP_CODE = 44285;		
+	select * from BAN_NET_POSITION;		
+	SELECT * FROM RMS_FNO_DELTA WHERE rfd_symbol LIKE '%SAIL%' AND RFD_STRIKE_PRICE= '140';		
+			
+			
+MCX	select * from SECURITY_MASTER where SM_EXCHANGE='NCDEX';		
+	select * from RMS_FNO_SPAN_MARGIN where RSM_EXCHANGE='NCDEX';		
+	select * from DRV_BHAV_COPY where DBC_EXCHANGE= 'ncdex';		
+	select * from RMS_MCX_EXP_MARGIN;		
+			
+File uploader	select * from GO_FILEUPLOAD_CONFIG;		
+			
+			
+	SHOW processlist;		
+			
+	EAM_VERSION_NO needs to change by 100		
+			
+Pledge approved list	select * from RMS_APPROVE_PLEDG_SCRIPT;		
+			
+			
+			
+	select RUPEESEED.FN_QRY_FUND_LIMIT('MK7025', 'CAPITAL', 'SYSADMIN1', '0');		
+			
+			
+			
+	SET SQL_SAFE_UPDATES=0;		
+	update SEM_ACTIVE set SM_UPPER_LIMIT='1000000',SM_LOWER_LIMIT='1';		
+	update SECURITY_MASTER set SM_UPPER_LIMIT='1000000',SM_LOWER_LIMIT='1';		
+			
+			
+	TRUNCATE COMM_ORDERS;		
+	SET SQL_SAFE_UPDATES=0;		
+	DELETE FROM  NET_POSITION_TABLE WHERE NPT_EXCH_ID='MCX';		
+			
+			
+Active client days	select ENTITY_CODE ,ENTITY_ENABLE_FLAG from  ENTITY_MASTER where ENTITY_CODE = 'A803' ;		
+			
+			
+	select * from GO_CLIENT_ALLOWED_IMMEM;		
+
+
+
+
+
+
+
+
+
+
+
+
+--------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		https://bjpcjp.github.io/pdfs/devops/linux-commands-handbook.pdf					
+							
+	SUDO CRONTAB -l						
+	lo	log path					
+	ll *_*	to search					
+	A						
+	X	back					
+	S	status					
+	cd ..	one step back (backspace)					
+	df -h	check Storage					
+							
+							
+							
+OTP	web ---enter						
+	wslo						
+	enter ll						
+	vi loginOTPcheck.log						
+	or						
+	tail -f loginOTPcheck.log						
+							
+							
+exit without saving	escape :q!						
+save & exit	:wq						
+DB password	ITI_OMS_UAT:/home/rsapp/RMS_DELIVERY > vi DBconf.txt						
+	Escape G						
+							
+							
+							
+start ApacheTomcat	RS_TEST_BORIVALI:/home/rsapp/Application/ApacheTomcat/bin > wsb1						
+	RS_TEST_BORIVALI:/home/rsapp/Application/ApacheTomcat1/bin > ./startup.sh						
+							
+							
+							
+	pkill -9 (process name)						
+							
+log	lo> vi log.NseCMExchAdap						
+							
+rsapp>	telnet 172.19.245.107 10262						
+							
+KAFKA	pf kafka	command to check kafka running or not					
+PATH	cd /home/rsapp/Application/KafkaServer						
+	cd Application/KafkaServer						
+	./RestartKafka.sh	to start kafka					
+PATH	cd /home/rsapp/Application/Exec/ShellScripts						
+	cd Application/Exec/ShellScripts						
+	./KafkaQueDelete.sh	Old data delete					
+	./KafkaRecon.sh	Fetch from DB					
+							
+							
+							
+go>	./InMemRedis MCX M						
+	./InMemRedis NSE D						
+							
+							
+golang							
+							
+							
+							
+							
+							
+IPO	/home/rsapp/Rupee_GO_Service/rs-web-ipoorders >						
+	cd Rupee_GO_Service/rs-web-ipoorders						
+	Go_Run.sh						
+							
+	 ps -aef|grep -i Rupee_GO_Service						
+							
+							
+Go file uploader	cd Rupee_GO_Service/rs-web-fileupload						
+							
+							
+	/home/rsapp/Rupee_GO_Service > ./RestartGoService.sh start						
+							
+Deployment process	paste the patch in rsapp>deployment from winscp						
+	go to putty path						
+	rsapp>deployment						
+	ll						
+	chmod 775 patchname						
+	cp patchname release						
+	./Deployment.sh						
+	password: rupee@123						
+							
+							
+	:/home/rsapp/Application/ApacheTomcat/webapps/RupeeSeedWSUE/WEB-INF/classes >						
+							
+stop broadcast	NseCMBcastAdap						
+							
+							
+	sl (enter)						
+	/home/rsapp/Application/Exec/ShellScripts/						
+	cd Application/Exec/ShellScripts						
+	./AutoStartSystem.sh	./AutoStartExch.sh					
+To delete	./DelLog.sh						
+							
+How to start SLBM Exhc							
+	s>stop						
+	NseSLBMExchAdap						
+	s>start						
+	NseSLBMExchAdap						
+							
+to check connection	 ShowConnStatus.sh						
+							
+							
+To check Notifier status	pf notifier						
+							
+To start notifier	1. go to path						
+	:/home/rsapp/Rupee_GO_OMS/rs-oms-notifier >						
+	cd Rupee_GO_OMS/rs-oms-notifier						
+	2. Run Go_Run.sh						
+	./Go_Run.sh						
+							
+start redis	cd redis/Installed/bin						
+	./StartUpRedis.sh						
+							
+							
+MWPL	cd Rupee_GO_Service/rs-web-miniadmin						
+	./Go_Run.sh						
+							
+	cd Rupee_GO_Job_Service/rs-job-memberposlimit						
+	./Go_Run.sh						
+							
+check logs	Rupee_GO_Job_Service/Log/20260130 > vi rs-job-memberposlimit-GoLog.log						
+							
+							
+	after oms stop						
+	KillJunk.sh						
+	CleanIPCS						
+							
+	table/alter/insert						
+							
+							
+vpn	vi log.McxCOMBoxAdap						
+	 telnet 192.168.195.12 19106						
+							
+							
+							
+	to check httpd started or not: pf httpd						
+							
+	if not started then first kill httpd: pkill httpd						
+							
+	then start: httpd -f /home/rsapp/Application/Apache2/conf/httpd.conf						
+							
+							
+							
+		gomt					
+							
+		redis					
+		auth abc123					
+		HGETALL NSE:E:5204	HSET NSE:D:51714 LTP 25855				
+		select * from GO_CLIENT_ALLOWED_IMMEM;					
+							
+		RMS_CLIENT_FNO_POS_LIMIT_DETAIL	position limit load				
+							
+							
+							
+							
+							
+							
+							
+							
+	inmem mcx	cd Rupee_GO_OMS/rs-oms-recon	rupee@123				
+		./updateSecMaster.sh					
+							
+	order server restart	cd Rupee_GO_OMS/rs-oms-orderserver					
+		Go_Run.sh					
+							
+							
+MTF exposure	Rupee_GO_Job_Service/rs-job-mtfexposer						
+							
+							
+							
+							
+							
+redis							
+auth abc123							
+HGETALL NSE:E:5204	HSET NSE:D:51714 LTP 25855	HGETALL MCX:M:477167					
+		HSET MCX:M:477167 LTP 1000					
+							
