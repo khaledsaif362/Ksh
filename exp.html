@@ -10,11 +10,10 @@ body{
   font-family:"Segoe UI", Arial, sans-serif;
   margin:0;
   background:#f5f5f5;
-  padding-top:60px;   /* 👈 TOP SPACE (2–3 lines) */
+  padding-top:60px;
 }
 
-/* ===== HEADER ===== */
-
+/* HEADER */
 .header{
   background:#2e7d32;
   color:white;
@@ -23,18 +22,17 @@ body{
   font-weight:600;
 }
 
-/* ===== MAIN AREA ===== */
-
+/* MAIN */
 .container{
   padding:30px;
 }
 
-/* ===== ENTRY BAR ===== */
-
+/* ENTRY */
 .entry{
   display:flex;
   gap:12px;
   margin-bottom:25px;
+  flex-wrap:wrap;
 }
 
 select,input{
@@ -43,6 +41,7 @@ select,input{
   border-radius:6px;
   border:1px solid #ccc;
   flex:1;
+  min-width:150px;
 }
 
 button{
@@ -60,8 +59,7 @@ button:hover{
   background:#1b5e20;
 }
 
-/* ===== PREVIEW CARD ===== */
-
+/* CARD */
 .preview-card{
   background:white;
   border-radius:10px;
@@ -77,8 +75,7 @@ button:hover{
   color:#2e7d32;
 }
 
-/* ===== TABLE ===== */
-
+/* TABLE */
 table{
   width:100%;
   border-collapse:collapse;
@@ -100,15 +97,13 @@ tr:nth-child(even){
   background:#fafafa;
 }
 
-/* ===== TOTAL ROW ===== */
-
+/* TOTAL */
 tfoot td{
   font-weight:700;
   background:#f1f8e9;
 }
 
-/* REMOVE BUTTON */
-
+/* REMOVE */
 .remove-btn{
   background:#c62828;
   padding:6px 12px;
@@ -129,8 +124,7 @@ tfoot td{
 
 <div class="container">
 
-<!-- ===== ENTRY ===== -->
-
+<!-- ENTRY -->
 <div class="entry">
 
 <select id="type" onchange="changeType()">
@@ -141,12 +135,14 @@ tfoot td{
 <input id="v1" type="number" placeholder="1st Contract">
 <input id="v2" type="number" placeholder="2nd Contract">
 
+<input id="v3" type="number" placeholder="Lot Qty" style="display:none;">
+<input id="v4" type="number" placeholder="Exp %" style="display:none;">
+
 <button onclick="submitData()">Submit</button>
 
 </div>
 
-<!-- ===== PREVIEW ===== -->
-
+<!-- PREVIEW -->
 <div class="preview-card">
 
 <div class="preview-header">Preview</div>
@@ -185,35 +181,43 @@ let total = 0;
 const typeEl = document.getElementById("type");
 const v1El = document.getElementById("v1");
 const v2El = document.getElementById("v2");
+const v3El = document.getElementById("v3");
+const v4El = document.getElementById("v4");
 
-/* ===== CHANGE TYPE ===== */
-
+/* CHANGE TYPE */
 function changeType(){
 
   if(typeEl.value === "future"){
     v1El.placeholder = "1st Contract";
     v2El.placeholder = "2nd Contract";
+
+    v3El.style.display = "none";
+    v4El.style.display = "none";
+
   }else{
-    v1El.placeholder = "Contract Value";
-    v2El.placeholder = "Exp %";
+    v1El.placeholder = "Strike Price";
+    v2El.placeholder = "Sell Price";
+
+    v3El.style.display = "block";
+    v4El.style.display = "block";
   }
 }
 
-/* ===== SUBMIT ENTRY ===== */
-
+/* SUBMIT */
 function submitData(){
 
   const type = typeEl.value;
-  const A = Number(v1El.value) || 0;
-  const B = Number(v2El.value) || 0;
-
-  if(A === 0 && B === 0) return;
 
   let exposure = 0;
   let steps = "";
 
-  // ===== FUTURE SPREAD =====
+  // ===== FUTURE =====
   if(type === "future"){
+
+    const A = Number(v1El.value) || 0;
+    const B = Number(v2El.value) || 0;
+
+    if(A === 0 && B === 0) return;
 
     const gross = A + B;
     const net = Math.abs(A - B);
@@ -231,30 +235,39 @@ function submitData(){
 3) Gross Spread = ${A} + ${B} = ${gross}<br>
 4) Net Spread = ${A} − ${B} = ${net}<br><br>
 
-5) Gross Exp = (${gross} − ${net}) / 2 = ${spreadPortion}<br>
-   <br>&nbsp;&nbsp
+5) Spread Exp = ${spreadPortion} × 2% × 34% = <b>${spreadExposure.toFixed(2)}</b><br><br>
 
-   = ${spreadPortion} × 2% × 34% = <b>${spreadExposure.toFixed(2)}</b><br><br>
+6) Net Exp = ${net} × 2% = <b>${balanceExposure.toFixed(2)}</b><br><br>
 
-6) Net Exp = ${net}<br><br>&nbsp&nbsp
-
-   = ${net} × 2% = <b>${balanceExposure.toFixed(2)}</b><br><br>
-
-<b>Final Exposure = ${spreadExposure.toFixed(2)} + ${balanceExposure.toFixed(2)} = ${exposure.toFixed(2)}</b>
+<b>Final Exposure = ${exposure.toFixed(2)}</b>
 `;
   }
 
   // ===== OPTION =====
   else{
 
-    exposure = A * B / 100;
+    const strike = Number(v1El.value) || 0;
+    const sell = Number(v2El.value) || 0;
+    const lot = Number(v3El.value) || 0;
+    const expPer = Number(v4El.value) || 0;
+
+    if(strike === 0 && sell === 0 && lot === 0 && expPer === 0) return;
+
+    const contractValue = (strike + sell) * lot;
+
+    exposure = contractValue * expPer / 100;
 
     steps = `
-1) Contract Value = ${A}<br>
-2) Exposure % = ${B}%<br><br>
+1) Strike Price = ${strike}<br>
+2) Sell Price = ${sell}<br>
+3) Lot Qty = ${lot}<br><br>
 
-Exposure = Contract × Exposure% / 100<br>
-         = ${A} × ${B} / 100<br>
+4) Contract Value = (${strike} + ${sell}) × ${lot}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;= ${contractValue}<br><br>
+
+5) Exposure % = ${expPer}%<br><br>
+
+Exposure = ${contractValue} × ${expPer} / 100<br>
          = <b>${exposure.toFixed(2)}</b>
 `;
   }
@@ -272,17 +285,17 @@ Exposure = Contract × Exposure% / 100<br>
     <td><button class="remove-btn" onclick="removeRow(this, ${exposure})">X</button></td>
   `;
 
-  document.getElementById("total").textContent =
-    total.toFixed(2);
+  document.getElementById("total").textContent = total.toFixed(2);
 
-  // Clear inputs
+  // CLEAR INPUTS
   v1El.value = "";
   v2El.value = "";
+  v3El.value = "";
+  v4El.value = "";
   v1El.focus();
 }
 
-/* ===== REMOVE ROW ===== */
-
+/* REMOVE */
 function removeRow(btn, exposure){
 
   const row = btn.parentElement.parentElement;
@@ -291,11 +304,10 @@ function removeRow(btn, exposure){
 
   total -= exposure;
 
-  document.getElementById("total").textContent =
-    total.toFixed(2);
+  document.getElementById("total").textContent = total.toFixed(2);
 }
 
 </script>
 
 </body>
-</html>
+</html>s
