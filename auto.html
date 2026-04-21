@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Automation Order Flow + Report</title>
+  <style>
+    body {
+      background: #0b1220;
+      font-family: Arial;
+      color: white;
+      text-align: center;
+    }
+    .card {
+      background: #111827;
+      padding: 20px;
+      margin: 20px auto;
+      width: 420px;
+      border-radius: 12px;
+    }
+    button {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+    }
+    .run { background: green; color: white; }
+    table {
+      margin: 20px auto;
+      border-collapse: collapse;
+      width: 95%;
+    }
+    th, td {
+      border: 1px solid #444;
+      padding: 8px;
+    }
+    th { background: #222; }
+  </style>
+</head>
+
+<body>
+
+<h2>📊 Automation Order Flow (Auto + Report)</h2>
+
+<div class="card">
+  <p>💰 Total Balance: ₹<span id="total">100000</span></p>
+  <p>💳 Available: ₹<span id="available">100000</span></p>
+  <p>🔒 Margin: ₹<span id="margin">0</span></p>
+
+  <button class="run" onclick="runAutomation()">▶ Run Full Automation</button>
+</div>
+
+<h3>📋 Execution Report</h3>
+
+<table id="report">
+  <tr>
+    <th>Step</th>
+    <th>Action</th>
+    <th>Qty</th>
+    <th>Price</th>
+    <th>Filled</th>
+    <th>Pending</th>
+    <th>Margin</th>
+    <th>Available</th>
+  </tr>
+</table>
+
+<script>
+let totalBalance = 100000;
+let marginUsed = 0;
+
+let order = {
+  qty: 0,
+  price: 100,
+  filled: 0
+};
+
+function getAvailable() {
+  return totalBalance - marginUsed;
+}
+
+function calculateMargin() {
+  let traded = order.filled * order.price;
+  let pending = (order.qty - order.filled) * order.price;
+  return traded + pending;
+}
+
+function log(step, action) {
+  let table = document.getElementById("report");
+
+  let row = table.insertRow();
+
+  row.insertCell(0).innerText = step;
+  row.insertCell(1).innerText = action;
+  row.insertCell(2).innerText = order.qty;
+  row.insertCell(3).innerText = order.price;
+  row.insertCell(4).innerText = order.filled;
+  row.insertCell(5).innerText = order.qty - order.filled;
+  row.insertCell(6).innerText = marginUsed;
+  row.insertCell(7).innerText = getAvailable();
+}
+
+function updateMargin() {
+  marginUsed = calculateMargin();
+
+  document.getElementById("margin").innerText = marginUsed;
+  document.getElementById("available").innerText = getAvailable();
+}
+
+// 🔁 AUTOMATION FLOW
+async function runAutomation() {
+
+  document.getElementById("report").innerHTML = `
+    <tr>
+      <th>Step</th><th>Action</th><th>Qty</th><th>Price</th>
+      <th>Filled</th><th>Pending</th><th>Margin</th><th>Available</th>
+    </tr>
+  `;
+
+  let step = 1;
+
+  function wait() {
+    return new Promise(r => setTimeout(r, 800));
+  }
+
+  // Step 1: Place Order
+  order = { qty: 1, price: 100, filled: 0 };
+  updateMargin();
+  log(step++, "Place Buy 1");
+  await wait();
+
+  // Step 2: Qty → 10
+  order.qty = 10;
+  updateMargin();
+  log(step++, "Modify Qty → 10");
+  await wait();
+
+  // Step 3: Qty → 5
+  order.qty = 5;
+  updateMargin();
+  log(step++, "Modify Qty → 5");
+  await wait();
+
+  // Step 4: Price +10
+  order.price += 10;
+  updateMargin();
+  log(step++, "Price +10");
+  await wait();
+
+  // Step 5: Price -5
+  order.price -= 5;
+  updateMargin();
+  log(step++, "Price -5");
+  await wait();
+
+  // Step 6: Partial Trade (simulate 2 filled)
+  order.filled = 2;
+  updateMargin();
+  log(step++, "Partial Fill (2)");
+  await wait();
+
+  // Step 7: Cancel Pending
+  order.qty = order.filled;
+  updateMargin();
+  log(step++, "Cancel Pending");
+  await wait();
+}
+</script>
+
+</body>
+</html>
