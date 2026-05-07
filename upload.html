@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RMS Dashboard</title>
+</head>
+<body>
+
+<h2>Upload Scrip + VAR Files</h2>
+
+<form action="/upload" method="post" enctype="multipart/form-data">
+    <label>Scrip File:</label><br>
+    <input type="file" name="scrip" required><br><br>
+
+    <label>VAR File:</label><br>
+    <input type="file" name="var" required><br><br>
+
+    <button type="submit">Upload & Process</button>
+</form>
+
+<hr>
+
+<h2>Search Security Code</h2>
+
+<form action="/search" method="get">
+    <input type="text" name="code" placeholder="Enter Security Code" required>
+    <button type="submit">Search</button>
+</form>
+
+</body>
+</html>
