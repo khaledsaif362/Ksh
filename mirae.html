@@ -1,0 +1,1026 @@
+package main
+
+import (
+	"encoding/csv"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"os"
+	"strconv"
+	"strings"
+
+	"github.com/joho/godotenv"
+)
+
+var (
+	API_KEY      string
+	ACCESS_TOKEN string
+	BASE_URL     = "https://api.mstock.trade/openapi/typea"
+)
+
+type ScriptMaster struct {
+	Exchange       string
+	TradingSymbol  string
+	InstrumentType string
+	Segment        string
+}
+
+type LTPItem struct {
+	InstrumentToken int     `json:"instrument_token"`
+	LastPrice       float64 `json:"last_price"`
+	NetChange       float64 `json:"net_change"`
+	PercentChange   float64 `json:"percent_change"`
+}
+
+type LTPResponse struct {
+	Status string             `json:"status"`
+	Data   map[string]LTPItem `json:"data"`
+}
+
+var scriptList []ScriptMaster
+
+// ----------------------------------------------------
+// SCRIPT MASTER DATA LOAD
+// ----------------------------------------------------
+func loadScriptMaster() error {
+	resp, err := http.Get(BASE_URL + "/instruments/scriptmaster")
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	reader := csv.NewReader(resp.Body)
+	records, err := reader.ReadAll()
+	if err != nil {
+		return err
+	}
+
+	for _, row := range records {
+		if len(row) < 12 {
+			continue
+		}
+
+		item := ScriptMaster{
+			TradingSymbol:  strings.TrimSpace(row[2]),
+			InstrumentType: strings.TrimSpace(row[9]),
+			Segment:        strings.TrimSpace(row[10]),
+			Exchange:       strings.TrimSpace(row[11]),
+		}
+		scriptList = append(scriptList, item)
+	}
+	fmt.Println("SCRIPT MASTER LOADED :", len(scriptList))
+	return nil
+}
+
+func findSymbol(exchange string, input string) string {
+	input = strings.ToUpper(strings.TrimSpace(input))
+	for _, item := range scriptList {
+		if strings.ToUpper(item.Exchange) != exchange {
+			continue
+		}
+		symbol := strings.ToUpper(item.TradingSymbol)
+		if symbol != input {
+			continue
+		}
+		finalType := ""
+		if exchange == "NSE" {
+			finalType = strings.ToUpper(item.InstrumentType)
+		}
+		if exchange == "BSE" {
+			finalType = strings.ToUpper(item.Segment)
+		}
+		finalSymbol := symbol
+		if finalType != "" {
+			finalSymbol = symbol + "-" + finalType
+		}
+		return exchange + ":" + finalSymbol
+	}
+	return ""
+}
+
+func apiRequest(method string, apiURL string, payload io.Reader, contentType string) ([]byte, error) {
+	req, err := http.NewRequest(method, apiURL, payload)
+	if err != nil {
+		return nil, err
+	}
+
+	auth := "token " + API_KEY + ":" + ACCESS_TOKEN
+	req.Header.Set("Authorization", auth)
+	req.Header.Set("X-Mirae-Version", "1")
+
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	return body, nil
+}
+
+// ----------------------------------------------------
+// LIVE INDEX TICKER BAR ENGINE
+// ----------------------------------------------------
+func getLiveIndexBar() string {
+	niftySymbol := "NSE:NIFTY 50"
+	bankNiftySymbol := "NSE:BANKNIFTY"
+	sensexSymbol := "BSE:SENSEX"
+
+	urlStr := BASE_URL + "/instruments/quote/ltp?i=" + url.QueryEscape(niftySymbol+","+bankNiftySymbol+","+sensexSymbol)
+	body, err := apiRequest("GET", urlStr, nil, "")
+
+	niftyHTML := `<div class="index-badge d-flex flex-column"><span class="text-muted small fw-semibold">NIFTY 50</span><span class="text-up fs-5">22,040.70 <small class="fs-6"><i class="fa-solid fa-caret-up"></i> +0.45%</small></span></div>`
+	bankHTML := `<div class="index-badge d-flex flex-column"><span class="text-muted small fw-semibold">BANK NIFTY</span><span class="text-up fs-5">46,785.20 <small class="fs-6"><i class="fa-solid fa-caret-up"></i> +0.62%</small></span></div>`
+	sensexHTML := `<div class="index-badge d-flex flex-column"><span class="text-muted small fw-semibold">SENSEX</span><span class="text-down fs-5">72,643.15 <small class="fs-6"><i class="fa-solid fa-caret-down"></i> -0.12%</small></span></div>`
+
+	if err == nil {
+		var result LTPResponse
+		if json.Unmarshal(body, &result) == nil && result.Status == "success" {
+			if item, ok := result.Data[niftySymbol]; ok {
+				cls := "text-up"
+				icon := "<i class='fa-solid fa-caret-up'></i>"
+				if item.PercentChange < 0 { cls = "text-down"; icon = "<i class='fa-solid fa-caret-down'></i>" }
+				niftyHTML = fmt.Sprintf(`<div class="index-badge d-flex flex-column"><span class="text-muted small fw-semibold">NIFTY 50</span><span class="%s fs-5">%.2f <small class="fs-6">%s %.2f%%</small></span></div>`, cls, item.LastPrice, icon, item.PercentChange)
+			}
+			if item, ok := result.Data[bankNiftySymbol]; ok {
+				cls := "text-up"
+				icon := "<i class='fa-solid fa-caret-up'></i>"
+				if item.PercentChange < 0 { cls = "text-down"; icon = "<i class='fa-solid fa-caret-down'></i>" }
+				bankHTML = fmt.Sprintf(`<div class="index-badge d-flex flex-column"><span class="text-muted small fw-semibold">BANK NIFTY</span><span class="%s fs-5">%.2f <small class="fs-6">%s %.2f%%</small></span></div>`, cls, item.LastPrice, icon, item.PercentChange)
+			}
+			if item, ok := result.Data[sensexSymbol]; ok {
+				cls := "text-up"
+				icon := "<i class='fa-solid fa-caret-up'></i>"
+				if item.PercentChange < 0 { cls = "text-down"; icon = "<i class='fa-solid fa-caret-down'></i>" }
+				sensexHTML = fmt.Sprintf(`<div class="index-badge d-flex flex-column"><span class="text-muted small fw-semibold">SENSEX</span><span class="%s fs-5">%.2f <small class="fs-6">%s %.2f%%</small></span></div>`, cls, item.LastPrice, icon, item.PercentChange)
+			}
+		}
+	}
+	return niftyHTML + bankHTML + sensexHTML
+}
+
+// ----------------------------------------------------
+// UNIFIED PREMIUM FinTech UI LAYOUT
+// ----------------------------------------------------
+func layoutStart(title string) string {
+	indexBarHTML := getLiveIndexBar()
+	return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>` + title + ` - TradeStation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body { background-color: #f4f6f9; font-family: 'Inter', system-ui, sans-serif; color: #1e293b; }
+        .sidebar { min-width: 260px; max-width: 260px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #fff; min-height: 100vh; box-shadow: 4px 0 10px rgba(0,0,0,0.05); }
+        .sidebar .logo { font-size: 1.4rem; font-weight: 800; padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.08); color: #38bdf8; letter-spacing: 0.5px; }
+        .sidebar .nav-link { color: #94a3b8; padding: 12px 20px; display: flex; align-items: center; gap: 12px; border-radius: 8px; margin: 4px 15px; transition: all 0.2s ease; text-decoration: none; font-weight: 500; }
+        .sidebar .nav-link:hover { background-color: rgba(255,255,255,0.05); color: #f8fafc; }
+        .sidebar .nav-link.active { background: linear-gradient(90deg, #0ea5e9 0%, #0284c7 100%); color: #fff; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3); }
+        .main-content { width: 100%; padding: 32px; }
+        .card-custom { border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); background: #fff; transition: transform 0.2s; }
+        .card-custom:hover { transform: translateY(-2px); }
+        .metric-card { position: relative; overflow: hidden; }
+        .metric-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; }
+        .mc-blue::before { background-color: #3b82f6; }
+        .mc-green::before { background-color: #10b981; }
+        .mc-purple::before { background-color: #8b5cf6; }
+        .mc-orange::before { background-color: #f59e0b; }
+        .index-badge { background: #fff; padding: 8px 16px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); min-width: 160px; }
+        .table-custom { border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+        .table-custom table { margin-bottom: 0; }
+        .table-custom th { background-color: #f8fafc; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; padding: 14px; border-bottom: 2px solid #e2e8f0; }
+        .table-custom td { padding: 14px; vertical-align: middle; color: #334155; font-size: 0.9rem; border-bottom: 1px solid #edf2f7; }
+        .table-custom tr:last-child td { border-bottom: none; }
+        .total-row { background-color: #f1f5f9; font-weight: 700; border-top: 2px solid #cbd5e1; }
+        .text-up { color: #10b981; font-weight: 600; }
+        .text-down { color: #ef4444; font-weight: 600; }
+    </style>
+</head>
+<body>
+<div class="d-flex w-100">
+    <div class="sidebar d-flex flex-column">
+        <div class="logo"><i class="fa-solid fa-bolt me-2"></i>TradeStation</div>
+        <div class="nav flex-column mt-4 flex-grow-1">
+            <a href="/" class="nav-link"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+            <a href="/funds" class="nav-link"><i class="fa-solid fa-wallet"></i> Funds</a>
+            <a href="/holdings" class="nav-link"><i class="fa-solid fa-briefcase"></i> Holdings</a>
+            <a href="/positions" class="nav-link"><i class="fa-solid fa-align-left"></i> Positions</a>
+            <a href="/orders" class="nav-link"><i class="fa-solid fa-list-check"></i> Orders</a>
+            <a href="/trades" class="nav-link"><i class="fa-solid fa-clock-rotate-left"></i> Trades</a>
+            <a href="/ltp" class="nav-link"><i class="fa-solid fa-satellite-dish"></i> Live LTP</a>
+            <a href="/placeorder" class="nav-link"><i class="fa-solid fa-cart-shopping"></i> Place Order</a>
+        </div>
+    </div>
+    <div class="main-content">
+        <div class="d-flex flex-wrap gap-3 mb-4 justify-content-end">
+            ` + indexBarHTML + `
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold text-dark m-0">` + title + `</h2>
+        </div>
+`
+}
+
+func layoutEnd() string {
+	return `</div></div>
+<script>
+    document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+        if(link.getAttribute('href') === window.location.pathname) {
+            link.classList.add('active');
+        }
+    });
+</script>
+</body>
+</html>`
+}
+
+// ----------------------------------------------------
+// METRIC-BASED DASHBOARD WITH LIVE COUNTS
+// ----------------------------------------------------
+func home(w http.ResponseWriter, r *http.Request) {
+	html := layoutStart("Dashboard")
+
+	availFunds := "₹ 0.00"
+
+fundsBody, err := apiRequest(
+	"GET",
+	BASE_URL+"/user/fundsummary",
+	nil,
+	"",
+)
+
+if err == nil {
+
+	type FundDashboardResponse struct {
+		Status string                   `json:"status"`
+		Data   []map[string]interface{} `json:"data"`
+	}
+
+	var fundRes FundDashboardResponse
+
+	if json.Unmarshal(fundsBody, &fundRes) == nil {
+
+		if len(fundRes.Data) > 0 {
+
+			if bal, ok := fundRes.Data[0]["AVAILABLE_BALANCE"]; ok {
+
+				availFunds = fmt.Sprintf("₹ %v", bal)
+			}
+		}
+	}
+}
+
+	countOrders := "0"
+	if oBody, err := apiRequest("GET", BASE_URL+"/orders", nil, ""); err == nil {
+		var oRes struct{ Data []interface{} `json:"data"` }
+		if json.Unmarshal(oBody, &oRes) == nil {
+			countOrders = strconv.Itoa(len(oRes.Data))
+		}
+	}
+
+	countHoldings := "0"
+	if hBody, err := apiRequest("GET", BASE_URL+"/portfolio/holdings", nil, ""); err == nil {
+		var hRes struct{ Data []interface{} `json:"data"` }
+		if json.Unmarshal(hBody, &hRes) == nil {
+			countHoldings = strconv.Itoa(len(hRes.Data))
+		}
+	}
+
+	countPositions := "0"
+	if pBody, err := apiRequest("GET", BASE_URL+"/portfolio/positions", nil, ""); err == nil {
+		var pRes struct{ Data []interface{} `json:"data"` }
+		if json.Unmarshal(pBody, &pRes) == nil {
+			countPositions = strconv.Itoa(len(pRes.Data))
+		}
+	}
+
+	html += `
+<div class="row g-4">
+    <div class="col-md-6 col-lg-3">
+        <div class="card card-custom metric-card mc-blue p-4">
+            <span class="text-muted small fw-bold text-uppercase">Available Funds</span>
+            <h3 class="fw-bold text-dark mt-2 mb-0">` + availFunds + `</h3>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card card-custom metric-card mc-green p-4">
+            <span class="text-muted small fw-bold text-uppercase">Total Holdings</span>
+            <h3 class="fw-bold text-dark mt-2 mb-0">` + countHoldings + ` Items</h3>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card card-custom metric-card mc-purple p-4">
+            <span class="text-muted small fw-bold text-uppercase">Open Positions</span>
+            <h3 class="fw-bold text-dark mt-2 mb-0">` + countPositions + ` Active</h3>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card card-custom metric-card mc-orange p-4">
+            <span class="text-muted small fw-bold text-uppercase">Today's Orders</span>
+            <h3 class="fw-bold text-dark mt-2 mb-0">` + countOrders + ` Placed</h3>
+        </div>
+    </div>
+</div>`
+
+	html += layoutEnd()
+	w.Write([]byte(html))
+}
+
+// ----------------------------------------------------
+// ----------------------------------------------------
+// ----------------------------------------------------
+// FUNDS PAGE HTML TABLE VIEW
+// ----------------------------------------------------
+// ----------------------------------------------------
+// FUNDS HTML TABLE VIEW
+// ----------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+func funds(w http.ResponseWriter, r *http.Request) {
+
+	html := layoutStart("Fund Summary")
+
+	body, err := apiRequest(
+		"GET",
+		BASE_URL+"/user/fundsummary",
+		nil,
+		"",
+	)
+
+	if err != nil {
+
+		html += `
+		<div class="alert alert-danger">
+			` + err.Error() + `
+		</div>`
+
+		html += layoutEnd()
+
+		w.Write([]byte(html))
+		return
+	}
+
+	// ---------- REAL RESPONSE STRUCT ----------
+
+	type FundResponse struct {
+		Status string                   `json:"status"`
+		Data   []map[string]interface{} `json:"data"`
+	}
+
+	var result FundResponse
+
+	err = json.Unmarshal(body, &result)
+
+	if err != nil {
+
+		html += `
+		<div class="alert alert-danger">
+			JSON Parse Failed
+		</div>
+
+		<pre>` + err.Error() + `</pre>
+		`
+
+		html += layoutEnd()
+
+		w.Write([]byte(html))
+		return
+	}
+
+	if len(result.Data) == 0 {
+
+		html += `
+		<div class="alert alert-warning">
+			No Fund Data Available
+		</div>
+		`
+
+		html += layoutEnd()
+
+		w.Write([]byte(html))
+		return
+	}
+
+	fund := result.Data[0]
+
+	// ---------- SUMMARY CARDS ----------
+
+	html += `
+	<div class="row g-4 mb-4">
+	`
+
+	cardFields := []string{
+		"AVAILABLE_BALANCE",
+		"CLEAR_BALANCE",
+		"LIMIT_SOD",
+		"SUM_OF_ALL",
+	}
+
+	for _, field := range cardFields {
+
+		value := "0"
+
+		if v, ok := fund[field]; ok {
+			value = fmt.Sprintf("%v", v)
+		}
+
+		html += `
+		<div class="col-md-3">
+
+			<div class="card card-custom metric-card mc-green p-4">
+
+				<div class="text-muted small fw-bold text-uppercase mb-2">
+					` + strings.ReplaceAll(field, "_", " ") + `
+				</div>
+
+				<h4 class="fw-bold text-success mb-0">
+					₹ ` + value + `
+				</h4>
+
+			</div>
+
+		</div>
+		`
+	}
+
+	html += `
+	</div>
+	`
+
+	// ---------- TABLE ----------
+
+	html += `
+	<div class="card card-custom p-0 overflow-hidden">
+
+		<div class="table-custom">
+
+			<table class="table table-bordered table-hover mb-0">
+
+				<thead>
+					<tr>
+						<th width="65%">Fund Component</th>
+						<th class="text-end">Amount</th>
+					</tr>
+				</thead>
+
+				<tbody>
+	`
+
+	for key, val := range fund {
+
+		value := fmt.Sprintf("%v", val)
+
+		className := "text-primary fw-bold"
+
+		upper := strings.ToUpper(key)
+
+		if strings.Contains(upper, "BALANCE") {
+			className = "text-success fw-bold"
+		}
+
+		if strings.Contains(upper, "MARGIN") ||
+			strings.Contains(upper, "UTILIZE") {
+			className = "text-danger fw-bold"
+		}
+
+		html += `
+		<tr>
+
+			<td class="fw-semibold">
+				` + strings.ReplaceAll(key, "_", " ") + `
+			</td>
+
+			<td class="text-end ` + className + `">
+				₹ ` + value + `
+			</td>
+
+		</tr>
+		`
+	}
+
+	html += `
+				</tbody>
+
+			</table>
+
+		</div>
+
+	</div>
+	`
+
+	html += layoutEnd()
+
+	w.Header().Set("Content-Type", "text/html")
+
+	w.Write([]byte(html))
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ----------------------------------------------------
+// HOLDINGS WITH TOTALS AND GRID LINES
+// ----------------------------------------------------
+type HoldingItem struct {
+	Symbol       string  `json:"tradingsymbol"`
+	Quantity     int     `json:"quantity"`
+	AveragePrice float64 `json:"average_price"`
+	LastPrice    float64 `json:"last_price"`
+}
+
+func holdings(w http.ResponseWriter, r *http.Request) {
+	html := layoutStart("Equity Holdings")
+	body, err := apiRequest("GET", BASE_URL+"/portfolio/holdings", nil, "")
+
+	if err != nil {
+		html += `<div class="alert alert-danger">` + err.Error() + `</div>` + layoutEnd()
+		w.Write([]byte(html))
+		return
+	}
+
+	var wrapper struct {
+		Data []HoldingItem `json:"data"`
+	}
+	_ = json.Unmarshal(body, &wrapper)
+
+	if len(wrapper.Data) == 0 {
+		html += `<div class="card card-custom p-5 text-center text-muted"><i class="fa-solid fa-folder-open fa-3x mb-3"></i><h5>No Portfolio Stocks Found</h5></div>` + layoutEnd()
+		w.Write([]byte(html))
+		return
+	}
+
+	html += `
+<div class="card card-custom p-0 overflow-hidden">
+    <div class="table-custom">
+        <table class="table table-bordered table-striped table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Scrip Instrument</th>
+                    <th class="text-center">Qty</th>
+                    <th class="text-end">Avg. Price</th>
+                    <th class="text-end">LTP</th>
+                    <th class="text-end">Invested</th>
+                    <th class="text-end">Current Value</th>
+                    <th class="text-end">P&amp;L</th>
+                </tr>
+            </thead>
+            <tbody>`
+
+	var totalInvested, totalCurrent float64
+
+	for _, item := range wrapper.Data {
+		invested := float64(item.Quantity) * item.AveragePrice
+		current := float64(item.Quantity) * item.LastPrice
+		pnl := current - invested
+
+		totalInvested += invested
+		totalCurrent += current
+
+		pnlClass := "text-up"
+		if pnl < 0 { pnlClass = "text-down" }
+
+		html += `
+                <tr>
+                    <td class="fw-bold">` + item.Symbol + `</td>
+                    <td class="text-center">` + strconv.Itoa(item.Quantity) + `</td>
+                    <td class="text-end">₹ ` + fmt.Sprintf("%.2f", item.AveragePrice) + `</td>
+                    <td class="text-end">₹ ` + fmt.Sprintf("%.2f", item.LastPrice) + `</td>
+                    <td class="text-end">₹ ` + fmt.Sprintf("%.2f", invested) + `</td>
+                    <td class="text-end">₹ ` + fmt.Sprintf("%.2f", current) + `</td>
+                    <td class="text-end ` + pnlClass + `">₹ ` + fmt.Sprintf("%.2f", pnl) + `</td>
+                </tr>`
+	}
+
+	totalPnl := totalCurrent - totalInvested
+	totalPnlClass := "text-up"
+	if totalPnl < 0 { totalPnlClass = "text-down" }
+
+	html += `
+                <tr class="total-row">
+                    <td>GRAND TOTAL</td>
+                    <td colspan="3"></td>
+                    <td class="text-end">₹ ` + fmt.Sprintf("%.2f", totalInvested) + `</td>
+                    <td class="text-end">₹ ` + fmt.Sprintf("%.2f", totalCurrent) + `</td>
+                    <td class="text-end ` + totalPnlClass + `">₹ ` + fmt.Sprintf("%.2f", totalPnl) + `</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>`
+
+	html += layoutEnd()
+	w.Write([]byte(html))
+}
+
+// ----------------------------------------------------
+// POSITIONS VIEW
+// ----------------------------------------------------
+type PositionItem struct {
+	Symbol       string  `json:"tradingsymbol"`
+	Product      string  `json:"product"`
+	Quantity     int     `json:"quantity"`
+	AveragePrice float64 `json:"average_price"`
+	LastPrice    float64 `json:"last_price"`
+}
+
+func positions(w http.ResponseWriter, r *http.Request) {
+	html := layoutStart("Margin Positions")
+	body, err := apiRequest("GET", BASE_URL+"/portfolio/positions", nil, "")
+
+	if err != nil {
+		html += `<div class="alert alert-danger">` + err.Error() + `</div>` + layoutEnd()
+		w.Write([]byte(html))
+		return
+	}
+
+	var wrapper struct {
+		Data []PositionItem `json:"data"`
+	}
+	_ = json.Unmarshal(body, &wrapper)
+
+	if len(wrapper.Data) == 0 {
+		html += `<div class="card card-custom p-5 text-center text-muted"><h5>No Active Trading Positions</h5></div>` + layoutEnd()
+		w.Write([]byte(html))
+		return
+	}
+
+	html += `
+<div class="card card-custom p-0 overflow-hidden">
+    <div class="table-custom">
+        <table class="table table-bordered table-striped mb-0">
+            <thead>
+                <tr>
+                    <th>Symbol</th>
+                    <th>Product</th>
+                    <th class="text-center">Net Qty</th>
+                    <th class="text-end">Avg Price</th>
+                    <th class="text-end">LTP</th>
+                    <th class="text-end">MTM P&amp;L</th>
+                </tr>
+            </thead>
+            <tbody>`
+
+	var totalMTM float64
+	for _, item := range wrapper.Data {
+		mtm := float64(item.Quantity) * (item.LastPrice - item.AveragePrice)
+		totalMTM += mtm
+		pnlClass := "text-up"
+		if mtm < 0 { pnlClass = "text-down" }
+
+		html += `
+                <tr>
+                    <td class="fw-bold">` + item.Symbol + `</td>
+                    <td><span class="badge bg-secondary">` + item.Product + `</span></td>
+                    <td class="text-center">` + strconv.Itoa(item.Quantity) + `</td>
+                    <td class="text-end">₹ ` + fmt.Sprintf("%.2f", item.AveragePrice) + `</td>
+                    <td class="text-end">₹ ` + fmt.Sprintf("%.2f", item.LastPrice) + `</td>
+                    <td class="text-end ` + pnlClass + `">₹ ` + fmt.Sprintf("%.2f", mtm) + `</td>
+                </tr>`
+	}
+
+	mtmClass := "text-up"
+	if totalMTM < 0 { mtmClass = "text-down" }
+
+	html += `
+                <tr class="total-row">
+                    <td colspan="5">NET MTM TOTAL</td>
+                    <td class="text-end ` + mtmClass + `">₹ ` + fmt.Sprintf("%.2f", totalMTM) + `</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>`
+
+	html += layoutEnd()
+	w.Write([]byte(html))
+}
+
+// ----------------------------------------------------
+// ORDERS LOGS & TRADES
+// ----------------------------------------------------
+type OrderItem struct {
+	OrderID       string  `json:"order_id"`
+	Symbol        string  `json:"tradingsymbol"`
+	Transaction   string  `json:"transaction_type"`
+	OrderType     string  `json:"order_type"`
+	Quantity      int     `json:"quantity"`
+	Price         float64 `json:"price"`
+	TriggerPrice  float64 `json:"trigger_price"`
+	Status        string  `json:"status"`
+}
+
+func orders(w http.ResponseWriter, r *http.Request) {
+	html := layoutStart("Today's Logs")
+	body, err := apiRequest("GET", BASE_URL+"/orders", nil, "")
+
+	if err != nil {
+		html += `<div class="alert alert-danger">` + err.Error() + `</div>` + layoutEnd()
+		w.Write([]byte(html))
+		return
+	}
+
+	var wrapper struct {
+		Data []OrderItem `json:"data"`
+	}
+	_ = json.Unmarshal(body, &wrapper)
+
+	html += `
+<div class="card card-custom p-0 overflow-hidden">
+    <div class="table-custom">
+        <table class="table table-bordered table-striped mb-0">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Ticker</th>
+                    <th>Action</th>
+                    <th>Type</th>
+                    <th class="text-center">Qty</th>
+                    <th class="text-end">Limit Price</th>
+                    <th class="text-end">Trigger Price</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>`
+
+	for _, o := range wrapper.Data {
+		badgeClass := "bg-warning"
+		if o.Status == "COMPLETE" { badgeClass = "bg-success" } else 
+		if o.Status == "REJECTED" || o.Status == "CANCELLED" { badgeClass = "bg-danger" }
+
+		txnClass := "text-up"
+		if o.Transaction == "SELL" { txnClass = "text-down" }
+
+		html += `
+                <tr>
+                    <td>` + o.OrderID + `</td>
+                    <td class="fw-bold">` + o.Symbol + `</td>
+                    <td class="` + txnClass + ` fw-bold">` + o.Transaction + `</td>
+                    <td><span class="badge bg-dark">` + o.OrderType + `</span></td>
+                    <td class="text-center">` + strconv.Itoa(o.Quantity) + `</td>
+                    <td class="text-end">₹ ` + fmt.Sprintf("%.2f", o.Price) + `</td>
+                    <td class="text-end">₹ ` + fmt.Sprintf("%.2f", o.TriggerPrice) + `</td>
+                    <td><span class="badge ` + badgeClass + `">` + o.Status + `</span></td>
+                </tr>`
+	}
+
+	html += `</tbody></table></div></div>` + layoutEnd()
+	w.Write([]byte(html))
+}
+
+func trades(w http.ResponseWriter, r *http.Request) {
+	html := layoutStart("Executed Trade Book")
+	body, err := apiRequest("GET", BASE_URL+"/tradebook", nil, "")
+	if err != nil {
+		html += `<div class="alert alert-danger">` + err.Error() + `</div>` + layoutEnd()
+		w.Write([]byte(html))
+		return
+	}
+
+	var wrapper struct { Data []OrderItem `json:"data"` }
+	_ = json.Unmarshal(body, &wrapper)
+
+	html += `
+<div class="card card-custom p-0 overflow-hidden">
+    <div class="table-custom">
+        <table class="table table-bordered table-striped mb-0">
+            <thead>
+                <tr>
+                    <th>Trade Execution ID</th>
+                    <th>Ticker</th>
+                    <th>Side</th>
+                    <th class="text-center">Executed Qty</th>
+                    <th class="text-end">Execution Price</th>
+                </tr>
+            </thead>
+            <tbody>`
+
+	for _, t := range wrapper.Data {
+		txnClass := "text-up"
+		if t.Transaction == "SELL" { txnClass = "text-down" }
+
+		html += `
+                <tr>
+                    <td>` + t.OrderID + `</td>
+                    <td class="fw-bold">` + t.Symbol + `</td>
+                    <td class="` + txnClass + ` fw-bold">` + t.Transaction + `</td>
+                    <td class="text-center">` + strconv.Itoa(t.Quantity) + `</td>
+                    <td class="text-end fw-bold text-primary">₹ ` + fmt.Sprintf("%.2f", t.Price) + `</td>
+                </tr>`
+	}
+	html += `</tbody></table></div></div>` + layoutEnd()
+	w.Write([]byte(html))
+}
+
+// ----------------------------------------------------
+// REALTIME IN-PLACE SAME PAGE LTP CORE
+// ----------------------------------------------------
+func ltpPage(w http.ResponseWriter, r *http.Request) {
+	html := layoutStart("Live Market Quote")
+	var responseBox string
+
+	if r.Method == "POST" {
+		exchange := strings.ToUpper(r.FormValue("exchange"))
+		input := strings.ToUpper(r.FormValue("symbol"))
+		symbol := findSymbol(exchange, input)
+
+		if symbol == "" {
+			responseBox = `<div class="alert alert-warning mt-4"><i class="fa-solid fa-circle-info me-2"></i>Symbol <strong>` + input + `</strong> not registered.</div>`
+		} else {
+			body, err := apiRequest("GET", BASE_URL+"/instruments/quote/ltp?i="+symbol, nil, "")
+			if err != nil {
+				responseBox = `<div class="alert alert-danger mt-4">API Read Failed: ` + err.Error() + `</div>`
+			} else {
+				var result LTPResponse
+				if json.Unmarshal(body, &result) == nil {
+					if item, ok := result.Data[symbol]; ok {
+						responseBox = `
+                        <div class="row g-3 mt-3" style="max-width: 650px;">
+                            <div class="col-md-4"><div class="card card-custom p-3"><small class="text-muted fw-bold">IDENTIFIER</small><h5 class="fw-bold text-dark mt-1 mb-0">` + symbol + `</h5></div></div>
+                            <div class="col-md-4"><div class="card card-custom p-3"><small class="text-muted fw-bold">TOKEN</small><h5 class="fw-bold text-secondary mt-1 mb-0">` + strconv.Itoa(item.InstrumentToken) + `</h5></div></div>
+                            <div class="col-md-4"><div class="card card-custom p-3 border-start border-success border-4"><small class="text-muted fw-bold">LAST PRICE</small><h4 class="fw-bold text-success mt-1 mb-0">₹ ` + fmt.Sprintf("%.2f", item.LastPrice) + `</h4></div></div>
+                        </div>`
+					} else {
+						responseBox = `<div class="alert alert-danger mt-4">Token map payload structure mismatch.</div>`
+					}
+				}
+			}
+		}
+	}
+
+	html += `
+<div class="card card-custom p-4" style="max-width: 650px;">
+    <form method="POST" action="/ltp">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label fw-semibold text-secondary">Exchange Node</label>
+                <select name="exchange" class="form-select">
+                    <option value="NSE">NSE</option>
+                    <option value="BSE">BSE</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold text-secondary">Asset Ticker</label>
+                <input type="text" name="symbol" class="form-control text-uppercase" placeholder="e.g. INFOSYS" required>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary w-100 mt-4 fw-bold"><i class="fa-solid fa-satellite-dish me-2"></i>Fetch Price Data</button>
+    </form>
+</div>
+` + responseBox
+
+	html += layoutEnd()
+	w.Write([]byte(html))
+}
+
+// ----------------------------------------------------
+// COMPLETE ORDER TERMINAL (MARKET, LIMIT, SL, SL-M)
+// ----------------------------------------------------
+func placeOrderPage(w http.ResponseWriter, r *http.Request) {
+	html := layoutStart("Order Placement Terminal")
+	html += `
+<div class="card card-custom p-4" style="max-width: 750px;">
+    <form method="POST" action="/placeorderpost">
+        <div class="row g-3">
+            <div class="col-md-4"><label class="form-label fw-semibold text-secondary">Exchange</label><select name="exchange" class="form-select"><option value="NSE">NSE</option><option value="BSE">BSE</option></select></div>
+            <div class="col-md-4"><label class="form-label fw-semibold text-secondary">Scrip Symbol</label><input type="text" name="symbol" class="form-control text-uppercase" placeholder="e.g. SBIN" required></div>
+            <div class="col-md-4"><label class="form-label fw-semibold text-secondary">Quantity</label><input type="number" name="qty" class="form-control" min="1" value="1" required></div>
+            
+            <div class="col-md-6">
+                <label class="form-label fw-semibold text-secondary">Order Mechanism</label>
+                <select name="order_type" id="order_type" class="form-select" onchange="togglePriceSystem()">
+                    <option value="MARKET">MARKET</option>
+                    <option value="LIMIT">LIMIT</option>
+                    <option value="SL">SL (Stop Loss Limit)</option>
+                    <option value="SL-M">SL-M (Stop Loss Market)</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold text-secondary">Execution Routing</label>
+                <select name="transaction_type" class="form-select fw-bold">
+                    <option value="BUY">BUY</option>
+                    <option value="SELL">SELL</option>
+                </select>
+            </div>
+            
+            <div class="col-md-6" id="limit_box" style="display:none;"><label class="form-label fw-semibold text-secondary">Limit Price (₹)</label><input type="text" name="price" class="form-control" value="0"></div>
+            <div class="col-md-6" id="trigger_box" style="display:none;"><label class="form-label fw-semibold text-danger">Trigger Stop Price (₹)</label><input type="text" name="trigger_price" class="form-control text-danger" value="0"></div>
+        </div>
+        <button type="submit" class="btn btn-dark w-100 mt-4 fw-bold"><i class="fa-solid fa-paper-plane me-2"></i>Fire Order to Core</button>
+    </form>
+</div>
+<script>
+    function togglePriceSystem() {
+        var mode = document.getElementById('order_type').value;
+        document.getElementById('limit_box').style.display = (mode === 'LIMIT' || mode === 'SL') ? 'block' : 'none';
+        document.getElementById('trigger_box').style.display = (mode === 'SL' || mode === 'SL-M') ? 'block' : 'none';
+    }
+</script>`
+	html += layoutEnd()
+	w.Write([]byte(html))
+}
+
+func placeOrderPost(w http.ResponseWriter, r *http.Request) {
+	exchange := strings.ToUpper(r.FormValue("exchange"))
+	input := strings.ToUpper(r.FormValue("symbol"))
+	finalSymbol := findSymbol(exchange, input)
+	html := layoutStart("Transmission Report")
+
+	if finalSymbol == "" {
+		html += `<div class="alert alert-danger">Error: Symbol resolution failed for <strong>` + input + `</strong>.</div>` + layoutEnd()
+		w.Write([]byte(html))
+		return
+	}
+
+	symbol := strings.Split(finalSymbol, ":")[1]
+	orderType := r.FormValue("order_type")
+
+	formData := url.Values{}
+	formData.Set("tradingsymbol", symbol)
+	formData.Set("exchange", exchange)
+	formData.Set("transaction_type", r.FormValue("transaction_type"))
+	formData.Set("order_type", orderType)
+	formData.Set("quantity", r.FormValue("qty"))
+	formData.Set("product", "MIS")
+	formData.Set("validity", "DAY")
+
+	if orderType == "LIMIT" || orderType == "SL" { formData.Set("price", r.FormValue("price")) }
+	if orderType == "SL" || orderType == "SL-M" { formData.Set("trigger_price", r.FormValue("trigger_price")) }
+
+	body, err := apiRequest("POST", BASE_URL+"/orders/regular", strings.NewReader(formData.Encode()), "application/x-www-form-urlencoded")
+	if err != nil {
+		html += `<div class="alert alert-danger">` + err.Error() + `</div>`
+	} else {
+		html += `<div class="card card-custom p-4"><h5 class="text-success fw-bold mb-3"><i class="fa-solid fa-circle-check me-2"></i>Order Handed Over Successfully</h5><pre class="bg-light p-3 rounded small mb-0">` + string(body) + `</pre></div>`
+	}
+	html += layoutEnd()
+	w.Write([]byte(html))
+}
+
+// ----------------------------------------------------
+// SERVER BOOTSTRAP ENGINE
+// ----------------------------------------------------
+func main() {
+	_ = godotenv.Load()
+	API_KEY = os.Getenv("API_KEY")
+	ACCESS_TOKEN = os.Getenv("ACCESS_TOKEN")
+
+	_ = loadScriptMaster()
+
+	http.HandleFunc("/", home)
+	http.HandleFunc("/funds", funds)
+	http.HandleFunc("/holdings", holdings)
+	http.HandleFunc("/positions", positions)
+	http.HandleFunc("/orders", orders)
+	http.HandleFunc("/trades", trades)
+	http.HandleFunc("/ltp", ltpPage)
+	http.HandleFunc("/placeorder", placeOrderPage)
+	http.HandleFunc("/placeorderpost", placeOrderPost)
+
+	fmt.Println("======================================================")
+	fmt.Println("⚡ TRADING INFRASTRUCTURE RUNNING: http://localhost:8080")
+	fmt.Println("======================================================")
+	_ = http.ListenAndServe(":8080", nil)
+}
