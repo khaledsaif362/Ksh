@@ -201,12 +201,33 @@ func layoutStart(title string) string {
         .index-badge { background: #fff; padding: 8px 16px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); min-width: 160px; }
         .table-custom { border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
         .table-custom table { margin-bottom: 0; }
-        .table-custom th { background-color: #f8fafc; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; padding: 14px; border-bottom: 2px solid #e2e8f0; }
+        .table-custom th {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: #f8fafc;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    letter-spacing: 0.6px;
+    padding: 15px;
+    border-bottom: none;
+}
         .table-custom td { padding: 14px; vertical-align: middle; color: #334155; font-size: 0.9rem; border-bottom: 1px solid #edf2f7; }
         .table-custom tr:last-child td { border-bottom: none; }
         .total-row { background-color: #f1f5f9; font-weight: 700; border-top: 2px solid #cbd5e1; }
         .text-up { color: #10b981; font-weight: 600; }
         .text-down { color: #ef4444; font-weight: 600; }
+		.buy-theme {
+    background: #eef7ff !important;
+    border: 1px solid #bfdbfe !important;
+    transition: all 0.25s ease;
+}
+
+.sell-theme {
+    background: #fff1f2 !important;
+    border: 1px solid #fecdd3 !important;
+    transition: all 0.25s ease;
+}
+		
     </style>
 </head>
 <body>
@@ -291,13 +312,33 @@ if err == nil {
 		}
 	}
 
-	countHoldings := "0"
-	if hBody, err := apiRequest("GET", BASE_URL+"/portfolio/holdings", nil, ""); err == nil {
-		var hRes struct{ Data []interface{} `json:"data"` }
-		if json.Unmarshal(hBody, &hRes) == nil {
-			countHoldings = strconv.Itoa(len(hRes.Data))
-		}
+	holdingValue := "₹ 0.00"
+
+if hBody, err := apiRequest(
+	"GET",
+	BASE_URL+"/portfolio/holdings",
+	nil,
+	"",
+); err == nil {
+
+	var hRes struct {
+		Data []HoldingItem `json:"data"`
 	}
+
+	if json.Unmarshal(hBody, &hRes) == nil {
+
+		var totalCurrent float64
+
+		for _, item := range hRes.Data {
+
+			current := float64(item.Quantity) * item.LastPrice
+
+			totalCurrent += current
+		}
+
+		holdingValue = fmt.Sprintf("₹ %.2f", totalCurrent)
+	}
+}
 
 	countPositions := "0"
 	if pBody, err := apiRequest("GET", BASE_URL+"/portfolio/positions", nil, ""); err == nil {
@@ -317,8 +358,13 @@ if err == nil {
     </div>
     <div class="col-md-6 col-lg-3">
         <div class="card card-custom metric-card mc-green p-4">
-            <span class="text-muted small fw-bold text-uppercase">Total Holdings</span>
-            <h3 class="fw-bold text-dark mt-2 mb-0">` + countHoldings + ` Items</h3>
+           <span class="text-muted small fw-bold text-uppercase">
+	Current Holdings Value
+</span>
+
+<h3 class="fw-bold text-dark mt-2 mb-0">
+	` + holdingValue + `
+</h3>
         </div>
     </div>
     <div class="col-md-6 col-lg-3">
@@ -598,11 +644,11 @@ func holdings(w http.ResponseWriter, r *http.Request) {
         <table class="table table-bordered table-striped table-hover mb-0">
             <thead>
                 <tr>
-                    <th>Scrip Instrument</th>
+                    <th>SYMBOL</th>
                     <th class="text-center">Qty</th>
                     <th class="text-end">Avg. Price</th>
                     <th class="text-end">LTP</th>
-                    <th class="text-end">Invested</th>
+                    <th class="text-end">Invested Vlaue</th>
                     <th class="text-end">Current Value</th>
                     <th class="text-end">P&amp;L</th>
                 </tr>
@@ -667,7 +713,7 @@ type PositionItem struct {
 }
 
 func positions(w http.ResponseWriter, r *http.Request) {
-	html := layoutStart("Margin Positions")
+	html := layoutStart("Positions")
 	body, err := apiRequest("GET", BASE_URL+"/portfolio/positions", nil, "")
 
 	if err != nil {
@@ -753,7 +799,7 @@ type OrderItem struct {
 }
 
 func orders(w http.ResponseWriter, r *http.Request) {
-	html := layoutStart("Today's Logs")
+	html := layoutStart("Order Book")
 	body, err := apiRequest("GET", BASE_URL+"/orders", nil, "")
 
 	if err != nil {
@@ -774,8 +820,8 @@ func orders(w http.ResponseWriter, r *http.Request) {
             <thead>
                 <tr>
                     <th>Order ID</th>
-                    <th>Ticker</th>
-                    <th>Action</th>
+                    <th>SYMBOL</th>
+                    <th>SIDE</th>
                     <th>Type</th>
                     <th class="text-center">Qty</th>
                     <th class="text-end">Limit Price</th>
@@ -811,7 +857,7 @@ func orders(w http.ResponseWriter, r *http.Request) {
 }
 
 func trades(w http.ResponseWriter, r *http.Request) {
-	html := layoutStart("Executed Trade Book")
+	html := layoutStart("Trade Book")
 	body, err := apiRequest("GET", BASE_URL+"/tradebook", nil, "")
 	if err != nil {
 		html += `<div class="alert alert-danger">` + err.Error() + `</div>` + layoutEnd()
@@ -829,7 +875,7 @@ func trades(w http.ResponseWriter, r *http.Request) {
             <thead>
                 <tr>
                     <th>Trade Execution ID</th>
-                    <th>Ticker</th>
+                    <th>SYMBOL</th>
                     <th>Side</th>
                     <th class="text-center">Executed Qty</th>
                     <th class="text-end">Execution Price</th>
@@ -895,18 +941,18 @@ func ltpPage(w http.ResponseWriter, r *http.Request) {
     <form method="POST" action="/ltp">
         <div class="row g-3">
             <div class="col-md-6">
-                <label class="form-label fw-semibold text-secondary">Exchange Node</label>
+                <label class="form-label fw-semibold text-secondary">Exchange</label>
                 <select name="exchange" class="form-select">
                     <option value="NSE">NSE</option>
                     <option value="BSE">BSE</option>
                 </select>
             </div>
             <div class="col-md-6">
-                <label class="form-label fw-semibold text-secondary">Asset Ticker</label>
+                <label class="form-label fw-semibold text-secondary">Symbol</label>
                 <input type="text" name="symbol" class="form-control text-uppercase" placeholder="e.g. INFOSYS" required>
             </div>
         </div>
-        <button type="submit" class="btn btn-primary w-100 mt-4 fw-bold"><i class="fa-solid fa-satellite-dish me-2"></i>Fetch Price Data</button>
+        <button type="submit" class="btn btn-primary w-100 mt-4 fw-bold"><i class="fa-solid fa-satellite-dish me-2"></i>Get LTP</button>
     </form>
 </div>
 ` + responseBox
@@ -919,9 +965,9 @@ func ltpPage(w http.ResponseWriter, r *http.Request) {
 // COMPLETE ORDER TERMINAL (MARKET, LIMIT, SL, SL-M)
 // ----------------------------------------------------
 func placeOrderPage(w http.ResponseWriter, r *http.Request) {
-	html := layoutStart("Order Placement Terminal")
+	html := layoutStart("Order Placement")
 	html += `
-<div class="card card-custom p-4" style="max-width: 750px;">
+<div id="orderCard" class="card card-custom p-4 buy-theme" style="max-width: 750px;">
     <form method="POST" action="/placeorderpost">
         <div class="row g-3">
             <div class="col-md-4"><label class="form-label fw-semibold text-secondary">Exchange</label><select name="exchange" class="form-select"><option value="NSE">NSE</option><option value="BSE">BSE</option></select></div>
@@ -929,7 +975,7 @@ func placeOrderPage(w http.ResponseWriter, r *http.Request) {
             <div class="col-md-4"><label class="form-label fw-semibold text-secondary">Quantity</label><input type="number" name="qty" class="form-control" min="1" value="1" required></div>
             
             <div class="col-md-6">
-                <label class="form-label fw-semibold text-secondary">Order Mechanism</label>
+                <label class="form-label fw-semibold text-secondary">Order Type</label>
                 <select name="order_type" id="order_type" class="form-select" onchange="togglePriceSystem()">
                     <option value="MARKET">MARKET</option>
                     <option value="LIMIT">LIMIT</option>
@@ -938,17 +984,63 @@ func placeOrderPage(w http.ResponseWriter, r *http.Request) {
                 </select>
             </div>
             <div class="col-md-6">
-                <label class="form-label fw-semibold text-secondary">Execution Routing</label>
-                <select name="transaction_type" class="form-select fw-bold">
+                <label class="form-label fw-semibold text-secondary">Transaction Type</label>
+               <select
+    name="transaction_type"
+    id="transaction_type"
+    class="form-select fw-bold"
+    onchange="changeOrderTheme()"
+>
                     <option value="BUY">BUY</option>
                     <option value="SELL">SELL</option>
                 </select>
             </div>
             
+			
+<div class="col-md-4">
+    <label class="form-label fw-semibold text-secondary">
+        Product
+    </label>
+
+    <select name="product" class="form-select">
+        <option value="CNC">CNC</option>
+        <option value="MIS">MIS</option>
+        <option value="NRML">NRML</option>
+        <option value="MTF">MTF</option>
+    </select>
+</div>
+
+<div class="col-md-4">
+    <label class="form-label fw-semibold text-secondary">
+        Validity
+    </label>
+
+    <select name="validity" class="form-select">
+        <option value="DAY">DAY</option>
+        <option value="IOC">IOC</option>
+    </select>
+</div>
+
+<div class="col-md-4">
+    <label class="form-label fw-semibold text-secondary">
+        Disclosed Qty
+    </label>
+
+    <input
+        type="number"
+        name="disclosed_quantity"
+        class="form-control"
+        value="0"
+    >
+</div>
+
+
+			
+			
             <div class="col-md-6" id="limit_box" style="display:none;"><label class="form-label fw-semibold text-secondary">Limit Price (₹)</label><input type="text" name="price" class="form-control" value="0"></div>
             <div class="col-md-6" id="trigger_box" style="display:none;"><label class="form-label fw-semibold text-danger">Trigger Stop Price (₹)</label><input type="text" name="trigger_price" class="form-control text-danger" value="0"></div>
         </div>
-        <button type="submit" class="btn btn-dark w-100 mt-4 fw-bold"><i class="fa-solid fa-paper-plane me-2"></i>Fire Order to Core</button>
+        <button type="submit" class="btn btn-dark w-100 mt-4 fw-bold"><i class="fa-solid fa-paper-plane me-2"></i>SUBMIT</button>
     </form>
 </div>
 <script>
@@ -957,6 +1049,27 @@ func placeOrderPage(w http.ResponseWriter, r *http.Request) {
         document.getElementById('limit_box').style.display = (mode === 'LIMIT' || mode === 'SL') ? 'block' : 'none';
         document.getElementById('trigger_box').style.display = (mode === 'SL' || mode === 'SL-M') ? 'block' : 'none';
     }
+	
+	
+	function changeOrderTheme() {
+
+    var side = document.getElementById('transaction_type').value;
+
+    var card = document.getElementById('orderCard');
+
+    card.classList.remove('buy-theme');
+    card.classList.remove('sell-theme');
+
+    if(side === 'BUY') {
+
+        card.classList.add('buy-theme');
+
+    } else {
+
+        card.classList.add('sell-theme');
+    }
+}
+	
 </script>`
 	html += layoutEnd()
 	w.Write([]byte(html))
@@ -983,8 +1096,10 @@ func placeOrderPost(w http.ResponseWriter, r *http.Request) {
 	formData.Set("transaction_type", r.FormValue("transaction_type"))
 	formData.Set("order_type", orderType)
 	formData.Set("quantity", r.FormValue("qty"))
-	formData.Set("product", "MIS")
-	formData.Set("validity", "DAY")
+	formData.Set("product", r.FormValue("product"))
+formData.Set("validity", r.FormValue("validity"))
+formData.Set("disclosed_quantity", r.FormValue("disclosed_quantity"))
+formData.Set("tag", r.FormValue("tag"))
 
 	if orderType == "LIMIT" || orderType == "SL" { formData.Set("price", r.FormValue("price")) }
 	if orderType == "SL" || orderType == "SL-M" { formData.Set("trigger_price", r.FormValue("trigger_price")) }
