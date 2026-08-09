@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>NSE SPAN</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:"Segoe UI",Arial,sans-serif;background:#eef7f3;color:#17382d;font-size:13px}
+.header{background:#087f5b;color:#fff;padding:11px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 7px rgba(0,0,0,.14)}
+.header h1{margin:0;font-size:19px}.header span{font-size:11px;opacity:.9}
+.container{max-width:1500px;margin:auto;padding:12px 16px}
+.card{background:#fff;border:1px solid #d7e8e0;border-radius:10px;padding:14px;margin-bottom:12px;box-shadow:0 2px 9px rgba(0,0,0,.04)}
+.card-title{color:#08704f;font-size:16px;font-weight:700;margin-bottom:10px}
+
+/* upload */
+.upload-row{display:flex;align-items:center;gap:12px;background:#f8fcfa;border:1px dashed #a6cdbd;border-radius:8px;padding:9px 12px}
+.upload-icon{width:32px;height:32px;border-radius:7px;background:#e3f4ec;display:flex;align-items:center;justify-content:center;font-size:17px}
+.upload-info{flex:1;min-width:0}.upload-title{font-weight:700;color:#225c48}.upload-sub{font-size:11px;color:#71847c;margin-top:2px}
+.upload-row input{font-size:12px;max-width:310px}
+.status{margin-top:7px;padding:7px 10px;border-radius:6px;background:#f2f5f3;color:#687870;font-size:11px}
+.status.ok{background:#e7f6ee;color:#08704f}.status.err{background:#fff0ee;color:#b83227}
+
+/* search */
+.search-grid{display:grid;grid-template-columns:1.1fr .75fr 1fr .9fr .75fr 1.1fr;gap:8px}
+.field label{display:block;font-size:11px;font-weight:700;color:#587068;margin-bottom:4px}
+.field input,.field select{width:100%;height:36px;border:1px solid #bdd9cc;border-radius:6px;padding:5px 9px;background:#fff;color:#17382d;font-size:12px}
+.field input:focus,.field select:focus{outline:none;border-color:#087f5b;box-shadow:0 0 0 2px rgba(8,127,91,.07)}
+.field input:disabled,.field select:disabled{background:#edf2ef;color:#9aa8a2}
+.buttons{display:flex;gap:7px;margin-top:10px}
+button{border:0;border-radius:6px;padding:7px 13px;min-height:34px;font-size:12px;font-weight:700;cursor:pointer}
+button:hover{opacity:.9}.primary{background:#087f5b;color:#fff}.secondary{background:#e4f3ec;color:#08704f}
+.add{background:#146c94;color:#fff;padding:6px 12px}.remove{background:#ffe8e5;color:#b83227;min-width:28px}
+.confirm{background:#087f5b;color:#fff}.cancel{background:#e4f3ec;color:#08704f}
+
+/* results */
+.results{margin-top:11px;border-top:1px solid #e2ebe7;padding-top:9px}
+.result-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.result-head b{color:#08704f;font-size:12px}.result-head span{font-size:11px;color:#71847c}
+.result-list{max-height:290px;overflow:auto;display:flex;flex-direction:column;gap:5px}
+.result{display:grid;grid-template-columns:55px 1.25fr 110px 90px 55px 85px 55px;gap:8px;align-items:center;border:1px solid #e0ebe6;border-radius:6px;padding:7px 8px;background:#fbfdfc;font-size:11px}
+.result:hover{background:#f1faf6}.result-type{font-weight:800;color:#08704f}.result-name{font-weight:700}
+.result-expiry{font-weight:700;color:#08704f}.result-option{font-weight:800}
+.id-badge{display:inline-block;margin-top:2px;padding:2px 5px;border-radius:4px;background:#edf3f0;color:#667a72;font-size:10px;font-weight:600}
+.empty{padding:22px;text-align:center;background:#f8fcfa;border:1px dashed #d1e4db;border-radius:7px;color:#71847c}
+
+/* portfolio */
+.port-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.port-title{color:#08704f;font-size:16px;font-weight:700}.port-count{font-size:11px;color:#71847c;margin-top:2px}
+.table-wrap{width:100%;overflow:auto;border:1px solid #dce9e3;border-radius:7px}
+table{border-collapse:collapse;width:100%;min-width:1500px;font-size:11px}
+th{background:#087f5b;color:#fff;padding:7px 6px;white-space:nowrap;text-align:center;position:sticky;top:0;z-index:2}
+th.left{text-align:left}
+td{padding:7px 6px;border-bottom:1px solid #e4ece8;white-space:nowrap;text-align:right}
+td.left{text-align:left}tr:hover td{background:#f7fbf9}
+.side,.qty{height:29px;border:1px solid #b9d9cb;border-radius:5px;font-size:11px;background:#fff}
+.side{padding:2px 6px;font-weight:700}.qty{width:70px;padding:2px 5px;text-align:right}
+.loss{color:#c0392b;font-weight:700}.offset{color:#087f5b;font-weight:700}
+.worst{background:#ffe5e0!important;color:#b83227!important;font-weight:800}
+.total-row{background:#e4f5ed!important;font-weight:800}.total-row td{border-top:2px solid #9dcfba;font-size:12px}
+.total-risk{color:#b83227;font-size:14px!important}
+
+/* summary */
+.summary{display:block;margin-top:9px}
+.summary-box{border:1px solid #d9eae2;border-radius:7px;background:#f8fcfa;padding:9px}
+.summary-box span{display:block;font-size:10px;color:#71847c}.summary-box b{display:block;margin-top:3px;font-size:14px}
+
+/* breakdown */
+.breakdown{margin-top:9px;border:1px solid #d7e8e0;border-radius:8px;overflow:hidden}
+.breakdown-title{background:#f0f8f4;color:#08704f;padding:8px 10px;font-weight:700;font-size:12px}
+.breakdown-grid{display:grid;grid-template-columns:repeat(3,1fr)}
+.calc{padding:9px 10px;border-right:1px solid #e1ebe7}.calc:last-child{border-right:0}
+.calc span{display:block;font-size:10px;color:#71847c}.calc b{display:block;margin-top:3px;font-size:14px}
+.calc.red b{color:#b83227}.calc.blue b{color:#146c94}.calc.green b{color:#087f5b}
+.audit{padding:7px 10px;background:#fbfdfc;border-top:1px solid #e1ebe7;color:#71847c;font-size:10px}
+
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.38);display:flex;align-items:center;justify-content:center;z-index:9999;padding:15px}
+.modal{width:100%;max-width:440px;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 15px 45px rgba(0,0,0,.25)}
+.modal-title{background:#087f5b;color:#fff;padding:11px 14px;font-weight:700}.modal-body{padding:14px;font-size:12px;color:#30483e;line-height:1.5}
+.preview{margin-top:9px;border:1px solid #d9eae2;border-radius:7px;background:#f5faf7;padding:9px}
+.preview-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e5eee9}.preview-row:last-child{border:0}
+.preview-label{color:#71847c}.preview-value{font-weight:700}.modal-buttons{display:flex;justify-content:flex-end;gap:7px;padding:0 14px 14px}
+.hidden{display:none!important}
+@media(max-width:1100px){.search-grid{grid-template-columns:repeat(3,1fr)}.summary{grid-template-columns:repeat(3,1fr)}.breakdown-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:650px){.container{padding:8px}.header{padding:10px 13px;display:block}.header span{display:block;margin-top:3px}.upload-row{display:block}.upload-info{margin-bottom:7px}.search-grid{grid-template-columns:1fr}.summary{grid-template-columns:repeat(2,1fr)}.breakdown-grid{grid-template-columns:1fr}.calc{border-right:0}.result{grid-template-columns:50px 1fr 90px 55px}.mobile-hide{display:none}}
+
+/* Simple grid-line scrip-wise margin display */
+.simple-margin-card{
+    margin-top:9px;
+    border:1px solid #cfe2d9;
+    border-radius:7px;
+    overflow:hidden;
+    background:#fff;
+}
+.simple-margin-title{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:8px 10px;
+    background:#087f5b;
+    color:#fff;
+    font-size:13px;
+    font-weight:800;
+}
+.simple-margin-sub{
+    color:#d9f0e7;
+    font-size:10px;
+    font-weight:600;
+}
+.simple-margin-table-wrap{
+    overflow-x:auto;
+}
+.simple-margin-table{
+    width:100%;
+    min-width:850px;
+    border-collapse:collapse;
+    table-layout:auto;
+    font-size:11px;
+}
+.simple-margin-table th{
+    position:static;
+    background:#eef7f3;
+    color:#245849;
+    border:1px solid #cfe2d9;
+    padding:7px 8px;
+    text-align:center;
+    white-space:nowrap;
+    font-weight:800;
+}
+.simple-margin-table th.left,
+.simple-margin-table td.left{
+    text-align:left;
+}
+.simple-margin-table td{
+    padding:7px 8px;
+    border:1px solid #dbe9e3;
+    text-align:center;
+    white-space:nowrap;
+    height:36px;
+}
+.simple-margin-table tbody tr:nth-child(even) td{
+    background:#fbfdfc;
+}
+.simple-margin-table tbody tr:hover td{
+    background:#f0f8f4;
+}
+.simple-margin-table .margin-value{
+    color:#b83227;
+    font-weight:800;
+    text-align:right;
+}
+.simple-margin-table .grand-total-row td{
+    background:#e3f4eb;
+    border:1px solid #a9d1bf;
+    border-top:2px solid #79b79f;
+    font-weight:800;
+}
+.simple-margin-table .grand-total-value{
+    color:#b83227;
+    font-size:14px;
+    text-align:right;
+}
+.simple-margin-note{
+    display:none;
+}
+
+/* Make the existing portfolio table itself compact because S1-S16
+   are no longer displayed. */
+#calculationArea .table-wrap{
+    border:0;
+    overflow-x:auto;
+}
+#calculationArea > .table-wrap > table{
+    min-width:0;
+    width:100%;
+}
+#calculationArea > .table-wrap th,
+#calculationArea > .table-wrap td{
+    border:1px solid #dbe9e3;
+}
+#calculationArea > .table-wrap th{
+    background:#087f5b;
+}
+#calculationArea > .table-wrap .grand-total-row td{
+    background:#e3f4eb;
+}
+#calculationArea > .table-wrap .grand-total-value{
+    color:#b83227;
+    font-size:14px;
+}
+
+
+
+/* Correct portfolio-contribution display */
+.simple-margin-table .contribution-negative{
+    color:#087f5b !important;
+    font-weight:800;
+}
+#calculationArea > .table-wrap > table .margin-value{
+    color:#b83227;
+    font-weight:800;
+    text-align:right;
+}
+#calculationArea > .table-wrap > table .contribution-negative{
+    color:#087f5b !important;
+}
+#calculationArea > .table-wrap > table .scenario-total-row td{
+    background:#eef7f3;
+    border:1px solid #c7ded4;
+    font-weight:800;
+}
+#calculationArea > .table-wrap > table .scenario-total-value{
+    color:#087f5b;
+    font-weight:900;
+    text-align:right;
+}
+#calculationArea > .table-wrap > table .grand-total-row td{
+    background:#e3f4eb;
+    border:1px solid #a9d1bf;
+    border-top:2px solid #79b79f;
+    font-weight:800;
+}
+#calculationArea > .table-wrap > table .grand-total-value{
+    color:#b83227;
+    font-size:14px;
+    font-weight:900;
+    text-align:right;
+}
+
+/* The calculation result is displayed in the main grid only. */
+#summary{
+    display:none !important;
+}
+#breakdown{
+    display:none !important;
+}
+
+
+.group-margin-note{font-size:10px;color:#71847c;margin-top:5px}
+
+</style>
+</head>
+<body>
+
+<header class="header">
+    <h1>NSE SPAN</h1>
+    
+</header>
+
+<div class="container">
+
+<div class="card">
+    <div class="card-title">1. Upload NSE SPAN File</div>
+    <div class="upload-row">
+        <div class="upload-icon">📄</div>
+        <div class="upload-info">
+            <div class="upload-title">NSE .SPN File</div>
+           
+        
+        <input id="spanFile" type="file" accept=".spn,.xml">
+    </div>
+    <div id="uploadStatus" class="status">No SPN file uploaded</div>
+</div>
+
+<div class="card">
+    <div class="card-title">2. Add Contracts</div>
+
+    <div class="search-grid">
+        <div class="field">
+            <label>Underlying</label>
+            <input id="symbol" value="NIFTY" placeholder="NIFTY">
+        </div>
+        <div class="field">
+            <label>Type</label>
+            <select id="contractType">
+                <option value="ALL">All</option>
+                <option value="FUT">Futures</option>
+                <option value="OPT">Options</option>
+            </select>
+        </div>
+        <div class="field">
+            <label>Expiry</label>
+            <input id="expiry" type="date">
+        </div>
+        <div class="field">
+            <label>Strike</label>
+            <input id="strike" type="number" placeholder="25000">
+        </div>
+        <div class="field">
+            <label>Option</label>
+            <select id="optionType">
+                <option value="">Any</option>
+                <option value="C">CE</option>
+                <option value="P">PE</option>
+            </select>
+        </div>
+        <div class="field">
+            <label>Contract ID</label>
+            <input id="contractId" placeholder="Optional">
+        </div>
+    </div>
+
+    <div class="buttons">
+        <button class="primary" onclick="searchContracts()">Search</button>
+        <button class="secondary" onclick="clearSearch()">Clear</button>
+    </div>
+
+    <div id="searchResults" class="results hidden">
+        <div class="result-head">
+            <b>Matching Contracts</b>
+            <span id="searchCount"></span>
+        </div>
+        <div id="resultList" class="result-list"></div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="port-head">
+        <div>
+            <div class="port-title">3. Portfolio</div>
+            <div id="selectedCount" class="port-count">No contracts selected</div>
+        </div>
+        <button class="secondary" onclick="clearPortfolio()">Clear All</button>
+    </div>
+
+    <div id="emptyPortfolio" class="empty">
+        No contracts added yet.<br><br>
+        Search for a contract above and click <b>Add</b>.
+    </div>
+
+    <div id="calculationArea" class="hidden">
+        <div class="table-wrap">
+            <table>
+                <thead id="calculationHead"></thead>
+                <tbody id="calculationBody"></tbody>
+            </table>
+        </div>
+        <div id="summary" class="summary"></div>
+        <div id="breakdown" class="breakdown"></div>
+    </div>
+</div>
+</div>
+
+<div id="confirmModal" class="modal-bg hidden">
+    <div class="modal">
+        <div class="modal-title">Verify Contract Before Adding</div>
+        <div class="modal-body">
+           
+            <div id="contractPreview" class="preview"></div>
+        </div>
+        <div class="modal-buttons">
+            <button class="cancel" onclick="closeConfirm()">Cancel</button>
+            <button class="confirm" onclick="confirmAdd()">Add Contract</button>
+        </div>
+    </div>
+</div>
+
+<script>
+"use strict";
+
+let spanXML=null;
+let contracts=[];
+let portfolio=[];
+let pendingContractIndex=null;
+
+/* ---------- Upload ---------- */
+document.getElementById("spanFile").addEventListener("change",function(e){
+    const file=e.target.files[0];
+    if(!file)return;
+
+    setStatus("Reading "+file.name+"...","normal");
+
+    const reader=new FileReader();
+
+    reader.onload=function(ev){
+        try{
+            const parser=new DOMParser();
+            spanXML=parser.parseFromString(ev.target.result,"application/xml");
+            if(spanXML.querySelector("parsererror"))throw new Error("Invalid SPN/XML file.");
+
+            parseSPAN();
+
+            if(!contracts.length)throw new Error("No supported contracts found.");
+
+            portfolio=[];
+            renderPortfolio();
+
+            document.getElementById("searchResults").classList.add("hidden");
+
+            setStatus(
+                file.name+" uploaded successfully • "+
+                contracts.length.toLocaleString("en-IN")+" contracts loaded",
+                "ok"
+            );
+        }catch(err){
+            console.error(err);
+            contracts=[];
+            portfolio=[];
+            renderPortfolio();
+            setStatus(err.message||"Unable to read SPN file.","err");
+        }
+    };
+
+    reader.onerror=function(){setStatus("Unable to read selected file.","err");};
+    reader.readAsText(file);
+});
+
+function setStatus(text,type){
+    const el=document.getElementById("uploadStatus");
+    el.textContent=text;
+    el.className="status";
+    if(type==="ok")el.classList.add("ok");
+    if(type==="err")el.classList.add("err");
+}
+
+/* ---------- XML helpers ---------- */
+function directValue(parent,tag){
+    const node=parent.querySelector(":scope > "+tag);
+    return node?node.textContent.trim():"";
+}
+
+function directNumber(parent,tag){
+    const v=directValue(parent,tag);
+    if(v==="")return null;
+    const n=Number(v);
+    return Number.isFinite(n)?n:null;
+}
+
+/*
+  Risk arrays are stored in SPN in <ra><a>...</a>...</ra>.
+  Some files can contain nested risk-array structures, so
+  we only take direct <a> children.
+*/
+function riskArray(node){
+    const ra=node.querySelector(":scope > ra");
+    if(!ra)return [];
+    return Array.from(ra.querySelectorAll(":scope > a"))
+        .map(x=>Number(x.textContent.trim())||0);
+}
+
+/* ---------- Parse SPN ---------- */
+function parseSPAN(){
+    contracts=[];
+    const seen=new Set();
+
+    /* Futures */
+    spanXML.querySelectorAll("futPf").forEach(pf=>{
+        const pfCode=directValue(pf,"pfCode");
+        const pfId=directValue(pf,"pfId");
+
+        pf.querySelectorAll(":scope > fut").forEach(fut=>{
+            const cId=directValue(fut,"cId");
+            const expiry=directValue(fut,"pe");
+
+            const key="FUT|"+pfId+"|"+cId+"|"+expiry;
+            if(seen.has(key))return;
+            seen.add(key);
+
+            contracts.push({
+                type:"FUT",
+                pfCode,pfId,contractId:cId,
+                expiry,
+                strike:null,
+                optionType:"",
+                price:directNumber(fut,"p"),
+                delta:directNumber(fut,"d"),
+                volatility:directNumber(fut,"v"),
+                cvf:directNumber(fut,"cvf")??1,
+                scaling:directNumber(fut,"sc")??1,
+                risk:riskArray(fut)
+            });
+        });
+    });
+
+    /* Options */
+    spanXML.querySelectorAll("oopPf").forEach(pf=>{
+        const pfCode=directValue(pf,"pfCode");
+        const pfId=directValue(pf,"pfId");
+
+        pf.querySelectorAll(":scope > series").forEach(series=>{
+            const expiry=directValue(series,"pe");
+
+            series.querySelectorAll(":scope > opt").forEach(opt=>{
+                const cId=directValue(opt,"cId");
+                const optionType=directValue(opt,"o").toUpperCase();
+                const strike=directNumber(opt,"k");
+
+                const key="OPT|"+pfId+"|"+cId+"|"+expiry+"|"+optionType+"|"+strike;
+                if(seen.has(key))return;
+                seen.add(key);
+
+                contracts.push({
+                    type:"OPT",
+                    pfCode,pfId,contractId:cId,
+                    expiry,strike,optionType,
+                    price:directNumber(opt,"p"),
+                    delta:directNumber(opt,"d"),
+                    volatility:directNumber(opt,"v"),
+                    cvf:directNumber(series,"cvf")??directNumber(pf,"cvf")??1,
+                    scaling:directNumber(series,"sc")??1,
+                    risk:riskArray(opt)
+                });
+            });
+        });
+    });
+}
+
+/* ---------- Date ---------- */
+function normalizeExpiry(value){
+    if(!value)return"";
+    value=String(value).trim().toUpperCase();
+
+    if(/^\d{8}$/.test(value))return value;
+    if(/^\d{4}-\d{2}-\d{2}$/.test(value))return value.replace(/-/g,"");
+
+    const m=value.match(/^(\d{1,2})[-\/]([A-Z]{3})[-\/](\d{4})$/);
+    if(m){
+        const months={
+            JAN:"01",FEB:"02",MAR:"03",APR:"04",MAY:"05",JUN:"06",
+            JUL:"07",AUG:"08",SEP:"09",OCT:"10",NOV:"11",DEC:"12"
+        };
+        if(months[m[2]])return m[3]+months[m[2]]+m[1].padStart(2,"0");
+    }
+    return value;
+}
+
+function formatExpiry(value){
+    const d=normalizeExpiry(value);
+    if(!/^\d{8}$/.test(d))return value||"-";
+
+    const months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    return d.substring(6,8)+"-"+months[Number(d.substring(4,6))-1]+"-"+d.substring(0,4);
+}
+
+/* ---------- Search ---------- */
+function searchContracts(){
+    if(!contracts.length){
+        setStatus("Please upload an SPN file first.","err");
+        return;
+    }
+
+    const symbol=document.getElementById("symbol").value.trim().toUpperCase();
+    const type=document.getElementById("contractType").value;
+    const expiry=normalizeExpiry(document.getElementById("expiry").value);
+    const strikeText=document.getElementById("strike").value.trim();
+    const strike=strikeText===""?null:Number(strikeText);
+    const optionType=document.getElementById("optionType").value.trim().toUpperCase();
+    const contractId=document.getElementById("contractId").value.trim().toUpperCase();
+
+    const results=contracts.filter(c=>{
+        if(symbol&&String(c.pfCode).toUpperCase()!==symbol)return false;
+        if(type!=="ALL"&&c.type!==type)return false;
+        if(expiry&&normalizeExpiry(c.expiry)!==expiry)return false;
+
+        if(c.type==="OPT"){
+            if(strike!==null&&Number(c.strike)!==strike)return false;
+            if(optionType&&c.optionType!==optionType)return false;
+        }
+
+        if(contractId&&!String(c.contractId).toUpperCase().includes(contractId))return false;
+        return true;
+    });
+
+    displayResults(results);
+}
+
+function displayResults(results){
+    const box=document.getElementById("searchResults");
+    const list=document.getElementById("resultList");
+    const count=document.getElementById("searchCount");
+
+    box.classList.remove("hidden");
+    list.innerHTML="";
+    count.textContent=results.length.toLocaleString("en-IN")+" found";
+
+    if(!results.length){
+        list.innerHTML='<div class="empty">No matching contracts found.</div>';
+        return;
+    }
+
+    results.slice(0,100).forEach(c=>{
+        const index=contracts.indexOf(c);
+        const row=document.createElement("div");
+        row.className="result";
+
+        row.innerHTML=`
+            <div class="result-type">${c.type}</div>
+            <div class="result-name">
+                ${escapeHtml(c.pfCode)}<br>
+                <span class="id-badge">Contract ID: ${escapeHtml(c.contractId)}</span>
+            </div>
+            <div class="result-expiry">${formatExpiry(c.expiry)}</div>
+            <div>${c.type==="OPT"?formatNumber(c.strike):"-"}</div>
+            <div class="result-option">${c.type==="OPT"?(c.optionType==="C"?"CE":"PE"):"FUT"}</div>
+            <div class="mobile-hide">${c.price==null?"-":formatNumber(c.price)}</div>
+            <div><button class="add" onclick="openConfirm(${index})">Add</button></div>
+        `;
+        list.appendChild(row);
+    });
+
+    if(results.length>100){
+        const more=document.createElement("div");
+        more.style.cssText="padding:7px;text-align:center;color:#71847c;font-size:10px";
+        more.textContent="Showing first 100 of "+results.length.toLocaleString("en-IN")+". Refine your search.";
+        list.appendChild(more);
+    }
+}
+
+/* ---------- Add ---------- */
+function openConfirm(index){
+    const c=contracts[index];
+    if(!c)return;
+
+    pendingContractIndex=index;
+
+    document.getElementById("contractPreview").innerHTML=`
+        <div class="preview-row"><span class="preview-label">Underlying</span><span class="preview-value">${escapeHtml(c.pfCode)}</span></div>
+        <div class="preview-row"><span class="preview-label">Type</span><span class="preview-value">${c.type==="OPT"?"OPTION":"FUTURE"}</span></div>
+        <div class="preview-row"><span class="preview-label">Expiry</span><span class="preview-value" style="color:#08704f">${formatExpiry(c.expiry)}</span></div>
+        <div class="preview-row"><span class="preview-label">Strike</span><span class="preview-value">${c.type==="OPT"?formatNumber(c.strike):"-"}</span></div>
+        <div class="preview-row"><span class="preview-label">Option</span><span class="preview-value">${c.type==="OPT"?(c.optionType==="C"?"CE":"PE"):"-"}</span></div>
+        <div class="preview-row"><span class="preview-label">Contract ID</span><span class="preview-value">${escapeHtml(c.contractId)}</span></div>
+        <div class="preview-row"><span class="preview-label">Price</span><span class="preview-value">${formatNumber(c.price)}</span></div>
+    `;
+
+    document.getElementById("confirmModal").classList.remove("hidden");
+}
+
+function confirmAdd(){
+    if(pendingContractIndex===null)return;
+
+    const c=contracts[pendingContractIndex];
+    if(!c){closeConfirm();return;}
+
+    portfolio.push({contract:c,side:"BUY",qty:1});
+    pendingContractIndex=null;
+    closeConfirm();
+
+    /* Hide matching-contract results immediately after Add. */
+    document.getElementById("searchResults").classList.add("hidden");
+    document.getElementById("resultList").innerHTML="";
+    document.getElementById("searchCount").textContent="";
+
+    renderPortfolio();
+
+    setTimeout(()=>document.getElementById("calculationArea").scrollIntoView({behavior:"smooth",block:"start"}),100);
+}
+
+function closeConfirm(){
+    pendingContractIndex=null;
+    document.getElementById("confirmModal").classList.add("hidden");
+}
+
+/* ---------- Portfolio ---------- */
+function renderPortfolio(){
+    const empty=document.getElementById("emptyPortfolio");
+    const area=document.getElementById("calculationArea");
+    const count=document.getElementById("selectedCount");
+
+    if(!portfolio.length){
+        empty.classList.remove("hidden");
+        area.classList.add("hidden");
+        count.textContent="No contracts selected";
+        return;
+    }
+
+    empty.classList.add("hidden");
+    area.classList.remove("hidden");
+    count.textContent=portfolio.length+(portfolio.length===1?" contract selected":" contracts selected");
+    buildCalculation();
+}
+
+/* ---------- Scenario calculation ---------- */
+function buildCalculation(){
+    const head=document.getElementById("calculationHead");
+    const body=document.getElementById("calculationBody");
+
+    /*
+      IMPORTANT:
+      SPAN scanning risk must NOT be calculated by adding the
+      same S1/S2/... scenario across unrelated underlyings.
+
+      Example:
+        NIFTY positions have their own worst scenario.
+        TCS positions have their own worst scenario.
+
+      Correct:
+        NIFTY scanning risk = MAX(NIFTY portfolio S1..S16)
+        TCS scanning risk   = MAX(TCS portfolio S1..S16)
+        Total scanning risk = NIFTY risk + TCS risk
+
+      The old code incorrectly did:
+        MAX(NIFTY S1 + TCS S1, ...)
+
+      That is why the previous portfolio was much lower than
+      the Zerodha SPAN value.
+
+      S1-S16 remain completely internal and are NOT displayed.
+    */
+
+    head.innerHTML=`
+        <tr>
+            <th>#</th>
+            <th class="left">Scrip / Contract</th>
+            <th>Type</th>
+            <th>Expiry</th>
+            <th>Strike</th>
+            <th>CE/PE</th>
+            <th>Side</th>
+            <th>Qty</th>
+            <th>Margin</th>
+            <th>Remove</th>
+        </tr>
+    `;
+
+    body.innerHTML="";
+
+    /*
+      Build each contract's 16 scenario values first.
+    */
+    const contractScenarioValues=[];
+    let netOptionValueAdjustment=0;
+
+    portfolio.forEach((item,index)=>{
+        const c=item.contract;
+        const direction=item.side==="BUY"?1:-1;
+        const qty=Math.max(0,Number(item.qty)||0);
+
+        /*
+          Same contract risk calculation:
+          SPN risk array × quantity × BUY/SELL × CVF × scaling
+        */
+        const multiplier=(Number(c.cvf)||1)*(Number(c.scaling)||1);
+        const values=[];
+
+        for(let s=0;s<16;s++){
+            const raw=Number(c.risk[s]||0);
+            values.push(raw*qty*direction*multiplier);
+        }
+
+        contractScenarioValues.push(values);
+
+        /*
+          Same option premium adjustment as before.
+        */
+        if(c.type==="OPT"){
+            const premium=(Number(c.price)||0)*qty*multiplier;
+
+            netOptionValueAdjustment +=
+                item.side==="SELL" ? premium : -premium;
+        }
+    });
+
+    /*
+      =========================================================
+      CORRECT SPAN RISK-GROUP CALCULATION
+      =========================================================
+
+      Positions belonging to the SAME underlying/product group
+      are combined scenario-by-scenario.
+
+      Then the WORST scenario of that group is selected.
+
+      Different underlyings are NOT scenario-netted against
+      each other.
+
+      Example:
+        NIFTY S1..S16 -> find NIFTY worst
+        TCS   S1..S16 -> find TCS worst
+
+        Total scanning risk =
+          NIFTY worst + TCS worst
+    */
+    const groups={};
+
+    portfolio.forEach((item,index)=>{
+        const c=item.contract;
+
+        /*
+          pfCode is the underlying/product group in this SPN.
+          Keep it normalized so NIFTY/NIFTY don't become separate.
+        */
+        const groupKey=String(c.pfCode||"").trim().toUpperCase();
+
+        if(!groups[groupKey]){
+            groups[groupKey]={
+                key:groupKey,
+                totals:new Array(16).fill(0),
+                members:[]
+            };
+        }
+
+        groups[groupKey].members.push(index);
+
+        for(let s=0;s<16;s++){
+            groups[groupKey].totals[s]+=contractScenarioValues[index][s];
+        }
+    });
+
+    let scanningRisk=0;
+    const groupWorst={};
+
+    Object.values(groups).forEach(group=>{
+        const worst=Math.max(...group.totals);
+        const worstIndex=group.totals.indexOf(worst);
+
+        groupWorst[group.key]={
+            risk:worst,
+            scenario:worstIndex
+        };
+
+        /*
+          IMPORTANT: sum worst risk of EACH group.
+        */
+        scanningRisk+=worst;
+    });
+
+    /*
+      For display, each contract contributes its value in the
+      WORST scenario of its OWN underlying group.
+
+      This makes the displayed rows reconcile to the group
+      scanning-risk total.
+    */
+    portfolio.forEach((item,index)=>{
+        const c=item.contract;
+        const groupKey=String(c.pfCode||"").trim().toUpperCase();
+        const group=groupWorst[groupKey];
+
+        const contribution=contractScenarioValues[index][group.scenario];
+
+        let marginClass="margin-value";
+
+        if(contribution<0){
+            marginClass="margin-value contribution-negative";
+        }
+
+        body.insertAdjacentHTML("beforeend",`
+            <tr>
+                <td>${index+1}</td>
+
+                <td class="left">
+                    <b>${escapeHtml(c.pfCode)}</b><br>
+                    <span class="id-badge">ID: ${escapeHtml(c.contractId)}</span>
+                </td>
+
+                <td>${c.type}</td>
+
+                <td>${formatExpiry(c.expiry)}</td>
+
+                <td>${c.type==="OPT"?formatNumber(c.strike):"-"}</td>
+
+                <td>
+                    ${c.type==="OPT"
+                        ?(c.optionType==="C"?"CE":"PE")
+                        :"-"}
+                </td>
+
+                <td>
+                    <select class="side" onchange="changeSide(${index},this.value)">
+                        <option value="BUY" ${item.side==="BUY"?"selected":""}>BUY</option>
+                        <option value="SELL" ${item.side==="SELL"?"selected":""}>SELL</option>
+                    </select>
+                </td>
+
+                <td>
+                    <input
+                        class="qty"
+                        type="number"
+                        min="1"
+                        value="${item.qty}"
+                        onchange="changeQty(${index},this.value)"
+                    >
+                </td>
+
+                <td class="${marginClass}">
+                    ₹${formatNumber(contribution)}
+                </td>
+
+                <td>
+                    <button class="remove" onclick="removeContract(${index})">×</button>
+                </td>
+            </tr>
+        `);
+    });
+
+    /*
+      Show scanning-risk total before spread adjustments.
+    */
+    body.insertAdjacentHTML("beforeend",`
+        <tr class="scenario-total-row">
+            <td colspan="8" class="left">
+                SCANNING RISK
+            </td>
+            <td class="scenario-total-value">
+                ₹${formatNumber(scanningRisk)}
+            </td>
+            <td>-</td>
+        </tr>
+    `);
+
+    /*
+      Calendar spread calculation remains the existing engine.
+      It consumes quantities only once.
+    */
+    const spreadResult=calculateCalendarSpreadCharge();
+    const spreadCharge=spreadResult.charge;
+
+    /*
+      Final SPAN remains:
+        Scanning Risk
+        + Calendar Spread Charge
+        + Net Option Value Adjustment
+    */
+    const finalSpan=
+        scanningRisk+
+        spreadCharge+
+        netOptionValueAdjustment;
+
+    body.insertAdjacentHTML("beforeend",`
+        <tr class="grand-total-row">
+            <td colspan="8" class="left">
+                GRAND TOTAL — FINAL SPAN
+            </td>
+            <td class="grand-total-value">
+                ₹${formatNumber(finalSpan)}
+            </td>
+            <td>-</td>
+        </tr>
+    `);
+
+    /*
+      Keep summary calculation available, but the UI hides the
+      old summary/breakdown boxes.
+    */
+    renderSummary(
+        scanningRisk,
+        null,
+        netOptionValueAdjustment,
+        spreadCharge,
+        finalSpan,
+        spreadResult.details
+    );
+}
+
+/* ---------- Correct spread calculation ---------- */
+
+/*
+  Extract rate from actual SPN formats.
+
+  Supported examples:
+    <rate><r>1</r><val>437</val></rate>
+    <rate>437</rate>
+*/
+function getRateValue(parent){
+    const rate=parent.querySelector(":scope > rate");
+    if(!rate)return 0;
+
+    const val=rate.querySelector(":scope > val");
+    if(val){
+        const n=Number(val.textContent.trim());
+        if(Number.isFinite(n))return n;
+    }
+
+    const n=Number(rate.textContent.trim());
+    return Number.isFinite(n)?n:0;
+}
+
+/*
+  Read a spread leg.
+  SPN versions differ slightly, so accept several
+  field names for contract family / expiry.
+*/
+function readSpreadLeg(leg){
+    if(!leg)return null;
+
+    const code=
+        directValue(leg,"cc") ||
+        directValue(leg,"pfCode") ||
+        directValue(leg,"pCode") ||
+        "";
+
+    const expiry=
+        directValue(leg,"pe") ||
+        directValue(leg,"expiry") ||
+        "";
+
+    const ratio=
+        directNumber(leg,"i") ??
+        directNumber(leg,"qty") ??
+        directNumber(leg,"ratio") ??
+        1;
+
+    return {
+        code:String(code).trim().toUpperCase(),
+        expiry:normalizeExpiry(expiry),
+        ratio:Math.abs(Number(ratio)||1)
+    };
+}
+
+/*
+  Build actual signed portfolio quantities by
+  underlying/family + expiry.
+
+  Options remain separated by option identity.
+  Calendar spread definitions are applied only
+  where the SPN defines a pair.
+*/
+function buildSignedPositions(){
+    const map={};
+
+    portfolio.forEach(item=>{
+        const c=item.contract;
+        const key=
+            String(c.pfCode).trim().toUpperCase()+
+            "|"+
+            normalizeExpiry(c.expiry);
+
+        if(!map[key]){
+            map[key]={
+                code:String(c.pfCode).trim().toUpperCase(),
+                expiry:normalizeExpiry(c.expiry),
+                qty:0
+            };
+        }
+
+        map[key].qty +=
+            (item.side==="BUY"?1:-1)*
+            Number(item.qty||0);
+    });
+
+    return map;
+}
+
+function calculateCalendarSpreadCharge(){
+
+    if(!spanXML || portfolio.length<2){
+        return {charge:0,details:[]};
+    }
+
+    const positions=buildSignedPositions();
+    const candidates=[];
+
+    /*
+      Read all spread definitions.
+    */
+    spanXML.querySelectorAll("dSpread").forEach(ds=>{
+
+        const legs=Array.from(
+            ds.querySelectorAll(":scope > pLeg")
+        );
+
+        if(legs.length<2)return;
+
+        /*
+          A dSpread can theoretically have more than two
+          legs in some versions. We use adjacent legs as
+          definitions, but each quantity is consumed globally.
+        */
+        for(let i=0;i<legs.length-1;i++){
+
+            const a=readSpreadLeg(legs[i]);
+            const b=readSpreadLeg(legs[i+1]);
+
+            if(!a||!b||!a.code||!b.code||!a.expiry||!b.expiry){
+                continue;
+            }
+
+            if(a.expiry===b.expiry){
+                continue;
+            }
+
+            const keyA=a.code+"|"+a.expiry;
+            const keyB=b.code+"|"+b.expiry;
+
+            if(!positions[keyA]||!positions[keyB]){
+                continue;
+            }
+
+            const rate=getRateValue(ds);
+
+            if(!rate)continue;
+
+            candidates.push({
+                a,b,
+                keyA,keyB,
+                rate,
+                ratioA:a.ratio,
+                ratioB:b.ratio
+            });
+        }
+    });
+
+    /*
+      Important:
+      Sort by expiry distance. This makes the nearest
+      calendar spread consume positions first and avoids
+      reusing the same quantity in multiple spreads.
+    */
+    candidates.sort((x,y)=>{
+        const dx=Math.abs(
+            Number(x.a.expiry)-Number(x.b.expiry)
+        );
+        const dy=Math.abs(
+            Number(y.a.expiry)-Number(y.b.expiry)
+        );
+        return dx-dy;
+    });
+
+    const remaining={};
+
+    Object.keys(positions).forEach(k=>{
+        remaining[k]=positions[k].qty;
+    });
+
+    let charge=0;
+    const details=[];
+
+    candidates.forEach(sp=>{
+
+        let qA=remaining[sp.keyA]||0;
+        let qB=remaining[sp.keyB]||0;
+
+        if(qA===0||qB===0)return;
+
+        /*
+          Leg orientation:
+          The two legs must have opposite signed positions.
+        */
+        if(Math.sign(qA)===Math.sign(qB)){
+            return;
+        }
+
+        /*
+          Quantity matching with ratios.
+
+          Example ratio 1:1:
+            +65 and -65 -> 65 spreads
+
+          General ratio:
+            matched = min(abs(qA)/ratioA,
+                          abs(qB)/ratioB)
+        */
+        const spreadUnits=Math.floor(
+            Math.min(
+                Math.abs(qA)/sp.ratioA,
+                Math.abs(qB)/sp.ratioB
+            )
+        );
+
+        if(spreadUnits<=0)return;
+
+        const usedA=spreadUnits*sp.ratioA*Math.sign(qA);
+        const usedB=spreadUnits*sp.ratioB*Math.sign(qB);
+
+        remaining[sp.keyA]-=usedA;
+        remaining[sp.keyB]-=usedB;
+
+        const amount=spreadUnits*sp.rate;
+
+        charge+=amount;
+
+        details.push({
+            expiryA:formatExpiry(sp.a.expiry),
+            expiryB:formatExpiry(sp.b.expiry),
+            qty:spreadUnits,
+            rate:sp.rate,
+            amount
+        });
+    });
+
+    return {charge,details};
+}
+
+/* ---------- Summary ---------- */
+function renderSummary(
+    scanningRisk,
+    worstIndex,
+    netOptionValue,
+    spreadCharge,
+    finalSpan,
+    spreadDetails
+){
+    /*
+      DISPLAY ONLY.
+      The calculation above is unchanged.
+
+      "Margin" shown for each contract is that contract's
+      own highest positive scenario contribution, using the
+      same scenario values already calculated in buildCalculation().
+      Grand Total is the actual portfolio Final SPAN calculated
+      by the existing calculation engine.
+    */
+
+    const rows = portfolio.map((item,index)=>{
+        const c=item.contract;
+        const direction=item.side==="BUY"?1:-1;
+        const qty=Math.max(0,Number(item.qty)||0);
+        const multiplier=(Number(c.cvf)||1)*(Number(c.scaling)||1);
+
+        const values=[];
+        for(let s=0;s<16;s++){
+            const raw=Number(c.risk[s]||0);
+            values.push(raw*qty*direction*multiplier);
+        }
+
+        const margin=Math.max(...values,0);
+
+        return `
+            <tr>
+                <td>${index+1}</td>
+                <td class="left"><b>${escapeHtml(c.pfCode)}</b></td>
+                <td>${c.type}</td>
+                <td>${formatExpiry(c.expiry)}</td>
+                <td>${c.type==="OPT"?formatNumber(c.strike):"-"}</td>
+                <td>${c.type==="OPT"?(c.optionType==="C"?"CE":"PE"):"-"}</td>
+                <td>${item.side}</td>
+                <td>${formatNumber(qty)}</td>
+                <td class="margin-value">₹${formatNumber(margin)}</td>
+            </tr>
+        `;
+    }).join("");
+
+    document.getElementById("summary").innerHTML = `
+        <div class="simple-margin-card">
+            <div class="simple-margin-title">
+                <span>4. SPAN Margin Summary</span>
+                <span class="simple-margin-sub">${portfolio.length} contract${portfolio.length===1?"":"s"}</span>
+            </div>
+
+            <div class="simple-margin-table-wrap">
+                <table class="simple-margin-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th class="left">Scrip / Contract</th>
+                            <th>Type</th>
+                            <th>Expiry</th>
+                            <th>Strike</th>
+                            <th>CE/PE</th>
+                            <th>Side</th>
+                            <th>Qty</th>
+                            <th>Margin</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                        <tr class="grand-total-row">
+                            <td colspan="8" class="left">GRAND TOTAL</td>
+                            <td class="grand-total-value">₹${formatNumber(finalSpan)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="simple-margin-note">
+                Grand Total is the existing <b>portfolio Final SPAN</b>.
+                Contract-wise Margin is displayed from the same scenario
+                calculation; no calculation logic has been changed.
+            </div>
+        </div>
+    `;
+
+    /* Hide the old detailed breakdown completely. */
+    document.getElementById("breakdown").innerHTML="";
+}
+
+/* ---------- Side / qty ---------- */
+function changeSide(index,value){
+    if(!portfolio[index])return;
+    portfolio[index].side=value;
+    renderPortfolio();
+}
+
+function changeQty(index,value){
+    if(!portfolio[index])return;
+    let qty=Number(value);
+    if(!Number.isFinite(qty)||qty<=0)qty=1;
+    portfolio[index].qty=qty;
+    renderPortfolio();
+}
+
+/* ---------- Remove / clear ---------- */
+function removeContract(index){
+    portfolio.splice(index,1);
+    renderPortfolio();
+}
+
+function clearPortfolio(){
+    portfolio=[];
+    renderPortfolio();
+}
+
+function clearSearch(){
+    document.getElementById("expiry").value="";
+    document.getElementById("strike").value="";
+    document.getElementById("contractId").value="";
+    document.getElementById("optionType").value="";
+    document.getElementById("searchResults").classList.add("hidden");
+}
+
+/* ---------- Type ---------- */
+document.getElementById("contractType").addEventListener("change",function(){
+    const fut=this.value==="FUT";
+    document.getElementById("strike").disabled=fut;
+    document.getElementById("optionType").disabled=fut;
+
+    if(fut){
+        document.getElementById("strike").value="";
+        document.getElementById("optionType").value="";
+    }
+});
+
+/* ---------- Format ---------- */
+function formatNumber(value){
+    if(value===null||value===undefined||value==="")return"-";
+    const n=Number(value);
+    if(!Number.isFinite(n))return String(value);
+    return n.toLocaleString("en-IN",{maximumFractionDigits:6});
+}
+
+function escapeHtml(value){
+    return String(value??"")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+}
+
+renderPortfolio();
+</script>
+</body>
+</html>
