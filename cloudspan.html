@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F&amp;O PCSPAN Margin Calculator</title>
+<style>
+:root{
+  --bg:#0b0f14; --panel:#111823; --panel2:#0e141d; --border:#1f2a38;
+  --text:#dfe6ee; --muted:#8296ab; --accent:#e8a33d; --accent2:#4fb0ff;
+  --pos:#3ecf8e; --neg:#ff6b6b; --warn:#e8a33d;
+  --mono:'IBM Plex Mono','SF Mono',Consolas,monospace;
+  --sans:'IBM Plex Sans',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;}
+::selection{background:#264055;}
+a{color:var(--accent2);}
+h1,h2,h3,h4{font-weight:600;margin:0 0 8px 0;}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums;}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;display:inline-block;}
+.pos{color:var(--pos);}
+.neg{color:var(--neg);}
+.warn{color:var(--warn);}
+.muted{color:var(--muted);}
+
+#topbar{
+  display:flex;align-items:center;gap:16px;padding:10px 18px;background:var(--panel2);
+  border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;
+}
+#topbar .brand{font-weight:700;letter-spacing:.02em;font-size:15px;color:var(--text);}
+#topbar .brand span{color:var(--accent);}
+#filestatus{font-size:12px;color:var(--muted);font-family:var(--mono);}
+#filestatus.loaded{color:var(--pos);}
+
+#tabs{display:flex;gap:2px;background:var(--panel2);border-bottom:1px solid var(--border);overflow-x:auto;}
+.tabbtn{
+  padding:10px 16px;background:transparent;border:none;color:var(--muted);cursor:pointer;
+  font-size:13px;font-weight:500;border-bottom:2px solid transparent;white-space:nowrap;
+}
+.tabbtn:hover{color:var(--text);}
+.tabbtn.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tabbtn:disabled{opacity:.35;cursor:not-allowed;}
+
+.tabpanel{display:none;padding:20px;max-width:1400px;margin:0 auto;}
+.tabpanel.active{display:block;}
+
+.card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px 18px;margin-bottom:16px;}
+.card h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px;}
+
+.grid{display:grid;gap:12px;}
+.grid.cols-2{grid-template-columns:1fr 1fr;}
+.grid.cols-3{grid-template-columns:repeat(3,1fr);}
+.grid.cols-4{grid-template-columns:repeat(4,1fr);}
+.grid.cols-6{grid-template-columns:repeat(6,1fr);}
+@media(max-width:900px){.grid.cols-2,.grid.cols-3,.grid.cols-4,.grid.cols-6{grid-template-columns:1fr 1fr;}}
+
+label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;}
+input,select{
+  width:100%;padding:8px 10px;background:var(--panel2);border:1px solid var(--border);border-radius:5px;
+  color:var(--text);font-size:13px;font-family:var(--sans);
+}
+input.mono,select.mono{font-family:var(--mono);}
+input:focus,select:focus{outline:none;border-color:var(--accent2);}
+input[type=file]{padding:6px;}
+
+button{
+  padding:8px 14px;background:var(--accent);border:none;border-radius:5px;color:#1a1206;font-weight:600;
+  cursor:pointer;font-size:13px;
+}
+button:hover{filter:brightness(1.08);}
+button:disabled{opacity:.4;cursor:not-allowed;}
+button.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--border);}
+button.danger{background:var(--neg);color:#2a0a0a;}
+button.small{padding:5px 10px;font-size:12px;}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+table.mono td, table.mono th{font-family:var(--mono);}
+th{text-align:left;padding:7px 10px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);
+   text-transform:uppercase;font-size:10.5px;letter-spacing:.04em;position:sticky;top:0;background:var(--panel);}
+td{padding:7px 10px;border-bottom:1px solid #182230;}
+tr:hover td{background:#0e1520;}
+td.num,th.num{text-align:right;font-family:var(--mono);}
+
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;}
+.badge.ok{background:#123023;color:var(--pos);}
+.badge.err{background:#331414;color:var(--neg);}
+.badge.warn{background:#332711;color:var(--warn);}
+.badge.info{background:#0f2536;color:var(--accent2);}
+
+.stat{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;}
+.stat .v{font-size:22px;font-weight:700;font-family:var(--mono);}
+.stat .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px;}
+
+.progresswrap{background:var(--panel2);border-radius:20px;height:8px;overflow:hidden;border:1px solid var(--border);}
+.progressbar{background:linear-gradient(90deg,var(--accent2),var(--accent));height:100%;width:0%;transition:width .2s;}
+
+.subtabs{display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid var(--border);}
+.subtabbtn{padding:6px 12px;background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:12.5px;border-bottom:2px solid transparent;}
+.subtabbtn.active{color:var(--accent2);border-bottom-color:var(--accent2);}
+
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin:8px 0;}
+.flow .step{background:var(--panel2);border:1px solid var(--border);padding:4px 10px;border-radius:5px;color:var(--text);}
+.flow .arrow{color:var(--muted);}
+
+.debugblock{background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:10px;}
+.debugblock h4{font-size:11.5px;color:var(--accent2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+.kv{display:grid;grid-template-columns:180px 1fr;gap:4px 10px;font-size:12px;}
+.kv .k{color:var(--muted);}
+.kv .v{font-family:var(--mono);}
+
+.scenariogrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;font-size:11.5px;}
+.scenariocell{background:var(--panel2);border:1px solid var(--border);border-radius:4px;padding:6px 8px;}
+.scenariocell.worst{border-color:var(--neg);background:#1a0f10;}
+
+.note{background:#1a1508;border:1px solid #3a2f10;color:var(--warn);border-radius:6px;padding:10px 12px;font-size:12.5px;margin:8px 0;}
+.note.err{background:#1f1010;border-color:#3a1414;color:var(--neg);}
+.note.info{background:#0c1c2b;border-color:#123049;color:var(--accent2);}
+
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
+.spacer{flex:1;}
+.hidden{display:none !important;}
+.small-muted{font-size:11.5px;color:var(--muted);}
+hr.sep{border:none;border-top:1px solid var(--border);margin:14px 0;}
+
+.posrow-remove{background:transparent;border:1px solid var(--border);color:var(--neg);padding:4px 8px;border-radius:5px;cursor:pointer;font-size:12px;}
+.diffup{color:var(--neg);}
+.diffdown{color:var(--pos);}
+
+#dropzone{
+  border:2px dashed var(--border);border-radius:8px;padding:36px;text-align:center;color:var(--muted);
+  cursor:pointer;transition:.15s;
+}
+#dropzone:hover, #dropzone.drag{border-color:var(--accent2);color:var(--text);background:#0d1420;}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="brand">PCSPAN <span>Margin</span> Calculator</div>
+  <div id="filestatus" class="mono">No PCSPAN file loaded</div>
+</div>
+
+<div id="tabs">
+  <button class="tabbtn active" data-tab="load">1 · Load PCSPAN</button>
+  <button class="tabbtn" data-tab="positions" disabled>2 · Positions</button>
+  <button class="tabbtn" data-tab="results" disabled>3 · Margin Results</button>
+  <button class="tabbtn" data-tab="debug" disabled>4 · Debug</button>
+  <button class="tabbtn" data-tab="expiry" disabled>5 · Expiry-Day</button>
+  <button class="tabbtn" data-tab="whatif" disabled>6 · What-If</button>
+  <button class="tabbtn" data-tab="recon" disabled>7 · Broker Recon</button>
+  <button class="tabbtn" data-tab="tests" disabled>8 · Test Mode</button>
+</div>
+
+<!-- ================= TAB: LOAD ================= -->
+<div class="tabpanel active" id="tab-load">
+
+  <div class="card">
+    <h3>Upload NSCCL PCSPAN File</h3>
+    <div id="dropzone">
+      <div style="font-size:15px;margin-bottom:6px;">Drop the <b>.spn / .xml</b> PCSPAN file here, or click to browse</div>
+      <div class="small-muted">Parsing happens 100% locally in your browser via a Web Worker. The file is never uploaded anywhere.</div>
+      <input type="file" id="fileInput" accept=".xml,.spn,.txt" style="display:none;">
+    </div>
+    <div style="margin-top:14px;">
+      <div class="progresswrap"><div class="progressbar" id="loadProgress"></div></div>
+      <div class="small-muted mono" id="loadStatus" style="margin-top:6px;">Idle.</div>
+    </div>
+  </div>
+
+  <div class="card hidden" id="fileInfoCard">
+    <h3>File Summary</h3>
+    <div class="grid cols-4" id="fileInfoStats"></div>
+    <hr class="sep">
+    <div class="grid cols-2">
+      <div class="kv" id="fileInfoMeta"></div>
+      <div>
+        <label>Underlyings loaded (search)</label>
+        <input type="text" id="underlyingSearch" class="mono" placeholder="Type to filter e.g. NIFTY, RELIANCE...">
+        <div style="max-height:180px;overflow:auto;margin-top:8px;" id="underlyingList" class="mono small-muted"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ================= TAB: POSITIONS ================= -->
+<div class="tabpanel" id="tab-positions">
+
+  <div class="subtabs">
+    <button class="subtabbtn active" data-sub="manual">Manual Entry</button>
+    <button class="subtabbtn" data-sub="broker">Broker Net Position File</button>
+  </div>
+
+  <div id="sub-manual">
+    <div class="card">
+      <h3>Add Position</h3>
+      <div class="grid cols-6" id="manualForm">
+        <div>
+          <label>Underlying / Symbol</label>
+          <input type="text" id="mUnderlying" class="mono" placeholder="NIFTY" list="underlyingDatalist">
+          <datalist id="underlyingDatalist"></datalist>
+        </div>
+        <div>
+          <label>Instrument</label>
+          <select id="mInstrument"><option value="FUT">Future</option><option value="OPT">Option</option></select>
+        </div>
+        <div>
+          <label>Expiry</label>
+          <select id="mExpiry" class="mono"></select>
+        </div>
+        <div id="mStrikeWrap">
+          <label>Strike</label>
+          <select id="mStrike" class="mono"></select>
+        </div>
+        <div id="mTypeWrap">
+          <label>CE / PE</label>
+          <select id="mType"><option value="CE">CE</option><option value="PE">PE</option></select>
+        </div>
+        <div>
+          <label>Buy / Sell</label>
+          <select id="mSide"><option value="BUY">Buy</option><option value="SELL">Sell</option></select>
+        </div>
+        <div>
+          <label>Quantity (lots)</label>
+          <input type="number" id="mLots" class="mono" value="1" min="1" step="1">
+        </div>
+        <div>
+          <label>Price (reference only)</label>
+          <input type="number" id="mPrice" class="mono" step="0.05" placeholder="optional">
+        </div>
+        <div style="display:flex;align-items:end;">
+          <button id="mAddBtn" style="width:100%;">+ Add Position</button>
+        </div>
+      </div>
+      <div class="note hidden" id="manualNote"></div>
+    </div>
+  </div>
+
+  <div id="sub-broker" class="hidden">
+    <div class="card">
+      <h3>Upload Broker Net Position CSV</h3>
+      <input type="file" id="brokerFileInput" accept=".csv,.txt">
+      <div class="small-muted" style="margin-top:8px;">Reliable CSV support first. After upload, map each broker column to the internal field below — column names are never assumed.</div>
+      <div id="brokerMapWrap" class="hidden" style="margin-top:14px;">
+        <h4 style="font-size:12px;color:var(--muted);text-transform:uppercase;">Column Mapping</h4>
+        <div class="grid cols-3" id="brokerMapGrid"></div>
+        <button id="brokerImportBtn" style="margin-top:12px;">Import &amp; Normalize Positions</button>
+      </div>
+      <div id="brokerPreview" style="margin-top:14px;overflow:auto;max-height:260px;"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Current Portfolio Positions <span class="small-muted" id="posCount"></span></h3>
+    <div class="toolbar">
+      <button class="secondary small" id="clearPositionsBtn">Clear All</button>
+      <div class="spacer"></div>
+      <button id="calcBtn">Calculate Margin →</button>
+    </div>
+    <div style="overflow:auto;">
+      <table class="mono" id="positionsTable">
+        <thead><tr>
+          <th>#</th><th>Underlying</th><th>Instrument</th><th>Expiry</th><th>Strike</th><th>Type</th>
+          <th>Side</th><th class="num">Lots</th><th>Status</th><th></th>
+        </tr></thead>
+        <tbody id="positionsBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ================= TAB: RESULTS ================= -->
+<div class="tabpanel" id="tab-results"><div id="resultsContent"></div></div>
+
+<!-- ================= TAB: DEBUG ================= -->
+<div class="tabpanel" id="tab-debug"><div id="debugContent"></div></div>
+
+<!-- ================= TAB: EXPIRY ================= -->
+<div class="tabpanel" id="tab-expiry"><div id="expiryContent"></div></div>
+
+<!-- ================= TAB: WHATIF ================= -->
+<div class="tabpanel" id="tab-whatif"><div id="whatifContent"></div></div>
+
+<!-- ================= TAB: RECON ================= -->
+<div class="tabpanel" id="tab-recon"><div id="reconContent"></div></div>
+
+<!-- ================= TAB: TESTS ================= -->
+<div class="tabpanel" id="tab-tests"><div id="testsContent"></div></div>
+
+<script>
+/* =========================================================================
+   SECTION 1: PCSPAN PARSER (runs inside a Web Worker — see WORKER_SRC below)
+   ========================================================================= */
+const WORKER_SRC = String.raw`
+function iterBlocks(text, tag, start, end) {
+  const openTag = '<' + tag + '>';
+  const closeTag = '</' + tag + '>';
+  const out = [];
+  let i = start;
+  while (true) {
+    const os = text.indexOf(openTag, i);
+    if (os === -1 || os >= end) break;
+    const oe = os + openTag.length;
+    const cs = text.indexOf(closeTag, oe);
+    if (cs === -1) break;
+    out.push([oe, cs]);
+    i = cs + closeTag.length;
+  }
+  return out;
+}
+function firstBlock(text, tag, start, end) {
+  const openTag = '<' + tag + '>';
+  const closeTag = '</' + tag + '>';
+  const os = text.indexOf(openTag, start);
+  if (os === -1 || os >= end) return null;
+  const oe = os + openTag.length;
+  const cs = text.indexOf(closeTag, oe);
+  if (cs === -1) return null;
+  return [oe, cs];
+}
+function tagVal(text, tag, start, end) {
+  const b = firstBlock(text, tag, start, end);
+  if (!b) return null;
+  return text.slice(b[0], b[1]).trim();
+}
+function tagNum(text, tag, start, end) {
+  const v = tagVal(text, tag, start, end);
+  if (v === null || v === '') return null;
+  const n = parseFloat(v);
+  return Number.isNaN(n) ? null : n;
+}
+const RA_RE = /<a>(-?[0-9.]+)<\/a>/g;
+function parseRiskArray(text, start, end) {
+  const b = firstBlock(text, 'ra', start, end);
+  if (!b) return null;
+  const [s, e] = b;
+  const block = text.slice(s, e);
+  const r = tagNum(block, 'r', 0, block.length) || 1;
+  const vals = [];
+  RA_RE.lastIndex = 0;
+  let m;
+  while ((m = RA_RE.exec(block)) !== null) vals.push(parseFloat(m[1]));
+  const lastA = block.lastIndexOf('</a>');
+  const d = tagNum(block, 'd', lastA === -1 ? 0 : lastA, block.length);
+  return { r, a: vals, d };
+}
+function parseOpt(text, start, end) {
+  const cId = tagVal(text, 'cId', start, end);
+  const o = tagVal(text, 'o', start, end);
+  const k = tagNum(text, 'k', start, end);
+  const p = tagNum(text, 'p', start, end);
+  const d = tagNum(text, 'd', start, end);
+  const v = tagNum(text, 'v', start, end);
+  const ra = parseRiskArray(text, start, end);
+  return { cId, o, k, p, d, v, ra: ra ? ra.a : null };
+}
+function parseFutRec(text, start, end) {
+  const cId = tagVal(text, 'cId', start, end);
+  const pe = tagVal(text, 'pe', start, end);
+  const p = tagNum(text, 'p', start, end);
+  const d = tagNum(text, 'd', start, end);
+  const v = tagNum(text, 'v', start, end);
+  const setlDate = tagVal(text, 'setlDate', start, end);
+  const t = tagNum(text, 't', start, end);
+  const ra = parseRiskArray(text, start, end);
+  return { cId, pe, p, d, v, setlDate, t, ra: ra ? ra.a : null };
+}
+function parsePLeg(text, start, end) {
+  return { cc: tagVal(text, 'cc', start, end), pe: tagVal(text, 'pe', start, end),
+    rs: tagVal(text, 'rs', start, end), i: tagNum(text, 'i', start, end) };
+}
+function parseDSpread(text, start, end) {
+  const spread = tagVal(text, 'spread', start, end);
+  const chargeMeth = tagVal(text, 'chargeMeth', start, end);
+  const rateBlock = firstBlock(text, 'rate', start, end);
+  let rateVal = null;
+  if (rateBlock) rateVal = tagNum(text, 'val', rateBlock[0], rateBlock[1]);
+  const legs = iterBlocks(text, 'pLeg', start, end).map(([s, e]) => parsePLeg(text, s, e));
+  return { spread, chargeMeth, rateVal, legs };
+}
+function parseCcDef(text, start, end) {
+  const cc = tagVal(text, 'cc', start, end);
+  const currency = tagVal(text, 'currency', start, end);
+  const riskExponent = tagNum(text, 'riskExponent', start, end);
+  const procMeth = tagVal(text, 'procMeth', start, end);
+  const wfprMeth = tagVal(text, 'wfprMeth', start, end);
+  const spotMeth = tagVal(text, 'spotMeth', start, end);
+  const somMeth = tagVal(text, 'somMeth', start, end);
+  const cmbMeth = tagVal(text, 'cmbMeth', start, end);
+  const cabBlock = firstBlock(text, 'cab', start, end);
+  const spreads = [];
+  for (const [s, e] of iterBlocks(text, 'dSpread', start, end)) {
+    const ds = parseDSpread(text, s, e);
+    if (ds.spread) spreads.push(ds);
+  }
+  return { cc, currency, riskExponent, procMeth, wfprMeth, spotMeth, somMeth, cmbMeth, cab: 0, spreads };
+}
+function parsePCSPAN(text, onProgress) {
+  const store = {
+    meta: {}, underlyings: {}, phy: {}, futures: {}, options: {},
+    counts: { contracts: 0, riskArrays: 0, spreadDefs: 0, underlyings: 0 }
+  };
+  store.meta.fileFormat = tagVal(text, 'fileFormat', 0, text.length);
+  store.meta.created = tagVal(text, 'created', 0, text.length);
+  const pit = firstBlock(text, 'pointInTime', 0, text.length);
+  if (pit) {
+    store.meta.date = tagVal(text, 'date', pit[0], pit[1]);
+    store.meta.isSetl = tagVal(text, 'isSetl', pit[0], pit[1]);
+  }
+  const co = pit ? firstBlock(text, 'clearingOrg', pit[0], pit[1]) : null;
+  if (co) store.meta.clearingOrgName = tagVal(text, 'name', co[0], co[1]) || tagVal(text,'n',co[0],co[1]);
+  const searchStart = co ? co[0] : 0;
+  const searchEnd = co ? co[1] : text.length;
+  const exchanges = iterBlocks(text, 'exchange', searchStart, searchEnd);
+  let done = 0;
+  const totalWork = exchanges.length + 1;
+  for (const [exS, exE] of exchanges) {
+    for (const [s, e] of iterBlocks(text, 'phyPf', exS, exE)) {
+      const pfCode = tagVal(text, 'pfCode', s, e);
+      if (!pfCode) continue;
+      const phyBlock = firstBlock(text, 'phy', s, e);
+      if (phyBlock) {
+        const p = tagNum(text, 'p', phyBlock[0], phyBlock[1]);
+        const ra = parseRiskArray(text, phyBlock[0], phyBlock[1]);
+        store.phy[pfCode] = { price: p, ra: ra ? ra.a : null };
+        store.counts.contracts++;
+        if (ra) store.counts.riskArrays++;
+      }
+    }
+    for (const [s, e] of iterBlocks(text, 'futPf', exS, exE)) {
+      const pfCode = tagVal(text, 'pfCode', s, e);
+      if (!pfCode) continue;
+      if (!store.futures[pfCode]) store.futures[pfCode] = {};
+      for (const [fs, fe] of iterBlocks(text, 'fut', s, e)) {
+        const rec = parseFutRec(text, fs, fe);
+        if (rec.pe) store.futures[pfCode][rec.pe] = rec;
+        store.counts.contracts++;
+        if (rec.ra) store.counts.riskArrays++;
+      }
+    }
+    for (const [s, e] of iterBlocks(text, 'oopPf', exS, exE)) {
+      const pfCode = tagVal(text, 'pfCode', s, e);
+      if (!pfCode) continue;
+      if (!store.options[pfCode]) store.options[pfCode] = {};
+      for (const [ss, se] of iterBlocks(text, 'series', s, e)) {
+        const pe = tagVal(text, 'pe', ss, se);
+        if (!pe) continue;
+        const vol = tagNum(text, 'v', ss, se);
+        const setlDate = tagVal(text, 'setlDate', ss, se);
+        const t = tagNum(text, 't', ss, se);
+        const calls = {}, puts = {};
+        for (const [os_, oe_] of iterBlocks(text, 'opt', ss, se)) {
+          const rec = parseOpt(text, os_, oe_);
+          if (rec.k === null || !rec.o) continue;
+          (rec.o === 'C' ? calls : puts)[rec.k] = rec;
+          store.counts.contracts++;
+          if (rec.ra) store.counts.riskArrays++;
+        }
+        store.options[pfCode][pe] = { vol, setlDate, t, calls, puts };
+      }
+    }
+    done++;
+    if (onProgress) onProgress({ phase: 'exchanges', done, total: totalWork, pct: Math.round(90*done/totalWork) });
+  }
+  const ccDefBlocks = iterBlocks(text, 'ccDef', searchStart, searchEnd);
+  let ci = 0;
+  for (const [s, e] of ccDefBlocks) {
+    const def = parseCcDef(text, s, e);
+    if (!def.cc) continue;
+    store.underlyings[def.cc] = def;
+    store.counts.spreadDefs += def.spreads.length;
+    ci++;
+    if (ci % 20 === 0 && onProgress) onProgress({ phase: 'ccdef', done: ci, total: ccDefBlocks.length, pct: 90 + Math.round(10*ci/ccDefBlocks.length) });
+  }
+  store.counts.underlyings = Object.keys(store.underlyings).length;
+  return store;
+}
+self.onmessage = async function(e) {
+  try {
+    const file = e.data.file;
+    self.postMessage({ type: 'progress', pct: 2, status: 'Reading file...' });
+    const text = await file.text();
+    self.postMessage({ type: 'progress', pct: 8, status: 'Parsing ' + (text.length/1e6).toFixed(1) + ' MB of XML...' });
+    const store = parsePCSPAN(text, (p) => {
+      self.postMessage({ type: 'progress', pct: 8 + Math.round(p.pct*0.9), status: 'Parsing PCSPAN structures... (' + p.phase + ' ' + p.done + '/' + p.total + ')' });
+    });
+    self.postMessage({ type: 'progress', pct: 99, status: 'Finalizing...' });
+    self.postMessage({ type: 'done', store, fileName: file.name, fileSize: file.size });
+  } catch (err) {
+    self.postMessage({ type: 'error', message: err.message + ' :: ' + (err.stack||'') });
+  }
+};
+`;
+
+/* =========================================================================
+   SECTION 2: CALCULATION ENGINE (main thread — pure functions on the store)
+   ========================================================================= */
+const RA_LEN = 16;
+function zeroVec() { return new Array(RA_LEN).fill(0); }
+function addScaled(vec, arr, scale) { for (let i = 0; i < RA_LEN; i++) vec[i] += arr[i] * scale; }
+function worstScenario(vec) {
+  let worstIdx = 0, worst = vec[0];
+  for (let i = 1; i < RA_LEN; i++) if (vec[i] < worst) { worst = vec[i]; worstIdx = i; }
+  return { worstIdx, worstValue: worst, risk: Math.max(0, -worst) };
+}
+
+function lookupContract(store, pos) {
+  const und = store.underlyings[pos.underlying];
+  if (!und) return { ok:false, reason:`Unknown underlying "${pos.underlying}" — not present in loaded PCSPAN file.` };
+  if (pos.instrument === 'FUT') {
+    const futMap = store.futures[pos.underlying];
+    const rec = futMap && futMap[pos.expiry];
+    if (!rec) return { ok:false, reason:`No future contract for ${pos.underlying} expiry ${fmtDate(pos.expiry)} in PCSPAN file.` };
+    if (!rec.ra) return { ok:false, reason:`Future contract found but has no risk array in PCSPAN file.` };
+    return { ok:true, kind:'FUT', rec, und };
+  }
+  if (pos.instrument === 'OPT') {
+    const optMap = store.options[pos.underlying];
+    const series = optMap && optMap[pos.expiry];
+    if (!series) return { ok:false, reason:`No option series for ${pos.underlying} expiry ${fmtDate(pos.expiry)} in PCSPAN file.` };
+    if (pos.optType !== 'CE' && pos.optType !== 'PE') return { ok:false, reason:`Invalid option type "${pos.optType}" — must be CE or PE.` };
+    const side = pos.optType === 'CE' ? series.calls : series.puts;
+    const rec = side[pos.strike];
+    if (!rec) return { ok:false, reason:`No strike ${pos.strike} ${pos.optType} for ${pos.underlying} ${fmtDate(pos.expiry)} in PCSPAN file.` };
+    if (!rec.ra) return { ok:false, reason:`Option contract found but has no risk array in PCSPAN file.` };
+    return { ok:true, kind:'OPT', rec, und, series };
+  }
+  return { ok:false, reason:`Unknown instrument type "${pos.instrument}" — must be FUT or OPT.` };
+}
+
+function validatePosition(store, pos) {
+  const errors = [];
+  if (!pos.underlying) errors.push('Missing underlying/symbol.');
+  if (pos.instrument !== 'FUT' && pos.instrument !== 'OPT') errors.push('Instrument must be FUT or OPT.');
+  if (!pos.expiry || !/^\d{8}$/.test(pos.expiry)) errors.push('Invalid/missing expiry (expected YYYYMMDD).');
+  if (pos.instrument === 'OPT') {
+    if (pos.strike === null || pos.strike === undefined || Number.isNaN(pos.strike)) errors.push('Missing/invalid strike.');
+    if (pos.optType !== 'CE' && pos.optType !== 'PE') errors.push('Option type must be CE or PE.');
+  }
+  if (pos.side !== 'BUY' && pos.side !== 'SELL') errors.push('Side must be BUY or SELL.');
+  if (!pos.lots || pos.lots <= 0 || !Number.isFinite(pos.lots)) errors.push('Quantity (lots) must be a positive whole number.');
+  if (errors.length) return { valid:false, errors };
+  const lookup = lookupContract(store, pos);
+  if (!lookup.ok) return { valid:false, errors:[lookup.reason] };
+  return { valid:true, errors:[], lookup };
+}
+
+function computeUnderlyingGroup(store, positions, debugSink) {
+  const combined = zeroVec();
+  const perPosition = [];
+  for (const pos of positions) {
+    const val = validatePosition(store, pos);
+    if (!val.valid) { perPosition.push({ pos, valid:false, errors: val.errors }); continue; }
+    const { lookup } = val;
+    const signedContracts = (pos.side === 'BUY' ? 1 : -1) * pos.lots;
+    const ra = lookup.rec.ra;
+    addScaled(combined, ra, signedContracts);
+    const standAlone = zeroVec(); addScaled(standAlone, ra, signedContracts);
+    const standAloneWorst = worstScenario(standAlone);
+    perPosition.push({ pos, valid:true, signedContracts, ra, standAloneRisk: standAloneWorst.risk,
+      standAloneWorstIdx: standAloneWorst.worstIdx, contractRef: lookup });
+    if (debugSink) debugSink.push({ pos, signedContracts, ra, standAloneWorstIdx: standAloneWorst.worstIdx,
+      standAloneRisk: standAloneWorst.risk, contractRef: lookup });
+  }
+  const combinedWorst = worstScenario(combined);
+  const sumStandAlone = perPosition.filter(p=>p.valid).reduce((s,p)=>s+p.standAloneRisk,0);
+  const nettingBenefit = Math.max(0, sumStandAlone - combinedWorst.risk);
+  return { combinedVector: combined, combinedWorstIdx: combinedWorst.worstIdx, scanningRisk: combinedWorst.risk,
+    sumStandAloneRisk: sumStandAlone, nettingBenefit, perPosition };
+}
+
+function computeSpreadCharges(store, cc, positions) {
+  const und = store.underlyings[cc];
+  if (!und || !und.spreads || !und.spreads.length) return { totalCharge:0, appliedSpreads:[] };
+  const remaining = new Map();
+  for (const pos of positions) {
+    if (pos.instrument !== 'FUT' || pos.underlying !== cc) continue;
+    const signed = (pos.side==='BUY'?1:-1)*pos.lots;
+    remaining.set(pos.expiry, (remaining.get(pos.expiry)||0)+signed);
+  }
+  const applied = []; let totalCharge = 0;
+  for (const sp of und.spreads) {
+    if (sp.legs.length !== 2 || sp.rateVal === null) continue;
+    const [legA, legB] = sp.legs;
+    const qtyA = remaining.get(legA.pe) || 0;
+    const qtyB = remaining.get(legB.pe) || 0;
+    if (qtyA === 0 || qtyB === 0) continue;
+    if (Math.sign(qtyA) === Math.sign(qtyB)) continue;
+    const matched = Math.min(Math.abs(qtyA), Math.abs(qtyB));
+    if (matched <= 0) continue;
+    const charge = matched * sp.rateVal;
+    totalCharge += charge;
+    remaining.set(legA.pe, qtyA - Math.sign(qtyA)*matched);
+    remaining.set(legB.pe, qtyB - Math.sign(qtyB)*matched);
+    applied.push({ spreadId: sp.spread, legA: legA.pe, legB: legB.pe, matchedLots: matched, ratePerLot: sp.rateVal, charge });
+  }
+  return { totalCharge, appliedSpreads: applied };
+}
+
+function computeShortOptionMinimum(store, cc, positions) {
+  const und = store.underlyings[cc];
+  if (!und) return { charge:0, note:null };
+  const cab = und.cab;
+  if (!cab) return { charge:0, note:null };
+  if (und.somMeth === 'GROSS') {
+    let shortLots = 0;
+    for (const pos of positions) if (pos.instrument==='OPT' && pos.side==='SELL') shortLots += pos.lots;
+    return { charge: shortLots*cab, note:null };
+  }
+  return { charge:0, note:'PCSPAN rule/specification required for this calculation (somMeth = '+und.somMeth+').' };
+}
+
+function computeExposureMargin() {
+  return { charge:null, note:'PCSPAN rule/specification required for this calculation. Exposure/Additional margin (ELM) parameters are published separately by the exchange and are not present in the PCSPAN risk file.' };
+}
+function computePremiumMargin() {
+  return { charge:null, note:'PCSPAN rule/specification required for this calculation. Premium margin requires live traded option premiums, not the theoretical prices carried in the PCSPAN file.' };
+}
+
+function calculatePortfolioMargin(store, positions) {
+  const debugTrace = [];
+  const byUnderlying = new Map();
+  for (const pos of positions) { if(!byUnderlying.has(pos.underlying)) byUnderlying.set(pos.underlying,[]); byUnderlying.get(pos.underlying).push(pos); }
+  const underlyingResults = [];
+  let totalScanningRisk=0, totalSpreadCharge=0, totalSOM=0, totalNettingBenefit=0;
+  const invalidPositions = [];
+  for (const [cc, posList] of byUnderlying.entries()) {
+    const group = computeUnderlyingGroup(store, posList, debugTrace);
+    for (const p of group.perPosition) if (!p.valid) invalidPositions.push(p);
+    const validPosList = posList.filter(p => group.perPosition.find(gp=>gp.pos===p && gp.valid));
+    const spreadResult = computeSpreadCharges(store, cc, validPosList);
+    const som = computeShortOptionMinimum(store, cc, validPosList);
+    const exposure = computeExposureMargin();
+    const premium = computePremiumMargin();
+    const underlyingMargin = group.scanningRisk + spreadResult.totalCharge + som.charge;
+    totalScanningRisk += group.scanningRisk; totalSpreadCharge += spreadResult.totalCharge;
+    totalSOM += som.charge; totalNettingBenefit += group.nettingBenefit;
+    underlyingResults.push({ cc, group, spreadResult, som, exposure, premium, underlyingMargin });
+  }
+  const finalMargin = totalScanningRisk + totalSpreadCharge + totalSOM;
+  return { underlyingResults, invalidPositions,
+    totals: { scanningRisk: totalScanningRisk, spreadCharge: totalSpreadCharge, shortOptionMinimum: totalSOM,
+      nettingBenefit: totalNettingBenefit, finalMargin },
+    debugTrace };
+}
+
+/* =========================================================================
+   SECTION 3: APP STATE + UTILITIES
+   ========================================================================= */
+const state = {
+  store: null,
+  fileName: null,
+  fileSize: null,
+  positions: [],   // manual + imported, common shape
+  nextId: 1,
+  lastResult: null,
+  whatifPositions: null,
+  whatifResult: null,
+  brokerRows: null,
+  brokerMapping: null,
+};
+
+function fmtDate(pe) {
+  if (!pe || pe.length !== 8) return pe || '—';
+  return pe.slice(6,8)+'-'+pe.slice(4,6)+'-'+pe.slice(0,4);
+}
+function fmtMoney(n) {
+  if (n === null || n === undefined) return '—';
+  const neg = n < 0;
+  const s = Math.abs(n).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+  return (neg?'-':'') + '₹' + s;
+}
+function el(tag, attrs, children) {
+  const e = document.createElement(tag);
+  if (attrs) for (const k in attrs) {
+    if (k === 'class') e.className = attrs[k];
+    else if (k === 'html') e.innerHTML = attrs[k];
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), attrs[k]);
+    else e.setAttribute(k, attrs[k]);
+  }
+  if (children) for (const c of [].concat(children)) if (c!==null && c!==undefined) e.appendChild(typeof c==='string'?document.createTextNode(c):c);
+  return e;
+}
+function setTabEnabled(tabName, enabled) {
+  document.querySelector(`.tabbtn[data-tab="${tabName}"]`).disabled = !enabled;
+}
+function activateTab(tabName) {
+  document.querySelectorAll('.tabbtn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tabName));
+  document.querySelectorAll('.tabpanel').forEach(p=>p.classList.toggle('active', p.id==='tab-'+tabName));
+}
+document.querySelectorAll('.tabbtn').forEach(b=>b.addEventListener('click', ()=>{ if(!b.disabled) activateTab(b.dataset.tab); }));
+document.querySelectorAll('.subtabbtn').forEach(b=>b.addEventListener('click', ()=>{
+  document.querySelectorAll('.subtabbtn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  document.getElementById('sub-manual').classList.toggle('hidden', b.dataset.sub!=='manual');
+  document.getElementById('sub-broker').classList.toggle('hidden', b.dataset.sub!=='broker');
+}));
+
+/* =========================================================================
+   SECTION 4: PCSPAN FILE LOADING (Web Worker)
+   ========================================================================= */
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+dropzone.addEventListener('click', ()=>fileInput.click());
+dropzone.addEventListener('dragover', e=>{e.preventDefault(); dropzone.classList.add('drag');});
+dropzone.addEventListener('dragleave', ()=>dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop', e=>{
+  e.preventDefault(); dropzone.classList.remove('drag');
+  if (e.dataTransfer.files.length) loadPcspanFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e=>{ if(e.target.files.length) loadPcspanFile(e.target.files[0]); });
+
+function loadPcspanFile(file) {
+  const progEl = document.getElementById('loadProgress');
+  const statusEl = document.getElementById('loadStatus');
+  progEl.style.width = '0%';
+  statusEl.textContent = 'Starting worker...';
+  statusEl.classList.remove('warn');
+  document.getElementById('filestatus').textContent = 'Loading ' + file.name + '...';
+
+  const blob = new Blob([WORKER_SRC], { type: 'application/javascript' });
+  const worker = new Worker(URL.createObjectURL(blob));
+
+  worker.onmessage = (e) => {
+    const msg = e.data;
+    if (msg.type === 'progress') {
+      progEl.style.width = msg.pct + '%';
+      statusEl.textContent = msg.status;
+    } else if (msg.type === 'done') {
+      progEl.style.width = '100%';
+      statusEl.textContent = 'Done. Parsed ' + msg.store.counts.contracts.toLocaleString() + ' contracts.';
+      state.store = msg.store;
+      state.fileName = msg.fileName;
+      state.fileSize = msg.fileSize;
+      onPcspanLoaded();
+      worker.terminate();
+    } else if (msg.type === 'error') {
+      statusEl.textContent = 'Error: ' + msg.message;
+      statusEl.classList.add('warn');
+      worker.terminate();
+    }
+  };
+  worker.onerror = (err) => {
+    statusEl.textContent = 'Worker error: ' + err.message;
+    statusEl.classList.add('warn');
+  };
+  worker.postMessage({ file });
+}
+
+function onPcspanLoaded() {
+  const store = state.store;
+  document.getElementById('filestatus').textContent = state.fileName + ' — ' + store.counts.underlyings + ' underlyings loaded';
+  document.getElementById('filestatus').classList.add('loaded');
+
+  ['positions','results','debug','expiry','whatif','recon','tests'].forEach(t=>setTabEnabled(t, true));
+
+  const infoCard = document.getElementById('fileInfoCard');
+  infoCard.classList.remove('hidden');
+  const stats = [
+    ['File name', state.fileName],
+    ['File size', (state.fileSize/1e6).toFixed(2)+' MB'],
+    ['File format', store.meta.fileFormat || '—'],
+    ['Created', store.meta.created || '—'],
+    ['Point-in-time date', fmtDate(store.meta.date)],
+    ['Records parsed', store.counts.contracts.toLocaleString()],
+    ['Underlyings', store.counts.underlyings.toLocaleString()],
+    ['Risk arrays', store.counts.riskArrays.toLocaleString()],
+    ['Spread definitions', store.counts.spreadDefs.toLocaleString()],
+    ['Clearing org', store.meta.clearingOrgName || '—'],
+  ];
+  const statsWrap = document.getElementById('fileInfoStats');
+  statsWrap.innerHTML = '';
+  stats.slice(0,4).forEach(([l,v])=>{
+    statsWrap.appendChild(el('div',{class:'stat'},[el('div',{class:'v'},String(v)), el('div',{class:'l'},l)]));
+  });
+  const metaWrap = document.getElementById('fileInfoMeta');
+  metaWrap.innerHTML = '';
+  stats.forEach(([l,v])=>{
+    metaWrap.appendChild(el('div',{class:'k'},l));
+    metaWrap.appendChild(el('div',{class:'v'},String(v)));
+  });
+
+  renderUnderlyingList('');
+  document.getElementById('underlyingSearch').addEventListener('input', e=>renderUnderlyingList(e.target.value));
+
+  const datalist = document.getElementById('underlyingDatalist');
+  datalist.innerHTML = '';
+  Object.keys(store.underlyings).sort().forEach(cc=>{
+    datalist.appendChild(el('option',{value:cc}));
+  });
+
+  renderPositionsTable();
+}
+
+function renderUnderlyingList(filter) {
+  const wrap = document.getElementById('underlyingList');
+  const f = filter.trim().toUpperCase();
+  const ccs = Object.keys(state.store.underlyings).sort().filter(cc=>!f || cc.includes(f)).slice(0,300);
+  wrap.innerHTML = ccs.map(cc=>{
+    const nFut = state.store.futures[cc] ? Object.keys(state.store.futures[cc]).length : 0;
+    let nOpt = 0;
+    if (state.store.options[cc]) for (const pe in state.store.options[cc]) {
+      nOpt += Object.keys(state.store.options[cc][pe].calls).length + Object.keys(state.store.options[cc][pe].puts).length;
+    }
+    return `<div style="padding:3px 0;border-bottom:1px solid #182230;">${cc} <span class="small-muted">— ${nFut} fut, ${nOpt} opt contracts</span></div>`;
+  }).join('') || '<div class="small-muted">No matches.</div>';
+}
+
+/* =========================================================================
+   SECTION 5: MANUAL POSITION ENTRY
+   ========================================================================= */
+const mUnderlying = document.getElementById('mUnderlying');
+const mInstrument = document.getElementById('mInstrument');
+const mExpiry = document.getElementById('mExpiry');
+const mStrike = document.getElementById('mStrike');
+const mType = document.getElementById('mType');
+const mStrikeWrap = document.getElementById('mStrikeWrap');
+const mTypeWrap = document.getElementById('mTypeWrap');
+
+function refreshManualExpiries() {
+  const cc = mUnderlying.value.trim().toUpperCase();
+  mExpiry.innerHTML = '';
+  if (!state.store || !state.store.underlyings[cc]) return;
+  const isOpt = mInstrument.value === 'OPT';
+  let expiries = [];
+  if (isOpt && state.store.options[cc]) expiries = Object.keys(state.store.options[cc]);
+  else if (!isOpt && state.store.futures[cc]) expiries = Object.keys(state.store.futures[cc]);
+  expiries.sort();
+  expiries.forEach(pe=>mExpiry.appendChild(el('option',{value:pe},fmtDate(pe))));
+  refreshManualStrikes();
+}
+function refreshManualStrikes() {
+  const cc = mUnderlying.value.trim().toUpperCase();
+  const pe = mExpiry.value;
+  const isOpt = mInstrument.value === 'OPT';
+  mStrikeWrap.style.display = isOpt ? '' : 'none';
+  mTypeWrap.style.display = isOpt ? '' : 'none';
+  mStrike.innerHTML = '';
+  if (!isOpt || !state.store || !state.store.options[cc] || !state.store.options[cc][pe]) return;
+  const series = state.store.options[cc][pe];
+  const type = mType.value === 'CE' ? 'calls' : 'puts';
+  const strikes = Object.keys(series[type]).map(Number).sort((a,b)=>a-b);
+  strikes.forEach(k=>mStrike.appendChild(el('option',{value:k}, k.toLocaleString())));
+}
+mUnderlying.addEventListener('change', refreshManualExpiries);
+mUnderlying.addEventListener('blur', refreshManualExpiries);
+mInstrument.addEventListener('change', refreshManualExpiries);
+mExpiry.addEventListener('change', refreshManualStrikes);
+mType.addEventListener('change', refreshManualStrikes);
+
+document.getElementById('mAddBtn').addEventListener('click', ()=>{
+  const cc = mUnderlying.value.trim().toUpperCase();
+  const instrument = mInstrument.value;
+  const expiry = mExpiry.value;
+  const strike = instrument==='OPT' ? parseFloat(mStrike.value) : null;
+  const optType = instrument==='OPT' ? mType.value : null;
+  const side = document.getElementById('mSide').value;
+  const lots = parseInt(document.getElementById('mLots').value, 10);
+  const pos = { id: state.nextId++, underlying: cc, instrument, expiry, strike, optType, side, lots, source:'manual' };
+  const note = document.getElementById('manualNote');
+  if (!state.store) { note.textContent = 'Load a PCSPAN file first.'; note.classList.remove('hidden'); return; }
+  const val = validatePosition(state.store, pos);
+  if (!val.valid) {
+    note.innerHTML = '<b>Position not added:</b> ' + val.errors.join(' ');
+    note.classList.remove('hidden');
+    return;
+  }
+  note.classList.add('hidden');
+  state.positions.push(pos);
+  renderPositionsTable();
+});
+
+function renderPositionsTable() {
+  const tbody = document.getElementById('positionsBody');
+  tbody.innerHTML = '';
+  document.getElementById('posCount').textContent = state.positions.length ? `(${state.positions.length})` : '';
+  state.positions.forEach((pos, idx)=>{
+    const val = state.store ? validatePosition(state.store, pos) : {valid:false, errors:['No file loaded']};
+    const tr = el('tr',{});
+    tr.appendChild(el('td',{},String(idx+1)));
+    tr.appendChild(el('td',{},pos.underlying));
+    tr.appendChild(el('td',{},pos.instrument));
+    tr.appendChild(el('td',{},fmtDate(pos.expiry)));
+    tr.appendChild(el('td',{},pos.strike!==null?String(pos.strike):'—'));
+    tr.appendChild(el('td',{},pos.optType||'—'));
+    tr.appendChild(el('td',{},pos.side));
+    tr.appendChild(el('td',{class:'num'},String(pos.lots)));
+    const statusTd = el('td',{});
+    statusTd.appendChild(el('span',{class:'badge '+(val.valid?'ok':'err')}, val.valid?'OK':'INVALID'));
+    if (!val.valid) statusTd.appendChild(el('div',{class:'small-muted',style:'margin-top:3px;max-width:260px;'}, val.errors.join(' ')));
+    tr.appendChild(statusTd);
+    const rmTd = el('td',{});
+    rmTd.appendChild(el('button',{class:'posrow-remove', onclick:()=>{ state.positions.splice(idx,1); renderPositionsTable(); }},'✕'));
+    tr.appendChild(rmTd);
+    tbody.appendChild(tr);
+  });
+}
+document.getElementById('clearPositionsBtn').addEventListener('click', ()=>{ state.positions=[]; renderPositionsTable(); });
+document.getElementById('calcBtn').addEventListener('click', ()=>{
+  if (!state.store) return;
+  runCalculation();
+  activateTab('results');
+});
+
+/* =========================================================================
+   SECTION 6: BROKER NET POSITION CSV IMPORT
+   ========================================================================= */
+function parseCSV(text) {
+  // Minimal, dependency-free CSV parser with quoted-field support.
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for (let i=0;i<text.length;i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') { if (text[i+1]==='"') { field+='"'; i++; } else inQuotes=false; }
+      else field += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ',') { row.push(field); field=''; }
+      else if (c === '\n' || c === '\r') {
+        if (c==='\r' && text[i+1]==='\n') i++;
+        row.push(field); field='';
+        if (row.length>1 || row[0]!=='') rows.push(row);
+        row = [];
+      } else field += c;
+    }
+  }
+  if (field !== '' || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+const INTERNAL_FIELDS = [
+  {key:'symbol', label:'Symbol', required:true},
+  {key:'instrument', label:'Instrument (FUT/OPT/FUTIDX/OPTIDX/FUTSTK/OPTSTK...)', required:true},
+  {key:'expiry', label:'Expiry', required:true},
+  {key:'strike', label:'Strike', required:false},
+  {key:'optType', label:'Option Type (CE/PE)', required:false},
+  {key:'buyQty', label:'Buy Quantity', required:false},
+  {key:'sellQty', label:'Sell Quantity', required:false},
+  {key:'netQty', label:'Net Quantity', required:false},
+  {key:'buyPrice', label:'Buy Price', required:false},
+  {key:'sellPrice', label:'Sell Price', required:false},
+];
+
+document.getElementById('brokerFileInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    const rows = parseCSV(reader.result).filter(r=>r.some(c=>c.trim()!==''));
+    if (!rows.length) return;
+    state.brokerRows = rows;
+    buildBrokerMappingUI(rows);
+  };
+  reader.readAsText(file);
+});
+
+function buildBrokerMappingUI(rows) {
+  const header = rows[0];
+  const wrap = document.getElementById('brokerMapWrap');
+  wrap.classList.remove('hidden');
+  const grid = document.getElementById('brokerMapGrid');
+  grid.innerHTML = '';
+  state.brokerMapping = {};
+  INTERNAL_FIELDS.forEach(f=>{
+    const sel = el('select',{});
+    sel.appendChild(el('option',{value:''},'— not mapped —'));
+    header.forEach((h,i)=>sel.appendChild(el('option',{value:i}, h || `Column ${i+1}`)));
+    // auto-guess by loose name match
+    const guessIdx = header.findIndex(h=>{
+      const hn = h.toLowerCase().replace(/[^a-z]/g,'');
+      const kn = f.key.toLowerCase();
+      return hn.includes(kn) || (f.key==='optType' && (hn.includes('opttype')||hn.includes('ceP'.toLowerCase())||hn.includes('optionType'.toLowerCase()))) ||
+             (f.key==='netQty' && hn.includes('netqty')) || (f.key==='buyQty' && hn.includes('buyqty')) ||
+             (f.key==='sellQty' && hn.includes('sellqty')) || (f.key==='symbol' && (hn==='symbol'||hn.includes('symbol'))) ||
+             (f.key==='expiry' && hn.includes('expiry')) || (f.key==='strike' && hn.includes('strike'));
+    });
+    if (guessIdx >= 0) sel.value = String(guessIdx);
+    sel.addEventListener('change', ()=>{ state.brokerMapping[f.key] = sel.value===''?null:parseInt(sel.value,10); });
+    state.brokerMapping[f.key] = guessIdx>=0 ? guessIdx : null;
+    grid.appendChild(el('div',{},[
+      el('label',{}, f.label + (f.required?' *':'')),
+      sel
+    ]));
+  });
+  renderBrokerPreview(rows);
+}
+
+function renderBrokerPreview(rows) {
+  const wrap = document.getElementById('brokerPreview');
+  const header = rows[0];
+  let html = '<table class="mono"><thead><tr>'+header.map(h=>`<th>${h}</th>`).join('')+'</tr></thead><tbody>';
+  rows.slice(1,11).forEach(r=>{ html += '<tr>'+r.map(c=>`<td>${c}</td>`).join('')+'</tr>'; });
+  html += '</tbody></table>';
+  wrap.innerHTML = '<div class="small-muted" style="margin-bottom:6px;">Preview (first 10 rows of '+(rows.length-1)+')</div>' + html;
+}
+
+function guessInstrumentAndOptType(rawInstrument, hasStrike, hasOptType, optTypeVal) {
+  const s = (rawInstrument||'').toUpperCase();
+  if (s.includes('OPT') || hasOptType || hasStrike) return 'OPT';
+  if (s.includes('FUT')) return 'FUT';
+  // fall back: if we have a CE/PE value anywhere treat as option
+  if (optTypeVal && /^(CE|PE|CALL|PUT|C|P)$/i.test(optTypeVal)) return 'OPT';
+  return 'FUT';
+}
+function normalizeOptType(v) {
+  if (!v) return null;
+  const s = v.toUpperCase().trim();
+  if (s==='CE'||s==='C'||s==='CALL') return 'CE';
+  if (s==='PE'||s==='P'||s==='PUT') return 'PE';
+  return s;
+}
+function normalizeExpiry(v) {
+  if (!v) return null;
+  const s = v.trim();
+  if (/^\d{8}$/.test(s)) return s;
+  // try DD-MMM-YYYY / DD-MM-YYYY / YYYY-MM-DD
+  const months = {JAN:'01',FEB:'02',MAR:'03',APR:'04',MAY:'05',JUN:'06',JUL:'07',AUG:'08',SEP:'09',OCT:'10',NOV:'11',DEC:'12'};
+  let m = s.match(/^(\d{1,2})[-\/]([A-Za-z]{3})[-\/](\d{4})$/);
+  if (m) return m[3] + months[m[2].toUpperCase()] + m[1].padStart(2,'0');
+  m = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/);
+  if (m) return m[1] + m[2].padStart(2,'0') + m[3].padStart(2,'0');
+  m = s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/);
+  if (m) return m[3] + m[2].padStart(2,'0') + m[1].padStart(2,'0');
+  return s;
+}
+
+document.getElementById('brokerImportBtn').addEventListener('click', ()=>{
+  const rows = state.brokerRows;
+  const map = state.brokerMapping;
+  const dataRows = rows.slice(1);
+  const imported = [];
+  const rejected = [];
+  dataRows.forEach((r, i)=>{
+    const get = (key)=> map[key]!==null && map[key]!==undefined ? (r[map[key]]||'').trim() : '';
+    const symbol = get('symbol').toUpperCase();
+    const rawInstrument = get('instrument');
+    const strikeRaw = get('strike');
+    const optTypeRaw = get('optType');
+    const expiryRaw = get('expiry');
+    const buyQty = parseFloat(get('buyQty')) || 0;
+    const sellQty = parseFloat(get('sellQty')) || 0;
+    const netQtyRaw = get('netQty');
+    let netQty = netQtyRaw !== '' ? parseFloat(netQtyRaw) : (buyQty - sellQty);
+    if (Number.isNaN(netQty)) netQty = 0;
+
+    if (!symbol) { rejected.push({row:i+2, reason:'Missing symbol'}); return; }
+    if (netQty === 0) { rejected.push({row:i+2, reason:'Net quantity is zero — skipped'}); return; }
+
+    const hasStrike = strikeRaw !== '' && !Number.isNaN(parseFloat(strikeRaw));
+    const optType = normalizeOptType(optTypeRaw);
+    const instrument = guessInstrumentAndOptType(rawInstrument, hasStrike, !!optType, optTypeRaw);
+    const expiry = normalizeExpiry(expiryRaw);
+
+    imported.push({
+      id: state.nextId++,
+      underlying: symbol,
+      instrument,
+      expiry,
+      strike: instrument==='OPT' ? parseFloat(strikeRaw) : null,
+      optType: instrument==='OPT' ? optType : null,
+      side: netQty > 0 ? 'BUY' : 'SELL',
+      lots: Math.abs(netQty),
+      source: 'broker',
+      sourceRow: i+2
+    });
+  });
+  state.positions.push(...imported);
+  renderPositionsTable();
+  const wrap = document.getElementById('brokerPreview');
+  const summary = el('div',{class:'note'+(rejected.length?'':' info')},
+    `Imported ${imported.length} position(s). ${rejected.length} row(s) skipped.` +
+    (rejected.length ? ' Skipped rows: ' + rejected.map(r=>`#${r.row} (${r.reason})`).join(', ') : ''));
+  wrap.prepend(summary);
+});
+
+/* =========================================================================
+   SECTION 7: RUN CALCULATION + RESULTS RENDERING
+   ========================================================================= */
+function runCalculation() {
+  state.lastResult = calculatePortfolioMargin(state.store, state.positions);
+  renderResults();
+  renderDebug();
+  renderExpiryTab();
+}
+
+function findPairwiseHedges(store, cc, posList) {
+  // Illustrative pairwise hedge display: for small position sets, show which
+  // pairs of legs — when isolated — produce a lower combined scanning risk
+  // than the sum of their standalone risks. This is the SAME array-based
+  // methodology as the group calculation, just restricted to a pair for a
+  // clearer "why" explanation. It is not an allocation of the group result.
+  const valid = posList.filter(p => validatePosition(store, p).valid);
+  const pairs = [];
+  if (valid.length > 24) return pairs; // avoid O(n^2) blowup on large manual portfolios
+  for (let i=0;i<valid.length;i++) {
+    for (let j=i+1;j<valid.length;j++) {
+      const a = valid[i], b = valid[j];
+      const g = computeUnderlyingGroup(store, [a,b]);
+      const benefit = g.nettingBenefit;
+      if (benefit > 0.005) {
+        pairs.push({ a, b, benefit, combinedRisk: g.scanningRisk, sumStandalone: g.sumStandAloneRisk,
+          worstIdx: g.combinedWorstIdx });
+      }
+    }
+  }
+  return pairs;
+}
+
+function positionLabel(pos) {
+  if (pos.instrument === 'FUT') return `${pos.underlying} FUT ${fmtDate(pos.expiry)}`;
+  return `${pos.underlying} ${fmtDate(pos.expiry)} ${pos.strike} ${pos.optType}`;
+}
+
+function renderResults(targetId, result, positions) {
+  targetId = targetId || 'resultsContent';
+  result = result || state.lastResult;
+  positions = positions || state.positions;
+  const c = document.getElementById(targetId);
+  c.innerHTML = '';
+  if (!result) { c.innerHTML = '<div class="note">No calculation yet. Add positions and click "Calculate Margin".</div>'; return; }
+
+  const t = result.totals;
+  const summaryCard = el('div',{class:'card'});
+  summaryCard.appendChild(el('h3',{},'Portfolio Summary'));
+  const stats = el('div',{class:'grid cols-4'});
+  const validCount = positions.length - result.invalidPositions.length;
+  [
+    ['Positions', validCount + (result.invalidPositions.length ? ` (${result.invalidPositions.length} invalid)` : '')],
+    ['Gross Risk (sum of standalone legs)', fmtMoney(t.scanningRisk + t.nettingBenefit)],
+    ['Netting / Hedge Benefit', fmtMoney(t.nettingBenefit)],
+    ['Combined Scanning Risk', fmtMoney(t.scanningRisk)],
+    ['Calendar Spread Charge (+)', fmtMoney(t.spreadCharge)],
+    ['Short Option Minimum (+)', fmtMoney(t.shortOptionMinimum)],
+    ['Exposure / Additional Margin', 'Not computable — see note'],
+    ['FINAL SPAN MARGIN', fmtMoney(t.finalMargin)],
+  ].forEach(([l,v],idx)=>{
+    const s = el('div',{class:'stat'});
+    s.appendChild(el('div',{class:'v'+(idx===7?' warn':'')}, String(v)));
+    s.appendChild(el('div',{class:'l'}, l));
+    stats.appendChild(s);
+  });
+  summaryCard.appendChild(stats);
+  summaryCard.appendChild(el('div',{class:'note info'}, 'Exposure/Additional margin (ELM) and Premium margin are NOT part of the PCSPAN risk-array file — they come from separate exchange circulars. This calculator never invents a percentage for them; see the Debug tab for the exact isolated functions.'));
+  c.appendChild(summaryCard);
+
+  if (result.invalidPositions.length) {
+    const invCard = el('div',{class:'card'});
+    invCard.appendChild(el('h3',{},'Invalid / Unresolved Positions'));
+    result.invalidPositions.forEach(p=>{
+      invCard.appendChild(el('div',{class:'note err'}, `${positionLabel(p.pos)} (${p.pos.side} ${p.pos.lots}): ${p.errors.join(' ')}`));
+    });
+    c.appendChild(invCard);
+  }
+
+  // Position breakdown
+  const posCard = el('div',{class:'card'});
+  posCard.appendChild(el('h3',{},'Position Breakdown'));
+  posCard.appendChild(el('div',{class:'small-muted', style:'margin-bottom:8px;'},
+    "Standalone Risk = this leg's own worst-scenario requirement in isolation. Hedge/netting benefit is realized at the underlying-group level (see Hedge Breakdown below) — real SPAN does not attribute it to a single leg."));
+  let tbl = '<table class="mono"><thead><tr><th>Position</th><th>Side</th><th class="num">Lots</th><th class="num">Standalone Risk</th></tr></thead><tbody>';
+  for (const ur of result.underlyingResults) {
+    for (const p of ur.group.perPosition) {
+      if (!p.valid) continue;
+      tbl += `<tr><td>${positionLabel(p.pos)}</td><td>${p.pos.side}</td><td class="num">${p.pos.lots}</td><td class="num">${fmtMoney(p.standAloneRisk)}</td></tr>`;
+    }
+  }
+  tbl += '</tbody></table>';
+  posCard.innerHTML += tbl;
+  c.appendChild(posCard);
+
+  // Hedge breakdown
+  const hedgeCard = el('div',{class:'card'});
+  hedgeCard.appendChild(el('h3',{},'Hedge / Spread Breakdown'));
+  let hedgeHtml = '';
+  for (const ur of result.underlyingResults) {
+    if (ur.spreadResult.appliedSpreads.length) {
+      hedgeHtml += `<h4 style="color:var(--accent2);font-size:12px;margin:10px 0 4px;">${ur.cc} — Calendar Spread (from PCSPAN dSpread definitions)</h4>`;
+      hedgeHtml += '<table class="mono"><thead><tr><th>Leg A (expiry)</th><th>Leg B (expiry)</th><th class="num">Matched Lots</th><th class="num">Rate / Lot</th><th class="num">Charge (+)</th></tr></thead><tbody>';
+      ur.spreadResult.appliedSpreads.forEach(s=>{
+        hedgeHtml += `<tr><td>${fmtDate(s.legA)}</td><td>${fmtDate(s.legB)}</td><td class="num">${s.matchedLots}</td><td class="num">${fmtMoney(s.ratePerLot)}</td><td class="num">${fmtMoney(s.charge)}</td></tr>`;
+      });
+      hedgeHtml += '</tbody></table>';
+    }
+    const posList = ur.group.perPosition.filter(p=>p.valid).map(p=>p.pos);
+    const pairwise = findPairwiseHedges(state.store, ur.cc, posList);
+    if (pairwise.length) {
+      hedgeHtml += `<h4 style="color:var(--accent2);font-size:12px;margin:10px 0 4px;">${ur.cc} — Scenario-Offset Hedges (illustrative pairs)</h4>`;
+      hedgeHtml += '<table class="mono"><thead><tr><th>Position A</th><th>Position B</th><th class="num">Benefit</th><th>Eligible</th></tr></thead><tbody>';
+      pairwise.forEach(pr=>{
+        hedgeHtml += `<tr><td>${positionLabel(pr.a)} (${pr.a.side} ${pr.a.lots})</td><td>${positionLabel(pr.b)} (${pr.b.side} ${pr.b.lots})</td><td class="num pos">${fmtMoney(pr.benefit)}</td><td><span class="badge ok">YES</span></td></tr>`;
+      });
+      hedgeHtml += '</tbody></table>';
+    }
+    if (ur.group.perPosition.filter(p=>p.valid).length > 1 && !ur.spreadResult.appliedSpreads.length && !pairwise.length && ur.group.nettingBenefit > 0.005) {
+      hedgeHtml += `<div class="note info">${ur.cc}: group-level netting benefit of ${fmtMoney(ur.group.nettingBenefit)} detected across ${ur.group.perPosition.filter(p=>p.valid).length} legs, but no single dominant pair explains it — it emerges from the combined scenario aggregation across all legs together.</div>`;
+    }
+  }
+  hedgeCard.innerHTML += hedgeHtml || '<div class="small-muted">No hedge/spread relationships detected in the current portfolio.</div>';
+  c.appendChild(hedgeCard);
+
+  // Underlying summary table
+  const uCard = el('div',{class:'card'});
+  uCard.appendChild(el('h3',{},'Margin by Underlying'));
+  let uTbl = '<table class="mono"><thead><tr><th>Underlying</th><th class="num">Scanning Risk</th><th class="num">Spread Charge</th><th class="num">SOM</th><th class="num">Underlying Margin</th></tr></thead><tbody>';
+  result.underlyingResults.forEach(ur=>{
+    uTbl += `<tr><td>${ur.cc}</td><td class="num">${fmtMoney(ur.group.scanningRisk)}</td><td class="num">${fmtMoney(ur.spreadResult.totalCharge)}</td><td class="num">${fmtMoney(ur.som.charge)}</td><td class="num" style="color:var(--accent)">${fmtMoney(ur.underlyingMargin)}</td></tr>`;
+  });
+  uTbl += `<tr style="font-weight:700;"><td>TOTAL</td><td class="num">${fmtMoney(t.scanningRisk)}</td><td class="num">${fmtMoney(t.spreadCharge)}</td><td class="num">${fmtMoney(t.shortOptionMinimum)}</td><td class="num" style="color:var(--accent)">${fmtMoney(t.finalMargin)}</td></tr>`;
+  uTbl += '</tbody></table>';
+  uCard.innerHTML += uTbl;
+  c.appendChild(uCard);
+}
+
+/* =========================================================================
+   SECTION 8: DEBUG MODE
+   ========================================================================= */
+function scenarioGridHtml(vec, worstIdx) {
+  let html = '<div class="scenariogrid">';
+  vec.forEach((v,i)=>{
+    html += `<div class="scenariocell${i===worstIdx?' worst':''}"><b>S${i+1}</b><br><span class="num">${v.toFixed(2)}</span></div>`;
+  });
+  html += '</div>';
+  return html;
+}
+
+function renderDebug() {
+  const c = document.getElementById('debugContent');
+  c.innerHTML = '';
+  const result = state.lastResult;
+  if (!result) { c.innerHTML = '<div class="note">Run a calculation first.</div>'; return; }
+
+  c.appendChild(el('div',{class:'card'},[
+    el('h3',{},'Calculation Flow'),
+    el('div',{class:'flow', html:
+      '<span class="step">Input Position</span><span class="arrow">→</span>'+
+      '<span class="step">Contract Lookup</span><span class="arrow">→</span>'+
+      '<span class="step">PCSPAN Risk Array</span><span class="arrow">→</span>'+
+      '<span class="step">16 Scenarios</span><span class="arrow">→</span>'+
+      '<span class="step">Worst Scenario (leg)</span><span class="arrow">→</span>'+
+      '<span class="step">Portfolio Aggregation (cc)</span><span class="arrow">→</span>'+
+      '<span class="step">Spread/Hedge ID</span><span class="arrow">→</span>'+
+      '<span class="step">Hedge Benefit</span><span class="arrow">→</span>'+
+      '<span class="step">Expiry Adjustment</span><span class="arrow">→</span>'+
+      '<span class="step">Other Components</span><span class="arrow">→</span>'+
+      '<span class="step" style="border-color:var(--accent);color:var(--accent);">Final Margin</span>'
+    })
+  ]));
+
+  for (const ur of result.underlyingResults) {
+    const card = el('div',{class:'card'});
+    card.appendChild(el('h3',{},'Underlying: ' + ur.cc));
+
+    const und = state.store.underlyings[ur.cc];
+    if (!und) {
+      card.appendChild(el('div',{class:'note err'}, `"${ur.cc}" is not a known underlying in the loaded PCSPAN file — all position(s) under it were rejected (see Invalid Positions on the Results tab).`));
+      c.appendChild(card);
+      continue;
+    }
+    card.appendChild(el('div',{class:'debugblock'},[
+      el('h4',{},'PCSPAN Parameters (as read from file — not guessed)'),
+      el('div',{class:'kv', html:
+        `<div class="k">Currency</div><div class="v">${und.currency}</div>`+
+        `<div class="k">procMeth</div><div class="v">${und.procMeth}</div>`+
+        `<div class="k">wfprMeth</div><div class="v">${und.wfprMeth}</div>`+
+        `<div class="k">spotMeth</div><div class="v">${und.spotMeth}</div>`+
+        `<div class="k">somMeth</div><div class="v">${und.somMeth}</div>`+
+        `<div class="k">cmbMeth</div><div class="v">${und.cmbMeth}</div>`+
+        `<div class="k">riskExponent</div><div class="v">${und.riskExponent}</div>`+
+        `<div class="k">Calendar spreads defined</div><div class="v">${und.spreads.length}</div>`
+      })
+    ]));
+
+    for (const p of ur.group.perPosition) {
+      if (!p.valid) {
+        card.appendChild(el('div',{class:'debugblock'},[
+          el('h4',{},'Position (INVALID): ' + positionLabel(p.pos)),
+          el('div',{class:'note err'}, p.errors.join(' '))
+        ]));
+        continue;
+      }
+      const block = el('div',{class:'debugblock'});
+      block.appendChild(el('h4',{}, positionLabel(p.pos) + ' — ' + p.pos.side + ' ' + p.pos.lots + ' lot(s)'));
+      block.innerHTML += `<div class="kv">
+        <div class="k">Contract ID (cId)</div><div class="v">${p.contractRef.rec.cId ?? '—'}</div>
+        <div class="k">Signed contracts</div><div class="v">${p.signedContracts}</div>
+        <div class="k">Theoretical price (p)</div><div class="v">${p.contractRef.rec.p ?? '—'}</div>
+        <div class="k">Delta (d)</div><div class="v">${p.contractRef.rec.d ?? '—'}</div>
+        <div class="k">Volatility (v)</div><div class="v">${p.contractRef.rec.v ?? '—'}</div>
+      </div>
+      <div style="margin:8px 0 4px;" class="small-muted">Risk array × signed contracts (16 SPAN scenarios, per lot values from file):</div>
+      ${scenarioGridHtml(p.ra.map(v=>v*p.signedContracts), p.standAloneWorstIdx)}
+      <div style="margin-top:8px;">Worst scenario: <b>S${p.standAloneWorstIdx+1}</b> → Standalone Risk = <span class="num warn">${fmtMoney(p.standAloneRisk)}</span></div>`;
+      card.appendChild(block);
+    }
+
+    card.appendChild(el('div',{class:'debugblock'},[
+      el('h4',{},'Portfolio Aggregation — Combined Scenario Vector (' + ur.cc + ')'),
+      el('div',{html: scenarioGridHtml(ur.group.combinedVector, ur.group.combinedWorstIdx)}),
+      el('div',{style:'margin-top:8px;', html:
+        `Worst combined scenario: <b>S${ur.group.combinedWorstIdx+1}</b> → Combined Scanning Risk = <span class="num warn">${fmtMoney(ur.group.scanningRisk)}</span><br>`+
+        `Sum of standalone leg risks = ${fmtMoney(ur.group.sumStandAloneRisk)}<br>`+
+        `<b>Netting / Hedge Benefit = ${fmtMoney(ur.group.nettingBenefit)}</b>`
+      })
+    ]));
+
+    if (ur.spreadResult.appliedSpreads.length) {
+      let sHtml = '<h4>Calendar Spread Charges Applied (from PCSPAN dSpread)</h4>';
+      ur.spreadResult.appliedSpreads.forEach(s=>{
+        sHtml += `<div class="kv"><div class="k">Spread ID</div><div class="v">${s.spreadId}</div>
+          <div class="k">Legs</div><div class="v">${fmtDate(s.legA)} ↔ ${fmtDate(s.legB)}</div>
+          <div class="k">Matched lots</div><div class="v">${s.matchedLots}</div>
+          <div class="k">Rate/lot (from file)</div><div class="v">${fmtMoney(s.ratePerLot)}</div>
+          <div class="k">Charge</div><div class="v">${fmtMoney(s.charge)}</div></div><hr class="sep">`;
+      });
+      card.appendChild(el('div',{class:'debugblock', html: sHtml}));
+    }
+
+    card.appendChild(el('div',{class:'debugblock'},[
+      el('h4',{},'Other Components'),
+      el('div',{class:'kv', html:
+        `<div class="k">Short Option Minimum</div><div class="v">${ur.som.note ? '<span class="warn">'+ur.som.note+'</span>' : fmtMoney(ur.som.charge)}</div>`+
+        `<div class="k">Exposure/Additional Margin</div><div class="v"><span class="warn">${ur.exposure.note}</span></div>`+
+        `<div class="k">Premium Margin</div><div class="v"><span class="warn">${ur.premium.note}</span></div>`+
+        `<div class="k"><b>Underlying Margin (Scanning + Spread + SOM)</b></div><div class="v"><b>${fmtMoney(ur.underlyingMargin)}</b></div>`
+      })
+    ]));
+
+    c.appendChild(card);
+  }
+
+  const finalCard = el('div',{class:'card'});
+  finalCard.appendChild(el('h3',{},'Final Margin Aggregation'));
+  finalCard.innerHTML += `<div class="kv">
+    <div class="k">Sum of Combined Scanning Risk (all underlyings)</div><div class="v">${fmtMoney(result.totals.scanningRisk)}</div>
+    <div class="k">+ Sum of Calendar Spread Charges</div><div class="v">${fmtMoney(result.totals.spreadCharge)}</div>
+    <div class="k">+ Sum of Short Option Minimum</div><div class="v">${fmtMoney(result.totals.shortOptionMinimum)}</div>
+    <div class="k">+ Exposure/Premium components</div><div class="v warn">Not computable from PCSPAN file alone</div>
+    <div class="k"><b>= FINAL SPAN MARGIN</b></div><div class="v" style="color:var(--accent);font-weight:700;">${fmtMoney(result.totals.finalMargin)}</div>
+  </div>`;
+  c.appendChild(finalCard);
+}
+
+/* =========================================================================
+   SECTION 9: EXPIRY-DAY FRAMEWORK
+   ========================================================================= */
+function renderExpiryTab() {
+  const c = document.getElementById('expiryContent');
+  c.innerHTML = '';
+  if (!state.store) { c.innerHTML = '<div class="note">Load a PCSPAN file first.</div>'; return; }
+  const today = state.store.meta.date;
+  const introCard = el('div',{class:'card'});
+  introCard.appendChild(el('h3',{},'Expiry-Day Treatment'));
+  introCard.innerHTML += `<div class="kv"><div class="k">PCSPAN file date (treated as "today")</div><div class="v">${fmtDate(today)}</div></div>
+  <div class="note info" style="margin-top:10px;">
+  The PCSPAN file already carries the exchange's own risk array for every contract as of this date — including contracts expiring today, whose arrays already reflect zero/near-zero time value. No expiry-day percentage is invented here.<br><br>
+  What this calculator adds on top: it separately shows (1) today's margin AS FILED, and (2) an <b>estimate</b> of the margin the SURVIVING legs would carry the moment any expiring leg is removed from the book — reusing today's still-valid parameters for those surviving legs, since tomorrow's PCSPAN file is not available. This is clearly an estimate, not the exchange's actual next-day computation.
+  </div>`;
+  c.appendChild(introCard);
+
+  if (!state.positions.length) { c.appendChild(el('div',{class:'note'},'Add positions to see expiry-day analysis.')); return; }
+
+  const expiringToday = state.positions.filter(p => p.expiry === today);
+  const survivors = state.positions.filter(p => p.expiry !== today);
+
+  const flagCard = el('div',{class:'card'});
+  flagCard.appendChild(el('h3',{},'Positions Expiring Today'));
+  if (!expiringToday.length) {
+    flagCard.appendChild(el('div',{class:'note'},'No positions in the current portfolio expire on the PCSPAN file date ('+fmtDate(today)+'). Normal-day and expiry-adjusted margin will be identical.'));
+  } else {
+    let tbl = '<table class="mono"><thead><tr><th>Position</th><th>Side</th><th class="num">Lots</th></tr></thead><tbody>';
+    expiringToday.forEach(p=>{ tbl += `<tr><td>${positionLabel(p)}</td><td>${p.side}</td><td class="num">${p.lots}</td></tr>`; });
+    tbl += '</tbody></table>';
+    flagCard.innerHTML += tbl;
+  }
+  c.appendChild(flagCard);
+
+  const normalResult = calculatePortfolioMargin(state.store, state.positions);
+  const postExpiryResult = calculatePortfolioMargin(state.store, survivors);
+
+  const cmpCard = el('div',{class:'card'});
+  cmpCard.appendChild(el('h3',{},'Normal-Day vs Post-Expiry Comparison'));
+  const rows = [
+    ['Scanning Risk', normalResult.totals.scanningRisk, postExpiryResult.totals.scanningRisk],
+    ['Calendar Spread Charge', normalResult.totals.spreadCharge, postExpiryResult.totals.spreadCharge],
+    ['Short Option Minimum', normalResult.totals.shortOptionMinimum, postExpiryResult.totals.shortOptionMinimum],
+    ['Netting/Hedge Benefit', normalResult.totals.nettingBenefit, postExpiryResult.totals.nettingBenefit],
+    ['FINAL MARGIN', normalResult.totals.finalMargin, postExpiryResult.totals.finalMargin],
+  ];
+  let tbl2 = '<table class="mono"><thead><tr><th>Component</th><th class="num">Today (as filed)</th><th class="num">Post-Expiry (estimate)</th><th class="num">Difference</th></tr></thead><tbody>';
+  rows.forEach(([label, a, b])=>{
+    const diff = b - a;
+    const cls = diff > 0.005 ? 'diffup' : (diff < -0.005 ? 'diffdown' : '');
+    tbl2 += `<tr><td>${label}</td><td class="num">${fmtMoney(a)}</td><td class="num">${fmtMoney(b)}</td><td class="num ${cls}">${diff>=0?'+':''}${fmtMoney(diff)}</td></tr>`;
+  });
+  tbl2 += '</tbody></table>';
+  cmpCard.innerHTML += tbl2;
+  const hedgeRemoved = normalResult.totals.nettingBenefit - postExpiryResult.totals.nettingBenefit;
+  cmpCard.appendChild(el('div',{class:'note'+(hedgeRemoved>0.005?' err':' info')},
+    hedgeRemoved > 0.005
+      ? `Removing today's expiring leg(s) reduces netting/hedge benefit by ${fmtMoney(hedgeRemoved)} — the surviving position(s) lose the offset that the expiring leg was providing.`
+      : `Removing today's expiring leg(s) does not reduce netting/hedge benefit for the surviving book.`));
+  c.appendChild(cmpCard);
+}
+
+/* =========================================================================
+   SECTION 10: WHAT-IF CALCULATOR
+   ========================================================================= */
+function initWhatifTab() {
+  const c = document.getElementById('whatifContent');
+  c.innerHTML = '';
+  const card = el('div',{class:'card'});
+  card.appendChild(el('h3',{},'What-If Scenario'));
+  card.innerHTML += '<div class="small-muted" style="margin-bottom:10px;">Duplicates your current portfolio into an editable copy. Change quantity/side, remove legs, or add new ones, then recalculate to see the margin impact.</div>';
+  const toolbar = el('div',{class:'toolbar'});
+  toolbar.appendChild(el('button',{class:'secondary small', onclick: resetWhatif},'↺ Reset from Current Portfolio'));
+  toolbar.appendChild(el('div',{class:'spacer'}));
+  toolbar.appendChild(el('button',{onclick: runWhatif},'Recalculate What-If →'));
+  card.appendChild(toolbar);
+  card.appendChild(el('div',{id:'whatifTableWrap'}));
+  c.appendChild(card);
+  c.appendChild(el('div',{class:'card', id:'whatifAddCard'},[
+    el('h3',{},'Add Position to What-If'),
+    buildQuickAddForm('wi')
+  ]));
+  c.appendChild(el('div',{id:'whatifResultWrap'}));
+  resetWhatif();
+}
+
+function buildQuickAddForm(prefix) {
+  const wrap = el('div',{class:'grid cols-6'});
+  const uInput = el('input',{type:'text', id:prefix+'Underlying', class:'mono', placeholder:'NIFTY', list:'underlyingDatalist'});
+  const instrSel = el('select',{id:prefix+'Instrument'},[el('option',{value:'FUT'},'Future'),el('option',{value:'OPT'},'Option')]);
+  const expirySel = el('select',{id:prefix+'Expiry', class:'mono'});
+  const strikeSel = el('select',{id:prefix+'Strike', class:'mono'});
+  const typeSel = el('select',{id:prefix+'Type'},[el('option',{value:'CE'},'CE'),el('option',{value:'PE'},'PE')]);
+  const sideSel = el('select',{id:prefix+'Side'},[el('option',{value:'BUY'},'Buy'),el('option',{value:'SELL'},'Sell')]);
+  const lotsInput = el('input',{type:'number', id:prefix+'Lots', class:'mono', value:'1', min:'1', step:'1'});
+  function refreshExp() {
+    const cc = uInput.value.trim().toUpperCase();
+    expirySel.innerHTML = '';
+    if (!state.store || !state.store.underlyings[cc]) return;
+    const isOpt = instrSel.value === 'OPT';
+    let exps = isOpt ? (state.store.options[cc]?Object.keys(state.store.options[cc]):[]) : (state.store.futures[cc]?Object.keys(state.store.futures[cc]):[]);
+    exps.sort().forEach(pe=>expirySel.appendChild(el('option',{value:pe},fmtDate(pe))));
+    refreshStrike();
+  }
+  function refreshStrike() {
+    const cc = uInput.value.trim().toUpperCase();
+    const pe = expirySel.value;
+    const isOpt = instrSel.value === 'OPT';
+    strikeSel.parentElement && (strikeSel.parentElement.style.display = isOpt?'':'none');
+    typeSel.parentElement && (typeSel.parentElement.style.display = isOpt?'':'none');
+    strikeSel.innerHTML = '';
+    if (!isOpt || !state.store || !state.store.options[cc] || !state.store.options[cc][pe]) return;
+    const series = state.store.options[cc][pe];
+    const list = typeSel.value==='CE'?series.calls:series.puts;
+    Object.keys(list).map(Number).sort((a,b)=>a-b).forEach(k=>strikeSel.appendChild(el('option',{value:k},k.toLocaleString())));
+  }
+  uInput.addEventListener('change', refreshExp); uInput.addEventListener('blur', refreshExp);
+  instrSel.addEventListener('change', refreshExp);
+  expirySel.addEventListener('change', refreshStrike);
+  typeSel.addEventListener('change', refreshStrike);
+  wrap.appendChild(el('div',{},[el('label',{},'Underlying'), uInput]));
+  wrap.appendChild(el('div',{},[el('label',{},'Instrument'), instrSel]));
+  wrap.appendChild(el('div',{},[el('label',{},'Expiry'), expirySel]));
+  wrap.appendChild(el('div',{},[el('label',{},'Strike'), strikeSel]));
+  wrap.appendChild(el('div',{},[el('label',{},'CE/PE'), typeSel]));
+  wrap.appendChild(el('div',{},[el('label',{},'Side'), sideSel]));
+  wrap.appendChild(el('div',{},[el('label',{},'Lots'), lotsInput]));
+  wrap.appendChild(el('div',{style:'display:flex;align-items:end;'},[
+    el('button',{onclick:()=>{
+      const cc = uInput.value.trim().toUpperCase();
+      const instrument = instrSel.value;
+      const pos = { id: state.nextId++, underlying:cc, instrument, expiry: expirySel.value,
+        strike: instrument==='OPT'?parseFloat(strikeSel.value):null, optType: instrument==='OPT'?typeSel.value:null,
+        side: sideSel.value, lots: parseInt(lotsInput.value,10)||1, source:'whatif' };
+      const val = validatePosition(state.store, pos);
+      if (!val.valid) { alert('Not added: ' + val.errors.join(' ')); return; }
+      state.whatifPositions.push(pos);
+      renderWhatifTable();
+    }},'+ Add')
+  ]));
+  return wrap;
+}
+
+function resetWhatif() {
+  state.whatifPositions = state.positions.map(p=>({...p}));
+  renderWhatifTable();
+  document.getElementById('whatifResultWrap').innerHTML = '';
+}
+function renderWhatifTable() {
+  const wrap = document.getElementById('whatifTableWrap');
+  if (!wrap) return;
+  let html = '<table class="mono"><thead><tr><th>#</th><th>Underlying</th><th>Instrument</th><th>Expiry</th><th>Strike</th><th>Type</th><th>Side</th><th class="num">Lots</th><th></th></tr></thead><tbody>';
+  state.whatifPositions.forEach((p,i)=>{
+    html += `<tr><td>${i+1}</td><td>${p.underlying}</td><td>${p.instrument}</td><td>${fmtDate(p.expiry)}</td><td>${p.strike??'—'}</td><td>${p.optType??'—'}</td>
+      <td><select data-idx="${i}" class="wi-side"><option value="BUY" ${p.side==='BUY'?'selected':''}>Buy</option><option value="SELL" ${p.side==='SELL'?'selected':''}>Sell</option></select></td>
+      <td><input type="number" min="1" step="1" data-idx="${i}" class="wi-lots mono" value="${p.lots}" style="width:80px;"></td>
+      <td><button class="posrow-remove" data-idx="${i}">✕</button></td></tr>`;
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+  wrap.querySelectorAll('.wi-side').forEach(sel=>sel.addEventListener('change', e=>{ state.whatifPositions[+e.target.dataset.idx].side = e.target.value; }));
+  wrap.querySelectorAll('.wi-lots').forEach(inp=>inp.addEventListener('change', e=>{ state.whatifPositions[+e.target.dataset.idx].lots = parseInt(e.target.value,10)||1; }));
+  wrap.querySelectorAll('.posrow-remove').forEach(btn=>btn.addEventListener('click', e=>{ state.whatifPositions.splice(+e.target.dataset.idx,1); renderWhatifTable(); }));
+}
+function runWhatif() {
+  const baseline = state.lastResult || calculatePortfolioMargin(state.store, state.positions);
+  const whatifResult = calculatePortfolioMargin(state.store, state.whatifPositions);
+  state.whatifResult = whatifResult;
+  const wrap = document.getElementById('whatifResultWrap');
+  wrap.innerHTML = '';
+  const card = el('div',{class:'card'});
+  card.appendChild(el('h3',{},'What-If Result'));
+  const rows = [
+    ['Scanning Risk', baseline.totals.scanningRisk, whatifResult.totals.scanningRisk],
+    ['Spread Charge', baseline.totals.spreadCharge, whatifResult.totals.spreadCharge],
+    ['Hedge/Netting Benefit', baseline.totals.nettingBenefit, whatifResult.totals.nettingBenefit],
+    ['FINAL MARGIN', baseline.totals.finalMargin, whatifResult.totals.finalMargin],
+  ];
+  let tbl = '<table class="mono"><thead><tr><th>Component</th><th class="num">Current</th><th class="num">What-If</th><th class="num">Difference</th></tr></thead><tbody>';
+  rows.forEach(([l,a,b])=>{
+    const diff = b-a;
+    const cls = diff>0.005?'diffup':(diff<-0.005?'diffdown':'');
+    tbl += `<tr><td>${l}</td><td class="num">${fmtMoney(a)}</td><td class="num">${fmtMoney(b)}</td><td class="num ${cls}">${diff>=0?'+':''}${fmtMoney(diff)}</td></tr>`;
+  });
+  tbl += '</tbody></table>';
+  card.innerHTML += tbl;
+  wrap.appendChild(card);
+  const breakdownWrap = el('div',{id:'whatifBreakdownInner'});
+  wrap.appendChild(el('h3',{style:'margin:16px 0 8px;color:var(--muted);text-transform:uppercase;font-size:12px;letter-spacing:.06em;'},'What-If Full Breakdown'));
+  wrap.appendChild(breakdownWrap);
+  renderResults('whatifBreakdownInner', whatifResult, state.whatifPositions);
+}
+
+/* =========================================================================
+   SECTION 11: BROKER MARGIN RECONCILIATION
+   ========================================================================= */
+function initReconTab() {
+  const c = document.getElementById('reconContent');
+  c.innerHTML = '';
+  const card = el('div',{class:'card'});
+  card.appendChild(el('h3',{},'Broker Margin Reconciliation'));
+  card.innerHTML += `<div class="grid cols-3">
+    <div><label>Broker-Reported Margin (₹)</label><input type="number" id="reconBrokerMargin" class="mono" step="0.01" placeholder="e.g. 245000"></div>
+    <div style="display:flex;align-items:end;"><button id="reconRunBtn" style="width:100%;">Compare</button></div>
+  </div>`;
+  c.appendChild(card);
+  c.appendChild(el('div',{id:'reconResultWrap'}));
+  document.getElementById('reconRunBtn').addEventListener('click', runRecon);
+}
+
+function runRecon() {
+  const wrap = document.getElementById('reconResultWrap');
+  wrap.innerHTML = '';
+  const brokerVal = parseFloat(document.getElementById('reconBrokerMargin').value);
+  if (Number.isNaN(brokerVal)) { wrap.innerHTML = '<div class="note err">Enter a valid broker margin figure.</div>'; return; }
+  const result = state.lastResult || calculatePortfolioMargin(state.store, state.positions);
+  const ours = result.totals.finalMargin;
+  const diff = brokerVal - ours;
+  const diffPct = ours !== 0 ? (diff/ours*100) : (brokerVal===0?0:100);
+
+  const card = el('div',{class:'card'});
+  card.appendChild(el('h3',{},'Reconciliation Result'));
+  const stats = el('div',{class:'grid cols-4'});
+  [
+    ['PCSPAN Calculator Margin', fmtMoney(ours)],
+    ['Broker-Reported Margin', fmtMoney(brokerVal)],
+    ['Difference', fmtMoney(diff)],
+    ['Difference %', diffPct.toFixed(2)+'%'],
+  ].forEach(([l,v])=>{
+    const s = el('div',{class:'stat'});
+    s.appendChild(el('div',{class:'v'+(Math.abs(diff)>0.5?' warn':' pos')}, String(v)));
+    s.appendChild(el('div',{class:'l'}, l));
+    stats.appendChild(s);
+  });
+  card.appendChild(stats);
+  c_appendDiagnostics(card, result, diff);
+  wrap.appendChild(card);
+}
+
+function c_appendDiagnostics(card, result, diff) {
+  card.appendChild(el('hr',{class:'sep'}));
+  card.appendChild(el('h4',{style:'font-size:12px;color:var(--muted);text-transform:uppercase;'},'Diagnostic Breakdown'));
+  const notes = [];
+  if (result.invalidPositions.length) {
+    notes.push({type:'err', text: `${result.invalidPositions.length} position(s) could not be resolved against the PCSPAN file (unknown contract/strike/expiry) and were EXCLUDED from our calculation. If the broker included them, that alone can explain part of the gap.`});
+  }
+  const hasOptions = state.positions.some(p=>p.instrument==='OPT');
+  if (hasOptions) {
+    notes.push({type:'info', text: 'Premium margin (mark-to-market on option premium) is not computed here — it requires live traded premiums, not the theoretical PCSPAN prices. If your book carries short options, this is a likely source of difference.'});
+  }
+  notes.push({type:'info', text: 'Exposure/Additional margin (ELM) is not part of the PCSPAN risk file and is not included in our figure. Most brokers add ELM on top of SPAN margin — this is very likely the largest single component of any gap for index/stock F&O.'});
+  if (result.underlyingResults.some(ur=>ur.spreadResult.appliedSpreads.length)) {
+    notes.push({type:'info', text: 'Calendar spread charges were applied using the exact PCSPAN dSpread rates for matched futures legs. If the broker uses a different spread-matching order (e.g. nearest-expiry-first vs file order) the matched charge could differ slightly.'});
+  }
+  notes.push({type:'info', text: "Quantity mismatch check: verify the broker's reported quantity is in LOTS (contracts), not shares — PCSPAN risk arrays are per-contract, and the file carries no lot-size table to auto-convert."});
+  if (Math.abs(diff) < 1) notes.push({type:'info', text: 'Difference is negligible — likely just rounding.'});
+  notes.forEach(n=>card.appendChild(el('div',{class:'note '+n.type}, n.text)));
+}
+
+/* =========================================================================
+   SECTION 12: TEST MODE
+   Built-in scenarios are generated dynamically from whatever underlying
+   actually exists in the loaded PCSPAN file (never hardcoded contract IDs),
+   per requirement #17.
+   ========================================================================= */
+function pickTestUnderlying(store) {
+  const preferred = ['NIFTY','BANKNIFTY','FINNIFTY'];
+  for (const p of preferred) {
+    if (store.underlyings[p] && store.futures[p] && Object.keys(store.futures[p]).length>=2 &&
+        store.options[p] && Object.keys(store.options[p]).length>=2) return p;
+  }
+  for (const cc of Object.keys(store.underlyings)) {
+    if (store.futures[cc] && Object.keys(store.futures[cc]).length>=2 &&
+        store.options[cc] && Object.keys(store.options[cc]).length>=2) return cc;
+  }
+  return null;
+}
+
+function nearestStrike(series, type, targetPrice) {
+  const map = type==='CE'?series.calls:series.puts;
+  let best=null, bestDiff=Infinity;
+  for (const k in map) { const d=Math.abs(parseFloat(k)-targetPrice); if(d<bestDiff){bestDiff=d;best=parseFloat(k);} }
+  return best;
+}
+
+function buildTestScenarios(store) {
+  const cc = pickTestUnderlying(store);
+  if (!cc) return { cc:null, scenarios:[] };
+  const futExps = Object.keys(store.futures[cc]).sort();
+  const optExps = Object.keys(store.options[cc]).sort();
+  const e1 = futExps[0], e2 = futExps[1] || futExps[0];
+  const oe1 = optExps.includes(e1) ? e1 : optExps[0];
+  const spotGuess = store.futures[cc][e1].p;
+  const series1 = store.options[cc][oe1];
+  const atmCall = nearestStrike(series1, 'CE', spotGuess);
+  const atmPut = nearestStrike(series1, 'PE', spotGuess);
+  const otmCall = nearestStrike(series1, 'CE', spotGuess*1.02);
+  const otmPut = nearestStrike(series1, 'PE', spotGuess*0.98);
+  const today = store.meta.date;
+  const expToday = optExps.includes(today) ? today : null;
+
+  const P = (instrument, expiry, strike, optType, side, lots) => ({
+    id: 'test', underlying: cc, instrument, expiry, strike, optType, side, lots
+  });
+
+  const scenarios = [
+    {n:1, name:'Single future (baseline)', positions:[P('FUT',e1,null,null,'BUY',1)]},
+    {n:2, name:'Long future', positions:[P('FUT',e1,null,null,'BUY',2)]},
+    {n:3, name:'Short future', positions:[P('FUT',e1,null,null,'SELL',2)]},
+    {n:4, name:'Long call', positions:[atmCall!=null?P('OPT',oe1,atmCall,'CE','BUY',1):null]},
+    {n:5, name:'Short call', positions:[atmCall!=null?P('OPT',oe1,atmCall,'CE','SELL',1):null]},
+    {n:6, name:'Long put', positions:[atmPut!=null?P('OPT',oe1,atmPut,'PE','BUY',1):null]},
+    {n:7, name:'Short put', positions:[atmPut!=null?P('OPT',oe1,atmPut,'PE','SELL',1):null]},
+    {n:8, name:'Future + future (same expiry, opposite side)', positions:[P('FUT',e1,null,null,'BUY',1),P('FUT',e1,null,null,'SELL',1)]},
+    {n:9, name:'Future + put hedge', positions:[P('FUT',e1,null,null,'BUY',1), atmPut!=null?P('OPT',oe1,atmPut,'PE','BUY',1):null]},
+    {n:10, name:'Future + call hedge (short fut + long call)', positions:[P('FUT',e1,null,null,'SELL',1), atmCall!=null?P('OPT',oe1,atmCall,'CE','BUY',1):null]},
+    {n:11, name:'Call spread (bull call)', positions:[atmCall!=null?P('OPT',oe1,atmCall,'CE','BUY',1):null, otmCall!=null?P('OPT',oe1,otmCall,'CE','SELL',1):null]},
+    {n:12, name:'Put spread (bear put)', positions:[atmPut!=null?P('OPT',oe1,atmPut,'PE','BUY',1):null, otmPut!=null?P('OPT',oe1,otmPut,'PE','SELL',1):null]},
+    {n:13, name:'Calendar spread (long near, short far future)', positions:[P('FUT',e1,null,null,'BUY',1), P('FUT',e2,null,null,'SELL',1)]},
+    {n:14, name:'Partial hedge (2 long fut, 1 short fut)', positions:[P('FUT',e1,null,null,'BUY',2), P('FUT',e1,null,null,'SELL',1)]},
+    {n:15, name:'Multiple hedges (fut + call + put)', positions:[P('FUT',e1,null,null,'BUY',1), atmCall!=null?P('OPT',oe1,atmCall,'CE','SELL',1):null, atmPut!=null?P('OPT',oe1,atmPut,'PE','BUY',1):null]},
+    {n:16, name:'Mixed portfolio (multiple underlyings-equivalent legs)', positions:[P('FUT',e1,null,null,'BUY',1), atmCall!=null?P('OPT',oe1,atmCall,'CE','BUY',1):null, atmPut!=null?P('OPT',oe1,atmPut,'PE','SELL',1):null]},
+    {n:17, name:'Different expiries (long e1, long e2)', positions:[P('FUT',e1,null,null,'BUY',1), P('FUT',e2,null,null,'BUY',1)]},
+    {n:18, name:'One leg expiring today' + (expToday?'':' (no same-day expiry series in this file)'), positions: expToday ? [P('FUT',e1,null,null,'BUY',1), nearestStrike(store.options[cc][expToday],'CE',spotGuess)!=null?P('OPT',expToday,nearestStrike(store.options[cc][expToday],'CE',spotGuess),'CE','SELL',1):null] : [P('FUT',e1,null,null,'BUY',1)]},
+    {n:19, name:'Full expiry-day scenario' + (expToday?'':' (no same-day expiry series in this file)'), positions: expToday ? [nearestStrike(store.options[cc][expToday],'CE',spotGuess)!=null?P('OPT',expToday,nearestStrike(store.options[cc][expToday],'CE',spotGuess),'CE','BUY',1):null, nearestStrike(store.options[cc][expToday],'PE',spotGuess)!=null?P('OPT',expToday,nearestStrike(store.options[cc][expToday],'PE',spotGuess),'PE','SELL',1):null] : []},
+    {n:20, name:'Hedge benefit removed on expiry (fut + today-expiring put)', positions: expToday ? [P('FUT',e1,null,null,'BUY',1), nearestStrike(store.options[cc][expToday],'PE',spotGuess)!=null?P('OPT',expToday,nearestStrike(store.options[cc][expToday],'PE',spotGuess),'PE','BUY',1):null] : [P('FUT',e1,null,null,'BUY',1)]},
+  ];
+  scenarios.forEach(s=>s.positions = s.positions.filter(p=>p!==null));
+  return { cc, scenarios };
+}
+
+function initTestsTab() {
+  const c = document.getElementById('testsContent');
+  c.innerHTML = '';
+  const { cc, scenarios } = buildTestScenarios(state.store);
+  if (!cc) {
+    c.innerHTML = '<div class="note err">Could not find an underlying in the loaded PCSPAN file with both futures (2+ expiries) and options — cannot build test scenarios.</div>';
+    return;
+  }
+  c.appendChild(el('div',{class:'note info'}, `Test scenarios generated dynamically from the loaded file using underlying "${cc}" and its real expiries/strikes — nothing hardcoded.`));
+  scenarios.forEach(s=>{
+    const card = el('div',{class:'card'});
+    card.appendChild(el('h3',{}, `Test ${s.n}: ${s.name}`));
+    if (!s.positions.length) {
+      card.appendChild(el('div',{class:'note'},'Skipped — could not build a valid position set from this file.'));
+      c.appendChild(card); return;
+    }
+    let inputTbl = '<table class="mono"><thead><tr><th>Underlying</th><th>Instrument</th><th>Expiry</th><th>Strike</th><th>Type</th><th>Side</th><th class="num">Lots</th></tr></thead><tbody>';
+    s.positions.forEach(p=>{
+      inputTbl += `<tr><td>${p.underlying}</td><td>${p.instrument}</td><td>${fmtDate(p.expiry)}</td><td>${p.strike??'—'}</td><td>${p.optType??'—'}</td><td>${p.side}</td><td class="num">${p.lots}</td></tr>`;
+    });
+    inputTbl += '</tbody></table>';
+    card.innerHTML += '<div class="small-muted" style="margin:6px 0;">Input:</div>' + inputTbl;
+
+    const result = calculatePortfolioMargin(state.store, s.positions);
+    const t = result.totals;
+    const hedgeStatus = t.nettingBenefit > 0.005 || t.spreadCharge > 0 ? 'HEDGED' : 'UNHEDGED';
+    card.innerHTML += `<div class="grid cols-4" style="margin-top:10px;">
+      <div class="stat"><div class="v">${fmtMoney(t.scanningRisk + t.nettingBenefit)}</div><div class="l">Gross (standalone sum)</div></div>
+      <div class="stat"><div class="v ${t.nettingBenefit>0?'pos':''}">${fmtMoney(t.nettingBenefit)}</div><div class="l">Hedge Benefit</div></div>
+      <div class="stat"><div class="v"><span class="badge ${hedgeStatus==='HEDGED'?'ok':'info'}">${hedgeStatus}</span></div><div class="l">Hedge Status</div></div>
+      <div class="stat"><div class="v warn">${fmtMoney(t.finalMargin)}</div><div class="l">Final Margin</div></div>
+    </div>`;
+    if (result.invalidPositions.length) {
+      card.appendChild(el('div',{class:'note err'}, 'Some legs invalid: ' + result.invalidPositions.map(p=>p.errors.join(' ')).join(' | ')));
+    }
+    c.appendChild(card);
+  });
+}
+
+/* =========================================================================
+   SECTION 13: TAB ACTIVATION HOOKS
+   ========================================================================= */
+const originalActivateTab = activateTab;
+activateTab = function(tabName) {
+  originalActivateTab(tabName);
+  if (tabName === 'whatif' && state.store) initWhatifTab();
+  if (tabName === 'recon' && state.store) initReconTab();
+  if (tabName === 'tests' && state.store) initTestsTab();
+  if (tabName === 'expiry' && state.store) renderExpiryTab();
+};
+</script>
+</body>
+</html>
