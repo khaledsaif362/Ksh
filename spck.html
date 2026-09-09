@@ -1,0 +1,4941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NSE PCSPAN SPAN Margin Calculator</title>
+
+<style>
+:root{
+  --bg:#f6f9f7;
+  --panel:#ffffff;
+  --panel2:#eef5f0;
+  --border:#d7e6dc;
+  --text:#1c2a22;
+  --muted:#6d8577;
+  --accent:#1f8a4c;
+  --accent-dark:#166238;
+  --accent-soft:#e3f3e9;
+  --blue:#1f6f8a;
+  --green:#1f8a4c;
+  --red:#b3392a;
+  --red-soft:#fbe9e6;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font:14px system-ui,-apple-system,Segoe UI,Roboto,sans-serif
+}
+
+button,input,select{font:inherit}
+
+button{
+  cursor:pointer;
+  background:var(--accent);
+  color:#fff;
+  border:0;
+  border-radius:5px;
+  padding:8px 13px;
+  font-weight:700
+}
+
+button:hover{background:var(--accent-dark)}
+
+button.secondary{
+  background:var(--panel2);
+  color:var(--text);
+  border:1px solid var(--border)
+}
+
+button.secondary:hover{background:var(--border)}
+
+input,select{
+  width:100%;
+  padding:8px;
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:5px;
+  color:var(--text)
+}
+
+input:focus,select:focus{
+  outline:2px solid var(--accent);
+  outline-offset:1px
+}
+
+#top{
+  position:sticky;
+  top:0;
+  z-index:10;
+  background:var(--panel);
+  border-bottom:1px solid var(--border);
+  padding:10px 16px;
+  display:flex;
+  gap:12px;
+  align-items:center;
+  box-shadow:0 1px 3px rgba(20,60,35,.05)
+}
+
+.brand{font-weight:800}
+.brand span{color:var(--accent)}
+.spacer{flex:1}
+
+.mono{
+  font-family:Consolas,monospace;
+  font-variant-numeric:tabular-nums
+}
+
+.tabs{
+  display:flex;
+  overflow:auto;
+  background:var(--panel);
+  border-bottom:1px solid var(--border)
+}
+
+.tab{
+  padding:10px 14px;
+  background:transparent;
+  color:var(--muted);
+  border-radius:0;
+  border-bottom:2px solid transparent;
+  white-space:nowrap
+}
+
+.tab.active{
+  color:var(--accent-dark);
+  border-bottom-color:var(--accent)
+}
+
+.page{
+  display:none;
+  max-width:1500px;
+  margin:auto;
+  padding:18px
+}
+
+.page.active{display:block}
+
+.card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:16px;
+  margin-bottom:15px;
+  box-shadow:0 1px 2px rgba(20,60,35,.04)
+}
+
+h3{
+  font-size:13px;
+  text-transform:uppercase;
+  color:var(--muted);
+  letter-spacing:.05em;
+  margin:0 0 12px
+}
+
+h4{
+  margin:10px 0 7px;
+  color:var(--accent-dark)
+}
+
+.grid{
+  display:grid;
+  gap:10px
+}
+
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g6{grid-template-columns:repeat(6,1fr)}
+
+@media(max-width:850px){
+  .g2,.g3,.g4,.g6{
+    grid-template-columns:1fr 1fr
+  }
+}
+
+@media(max-width:520px){
+  .g2,.g3,.g4,.g6{
+    grid-template-columns:1fr
+  }
+}
+
+label{
+  display:block;
+  font-size:11px;
+  color:var(--muted);
+  margin-bottom:4px;
+  text-transform:uppercase
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:12px
+}
+
+th,td{
+  padding:7px 9px;
+  border-bottom:1px solid var(--border);
+  text-align:left
+}
+
+th{
+  color:var(--muted);
+  font-size:10px;
+  text-transform:uppercase;
+  position:sticky;
+  top:0;
+  background:var(--panel)
+}
+
+td.num,th.num{text-align:right}
+
+.note{
+  padding:10px 12px;
+  border:1px solid #e3d8a8;
+  background:#fbf6e2;
+  color:#8a6d1f;
+  border-radius:6px;
+  margin:8px 0
+}
+
+.info{
+  border-color:#bfe0c9;
+  background:var(--accent-soft);
+  color:var(--accent-dark)
+}
+
+.err{
+  border-color:#e6c3bc;
+  background:var(--red-soft);
+  color:var(--red)
+}
+
+.stat{
+  background:var(--panel2);
+  border:1px solid var(--border);
+  border-radius:7px;
+  padding:12px
+}
+
+.stat .v{
+  font:700 21px Consolas;
+  color:var(--accent-dark)
+}
+
+.stat .l{
+  font-size:10px;
+  color:var(--muted);
+  text-transform:uppercase;
+  margin-top:3px
+}
+
+.big{
+  text-align:center;
+  padding:20px;
+  background:linear-gradient(180deg,var(--accent-soft),var(--panel))
+}
+
+.big .amount{
+  font:800 38px Consolas;
+  color:var(--accent-dark)
+}
+
+.muted{color:var(--muted)}
+.green{color:var(--accent-dark)}
+.red{color:var(--red)}
+
+.drop{
+  border:2px dashed var(--border);
+  padding:35px;
+  text-align:center;
+  border-radius:8px;
+  cursor:pointer;
+  background:var(--panel2)
+}
+
+.drop:hover{border-color:var(--accent)}
+
+.hidden{display:none!important}
+
+.scenarios{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:5px
+}
+
+.scenario{
+  padding:6px;
+  border:1px solid var(--border);
+  background:var(--panel2);
+  border-radius:4px
+}
+
+.scenario.worst{
+  border-color:var(--red);
+  background:var(--red-soft)
+}
+
+.kv{
+  display:grid;
+  grid-template-columns:270px 1fr;
+  gap:5px;
+  font-size:12px
+}
+
+.kv div:nth-child(odd){
+  color:var(--muted)
+}
+
+.toolbar{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap
+}
+
+.right{text-align:right}
+
+pre{
+  white-space:pre-wrap;
+  word-break:break-word
+}
+
+.calc-step{
+  background:var(--panel2);
+  border:1px solid var(--border);
+  border-left:3px solid var(--accent);
+  border-radius:7px;
+  padding:11px 12px;
+  margin:8px 0
+}
+
+.calc-step .title{
+  font-weight:800;
+  color:var(--accent-dark);
+  margin-bottom:5px
+}
+
+.calc-step .formula{
+  font-family:Consolas,monospace;
+  font-size:12px;
+  line-height:1.55;
+  word-break:break-word;
+  color:var(--text)
+}
+
+.calc-step .why{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:4px;
+  line-height:1.45
+}
+
+.scenario-wrap{
+  overflow:auto;
+  margin-top:8px
+}
+
+.scenario-table{
+  min-width:720px
+}
+
+.scenario-table td,
+.scenario-table th{
+  text-align:right
+}
+
+.scenario-table td:first-child,
+.scenario-table th:first-child{
+  text-align:left
+}
+
+.scenario-table .worst-cell{
+  font-weight:800;
+  color:var(--red);
+  background:var(--red-soft)
+}
+
+.ra-cell{
+  font-family:Consolas,monospace;
+  font-size:10px;
+  white-space:nowrap
+}
+
+.result-final{
+  font-size:18px;
+  font-weight:800;
+  color:var(--accent-dark)
+}
+</style>
+</head>
+
+<body>
+
+<div id="top">
+  <div class="brand">
+    PCSPAN <span>SPAN</span> Calculator
+  </div>
+
+  <div class="spacer"></div>
+
+  <div id="status" class="mono muted">
+    No PCSPAN file loaded
+  </div>
+</div>
+
+<div class="tabs">
+
+  <button class="tab active" data-tab="load">
+    1 · Load PCSPAN
+  </button>
+
+  <button class="tab" data-tab="positions" disabled>
+    2 · Positions
+  </button>
+
+  <button class="tab" data-tab="results" disabled>
+    3 · SPAN Results
+  </button>
+
+  <button class="tab" data-tab="debug" disabled>
+    4 · Debug
+  </button>
+
+  <button class="tab" data-tab="expiry" disabled>
+    5 · Expiry Day
+  </button>
+
+</div>
+
+
+<!-- ================================================================
+     1. LOAD
+================================================================ -->
+
+<section class="page active" id="load">
+
+  <div class="card">
+
+    <h3>Load NSE Clearing PCSPAN File</h3>
+
+    <label class="drop" id="drop">
+
+      <b>
+        Drop .spn / .xml / .txt here or tap to select
+      </b>
+
+      <br>
+
+      <span class="muted">
+        Everything is processed locally in the browser.
+      </span>
+
+      <input
+        id="file"
+        type="file"
+        accept=".spn,.xml,.txt,*/*"
+        style="display:none"
+      >
+
+    </label>
+
+    <div id="loadmsg" class="note info">
+      Idle.
+    </div>
+
+  </div>
+
+  <div id="fileInfo"></div>
+
+</section>
+
+
+<!-- ================================================================
+     2. POSITIONS
+================================================================ -->
+
+<section class="page" id="positions">
+
+  <div class="card">
+
+    <h3>Manual Position</h3>
+
+    <div class="grid g6">
+
+      <div>
+        <label>Underlying</label>
+
+        <input
+          id="u"
+          list="symbols"
+          class="mono"
+        >
+
+        <datalist id="symbols"></datalist>
+      </div>
+
+
+      <div>
+
+        <label>Instrument</label>
+
+        <select id="inst">
+
+          <option value="FUT">
+            Future
+          </option>
+
+          <option value="OPT">
+            Option
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <div>
+
+        <label>Expiry</label>
+
+        <select id="exp" class="mono"></select>
+
+      </div>
+
+
+      <div id="strikeBox">
+
+        <label>Strike</label>
+
+        <select id="strike" class="mono"></select>
+
+      </div>
+
+
+      <div id="typeBox">
+
+        <label>Option Type</label>
+
+        <select id="otype">
+
+          <option>CE</option>
+          <option>PE</option>
+
+        </select>
+
+      </div>
+
+
+      <div>
+
+        <label>Buy/Sell</label>
+
+        <select id="side">
+
+          <option>BUY</option>
+          <option>SELL</option>
+
+        </select>
+
+      </div>
+
+    </div>
+
+
+    <div class="grid g3" style="margin-top:10px">
+
+      <div>
+
+        <label>Lots</label>
+
+        <input
+          id="lots"
+          type="number"
+          min="1"
+          step="1"
+          value="1"
+          class="mono"
+        >
+
+      </div>
+
+
+      <div>
+
+        <label>Reference Price (optional)</label>
+
+        <input
+          id="refprice"
+          type="number"
+          step=".05"
+          class="mono"
+        >
+
+      </div>
+
+
+      <div style="display:flex;align-items:end">
+
+        <button id="add">
+          + Add Position
+        </button>
+
+      </div>
+
+    </div>
+
+    <div id="posmsg"></div>
+
+  </div>
+
+
+  <!-- BROKER CSV -->
+
+  <div class="card">
+
+    <h3>Broker Net Position CSV</h3>
+
+    <input
+      id="csv"
+      type="file"
+      accept=".csv,.txt"
+    >
+
+    <div
+      class="muted"
+      style="margin-top:6px"
+    >
+      Map the broker columns. Net quantity is used as contracts/lots
+      exactly as supplied.
+    </div>
+
+    <div id="csvmap"></div>
+
+  </div>
+
+
+  <!-- PORTFOLIO -->
+
+  <div class="card">
+
+    <div class="toolbar">
+
+      <h3 style="margin:0">
+        Portfolio
+      </h3>
+
+      <div class="spacer"></div>
+
+      <button
+        class="secondary"
+        id="clear"
+      >
+        Clear
+      </button>
+
+      <button id="calculate">
+        Calculate SPAN →
+      </button>
+
+    </div>
+
+
+    <div style="overflow:auto">
+
+      <table>
+
+        <thead>
+
+          <tr>
+
+            <th>#</th>
+            <th>Underlying</th>
+            <th>Instrument</th>
+            <th>Expiry</th>
+            <th>Strike</th>
+            <th>Type</th>
+            <th>Side</th>
+            <th class="num">Lots</th>
+            <th>Status</th>
+            <th></th>
+
+          </tr>
+
+        </thead>
+
+        <tbody id="ptable"></tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ================================================================
+     3. RESULTS
+================================================================ -->
+
+<section class="page" id="results">
+
+  <div id="resultsBox"></div>
+
+</section>
+
+
+<!-- ================================================================
+     4. DEBUG
+================================================================ -->
+
+<section class="page" id="debug">
+
+  <div id="debugBox"></div>
+
+</section>
+
+
+<!-- ================================================================
+     5. EXPIRY
+================================================================ -->
+
+<section class="page" id="expiry">
+
+  <div id="expiryBox"></div>
+
+</section>
+
+
+<script>
+
+/* =================================================================
+   GENERAL HELPERS
+================================================================= */
+
+function esc(x){
+
+  return String(x ?? '')
+    .replace(
+      /[&<>\"']/g,
+      m => ({
+        '&':'&amp;',
+        '<':'&lt;',
+        '>':'&gt;',
+        '"':'&quot;',
+        "'":'&#39;'
+      }[m])
+    );
+
+}
+
+
+function positionLabel(p){
+
+  let s =
+    `${p.underlying} ${p.instrument} ${date(p.expiry)}`;
+
+  if(p.instrument === 'OPT'){
+    s += ` ${p.strike} ${p.optType}`;
+  }
+
+  s += ` ${p.side} ${p.lots} lot(s)`;
+
+  return s;
+
+}
+
+
+const SCENARIO_NAMES = [
+
+  "Scenario 1",
+  "Scenario 2",
+  "Scenario 3",
+  "Scenario 4",
+  "Scenario 5",
+  "Scenario 6",
+  "Scenario 7",
+  "Scenario 8",
+  "Scenario 9",
+  "Scenario 10",
+  "Scenario 11",
+  "Scenario 12",
+  "Scenario 13",
+  "Scenario 14",
+  "Scenario 15",
+  "Scenario 16"
+
+];
+
+
+/* =================================================================
+   PCSPAN XML/TEXT PARSER
+================================================================= */
+
+function blocks(
+  text,
+  tag,
+  start=0,
+  end=text.length
+){
+
+  const o = '<' + tag + '>';
+  const c = '</' + tag + '>';
+
+  const out = [];
+
+  let i = start;
+
+  while(true){
+
+    const s = text.indexOf(o,i);
+
+    if(s < 0 || s >= end)
+      break;
+
+    const a = s + o.length;
+
+    const b = text.indexOf(c,a);
+
+    if(b < 0)
+      break;
+
+    out.push([a,b]);
+
+    i = b + c.length;
+
+  }
+
+  return out;
+
+}
+
+
+function block(
+  text,
+  tag,
+  start=0,
+  end=text.length
+){
+
+  const a = '<' + tag + '>';
+  const c = '</' + tag + '>';
+
+  const s = text.indexOf(a,start);
+
+  if(s < 0 || s >= end)
+    return null;
+
+  const x = s + a.length;
+
+  const y = text.indexOf(c,x);
+
+  if(y < 0)
+    return null;
+
+  return [x,y];
+
+}
+
+
+function val(
+  text,
+  tag,
+  s=0,
+  e=text.length
+){
+
+  const b = block(text,tag,s,e);
+
+  return b
+    ? text.slice(b[0],b[1]).trim()
+    : null;
+
+}
+
+
+function num(
+  text,
+  tag,
+  s=0,
+  e=text.length
+){
+
+  const v = val(text,tag,s,e);
+
+  if(v == null || v === '')
+    return null;
+
+  const n = parseFloat(v);
+
+  return Number.isFinite(n)
+    ? n
+    : null;
+
+}
+
+
+/* =================================================================
+   EXPIRY NORMALIZATION
+================================================================= */
+
+function normalizeExpiry(x){
+
+  if(x == null)
+    return null;
+
+  let s = String(x).trim();
+
+  if(!s)
+    return null;
+
+  /*
+     20260929
+  */
+
+  if(/^\d{8}$/.test(s))
+    return s;
+
+
+  /*
+     2026-09-29
+  */
+
+  let m = s.match(
+    /^(\d{4})[-\/](\d{2})[-\/](\d{2})$/
+  );
+
+  if(m)
+    return m[1]+m[2]+m[3];
+
+
+  /*
+     29-09-2026
+     29/09/2026
+  */
+
+  m = s.match(
+    /^(\d{2})[-\/](\d{2})[-\/](\d{4})$/
+  );
+
+  if(m)
+    return m[3]+m[2]+m[1];
+
+
+  /*
+     29SEP2026
+  */
+
+  m = s.match(
+    /^(\d{2})(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(\d{4})$/i
+  );
+
+  if(m){
+
+    const months = {
+      JAN:'01',
+      FEB:'02',
+      MAR:'03',
+      APR:'04',
+      MAY:'05',
+      JUN:'06',
+      JUL:'07',
+      AUG:'08',
+      SEP:'09',
+      OCT:'10',
+      NOV:'11',
+      DEC:'12'
+    };
+
+    return m[3] +
+           months[m[2].toUpperCase()] +
+           m[1];
+
+  }
+
+
+  return s;
+
+}
+
+
+/* =================================================================
+   RISK ARRAY
+================================================================= */
+
+function riskArray(text,s,e){
+
+  const b = block(text,'ra',s,e);
+
+  if(!b)
+    return null;
+
+  const z = text.slice(b[0],b[1]);
+
+  const a = [];
+
+  const re =
+    /<a>\s*(-?[0-9.eE+]+)\s*<\/a>/g;
+
+  let m;
+
+  while((m=re.exec(z))){
+
+    const n = parseFloat(m[1]);
+
+    if(Number.isFinite(n))
+      a.push(n);
+
+  }
+
+  let d = num(z,'d');
+
+  return {
+    a,
+    d
+  };
+
+}
+
+
+/* =================================================================
+   FUTURE
+================================================================= */
+
+function parseFuture(text,s,e){
+
+  const ra = riskArray(text,s,e);
+
+  return {
+
+    cId:val(text,'cId',s,e),
+
+    pe:normalizeExpiry(
+      val(text,'pe',s,e)
+    ),
+
+    p:num(text,'p',s,e),
+
+    d:num(text,'d',s,e),
+
+    v:num(text,'v',s,e),
+
+    cvf:num(text,'cvf',s,e),
+
+    setlDate:normalizeExpiry(
+      val(text,'setlDate',s,e)
+    ),
+
+    t:num(text,'t',s,e),
+
+    ra:ra ? ra.a : null,
+
+    raDelta:ra ? ra.d : null
+
+  };
+
+}
+
+
+/* =================================================================
+   OPTION
+================================================================= */
+
+function parseOpt(text,s,e){
+
+  const ra = riskArray(text,s,e);
+
+  return {
+
+    cId:val(text,'cId',s,e),
+
+    o:val(text,'o',s,e),
+
+    k:num(text,'k',s,e),
+
+    p:num(text,'p',s,e),
+
+    d:num(text,'d',s,e),
+
+    v:num(text,'v',s,e),
+
+    ra:ra ? ra.a : null,
+
+    raDelta:ra ? ra.d : null
+
+  };
+
+}
+
+
+/* =================================================================
+   SPREAD LEG
+================================================================= */
+
+function parseLeg(text,s,e){
+
+  return {
+
+    cc:val(text,'cc',s,e),
+
+    pe:normalizeExpiry(
+      val(text,'pe',s,e)
+    ),
+
+    rs:num(text,'rs',s,e),
+
+    i:num(text,'i',s,e)
+
+  };
+
+}
+
+
+/* =================================================================
+   SPREAD
+================================================================= */
+
+function parseSpread(text,s,e){
+
+  const rateBlock =
+    block(text,'rate',s,e);
+
+  const rateVal =
+    rateBlock
+      ? num(
+          text,
+          'val',
+          rateBlock[0],
+          rateBlock[1]
+        )
+      : null;
+
+  return {
+
+    spread:val(text,'spread',s,e),
+
+    chargeMeth:val(
+      text,
+      'chargeMeth',
+      s,
+      e
+    ),
+
+    rateVal,
+
+    legs:blocks(
+      text,
+      'pLeg',
+      s,
+      e
+    ).map(
+      x => parseLeg(text,x[0],x[1])
+    )
+
+  };
+
+}
+
+
+/* =================================================================
+   CC DEFINITION
+================================================================= */
+
+function parseCC(text,s,e){
+
+  const spreads =
+    blocks(
+      text,
+      'dSpread',
+      s,
+      e
+    )
+    .map(
+      x => parseSpread(
+        text,
+        x[0],
+        x[1]
+      )
+    )
+    .filter(
+      x => x.spread
+    );
+
+
+  const somTiers =
+    blocks(
+      text,
+      'somTier',
+      s,
+      e
+    )
+    .map(
+      x => ({
+
+        from:num(
+          text,
+          'from',
+          x[0],
+          x[1]
+        ),
+
+        to:num(
+          text,
+          'to',
+          x[0],
+          x[1]
+        ),
+
+        val:num(
+          text,
+          'val',
+          x[0],
+          x[1]
+        )
+
+      })
+    );
+
+
+  return {
+
+    cc:val(text,'cc',s,e),
+
+    currency:val(
+      text,
+      'currency',
+      s,
+      e
+    ),
+
+    riskExponent:num(
+      text,
+      'riskExponent',
+      s,
+      e
+    ),
+
+    procMeth:val(
+      text,
+      'procMeth',
+      s,
+      e
+    ),
+
+    wfprMeth:val(
+      text,
+      'wfprMeth',
+      s,
+      e
+    ),
+
+    spotMeth:val(
+      text,
+      'spotMeth',
+      s,
+      e
+    ),
+
+    somMeth:val(
+      text,
+      'somMeth',
+      s,
+      e
+    ),
+
+    cmbMeth:val(
+      text,
+      'cmbMeth',
+      s,
+      e
+    ),
+
+    cab:num(
+      text,
+      'cab',
+      s,
+      e
+    ) || 0,
+
+    somTiers,
+
+    spreads
+
+  };
+
+}
+
+
+/* =================================================================
+   MAIN PCSPAN PARSER
+================================================================= */
+
+function parsePCSPAN(text){
+
+  const store = {
+
+    meta:{},
+
+    underlyings:{},
+
+    futures:{},
+
+    options:{},
+
+    phy:{},
+
+    counts:{
+      contracts:0,
+      riskArrays:0,
+      spreadDefs:0,
+      underlyings:0
+    }
+
+  };
+
+
+  store.meta.fileFormat =
+    val(text,'fileFormat');
+
+
+  store.meta.created =
+    val(text,'created');
+
+
+  const pit =
+    block(text,'pointInTime');
+
+
+  if(pit){
+
+    store.meta.date =
+      normalizeExpiry(
+        val(
+          text,
+          'date',
+          pit[0],
+          pit[1]
+        )
+      );
+
+    store.meta.isSetl =
+      val(
+        text,
+        'isSetl',
+        pit[0],
+        pit[1]
+      );
+
+  }
+
+
+  const rootStart =
+    pit ? pit[0] : 0;
+
+  const rootEnd =
+    pit ? pit[1] : text.length;
+
+
+  const exchanges =
+    blocks(
+      text,
+      'exchange',
+      rootStart,
+      rootEnd
+    );
+
+
+  for(const [xs,xe] of exchanges){
+
+
+    /* =============================================================
+       FUTURES
+    ============================================================= */
+
+    for(
+      const [s,e]
+      of blocks(
+        text,
+        'futPf',
+        xs,
+        xe
+      )
+    ){
+
+      const cc =
+        val(
+          text,
+          'pfCode',
+          s,
+          e
+        );
+
+      if(!cc)
+        continue;
+
+
+      store.futures[cc] ||= {};
+
+
+      for(
+        const [a,b]
+        of blocks(
+          text,
+          'fut',
+          s,
+          e
+        )
+      ){
+
+        const r =
+          parseFuture(
+            text,
+            a,
+            b
+          );
+
+
+        if(r.pe)
+          store.futures[cc][r.pe] = r;
+
+
+        store.counts.contracts++;
+
+
+        if(r.ra)
+          store.counts.riskArrays++;
+
+      }
+
+    }
+
+
+    /* =============================================================
+       OPTIONS
+    ============================================================= */
+
+    for(
+      const [s,e]
+      of blocks(
+        text,
+        'oopPf',
+        xs,
+        xe
+      )
+    ){
+
+      const cc =
+        val(
+          text,
+          'pfCode',
+          s,
+          e
+        );
+
+
+      if(!cc)
+        continue;
+
+
+      store.options[cc] ||= {};
+
+
+      for(
+        const [a,b]
+        of blocks(
+          text,
+          'series',
+          s,
+          e
+        )
+      ){
+
+        const pe =
+          normalizeExpiry(
+            val(
+              text,
+              'pe',
+              a,
+              b
+            )
+          );
+
+
+        if(!pe)
+          continue;
+
+
+        const series = {
+
+          vol:num(
+            text,
+            'v',
+            a,
+            b
+          ),
+
+          setlDate:normalizeExpiry(
+            val(
+              text,
+              'setlDate',
+              a,
+              b
+            )
+          ),
+
+          t:num(
+            text,
+            't',
+            a,
+            b
+          ),
+
+          calls:{},
+
+          puts:{}
+
+        };
+
+
+        for(
+          const [x,y]
+          of blocks(
+            text,
+            'opt',
+            a,
+            b
+          )
+        ){
+
+          const r =
+            parseOpt(
+              text,
+              x,
+              y
+            );
+
+
+          if(
+            r.k == null ||
+            !r.o
+          )
+            continue;
+
+
+          if(r.o === 'C')
+            series.calls[r.k] = r;
+
+          else
+            series.puts[r.k] = r;
+
+
+          store.counts.contracts++;
+
+
+          if(r.ra)
+            store.counts.riskArrays++;
+
+        }
+
+
+        store.options[cc][pe] =
+          series;
+
+      }
+
+    }
+
+  }
+
+
+  /* ===============================================================
+     CC DEFINITIONS
+  =============================================================== */
+
+  const cdefs =
+    blocks(
+      text,
+      'ccDef',
+      rootStart,
+      rootEnd
+    );
+
+
+  for(
+    const [s,e]
+    of cdefs
+  ){
+
+    const c =
+      parseCC(
+        text,
+        s,
+        e
+      );
+
+
+    if(c.cc){
+
+      store.underlyings[c.cc] =
+        c;
+
+      store.counts.spreadDefs +=
+        c.spreads.length;
+
+    }
+
+  }
+
+
+  store.counts.underlyings =
+    Object.keys(
+      store.underlyings
+    ).length;
+
+
+  return store;
+
+}
+
+
+/* =================================================================
+   SPAN ENGINE
+================================================================= */
+
+const RA_LEN = 16;
+
+
+function zero(){
+
+  return new Array(
+    RA_LEN
+  ).fill(0);
+
+}
+
+
+function addScaled(
+  v,
+  a,
+  k
+){
+
+  if(!a)
+    return;
+
+  for(
+    let i=0;
+    i<RA_LEN;
+    i++
+  ){
+
+    v[i] +=
+      (Number(a[i]) || 0) *
+      k;
+
+  }
+
+}
+
+
+function worst(v){
+
+  let idx = 0;
+
+  let w =
+    Number(v[0]) || 0;
+
+
+  for(
+    let i=1;
+    i<RA_LEN;
+    i++
+  ){
+
+    if(v[i] > w){
+
+      w = v[i];
+
+      idx = i;
+
+    }
+
+  }
+
+
+  return {
+
+    idx,
+
+    w,
+
+    risk:Math.max(
+      0,
+      w
+    )
+
+  };
+
+}
+
+
+/* =================================================================
+   LOOKUP
+================================================================= */
+
+function lookup(
+  store,
+  p
+){
+
+  const und =
+    store.underlyings[
+      p.underlying
+    ];
+
+
+  if(!und){
+
+    return {
+      ok:false,
+      reason:
+        'Unknown underlying ' +
+        p.underlying
+    };
+
+  }
+
+
+  if(p.instrument === 'FUT'){
+
+    const r =
+      store.futures[
+        p.underlying
+      ]?.[
+        p.expiry
+      ];
+
+
+    if(!r){
+
+      return {
+        ok:false,
+        reason:
+          'Future not found ' +
+          p.underlying +
+          ' ' +
+          p.expiry
+      };
+
+    }
+
+
+    if(!r.ra){
+
+      return {
+        ok:false,
+        reason:
+          'Future has no risk array'
+      };
+
+    }
+
+
+    return {
+
+      ok:true,
+
+      kind:'FUT',
+
+      rec:r,
+
+      und
+
+    };
+
+  }
+
+
+  const s =
+    store.options[
+      p.underlying
+    ]?.[
+      p.expiry
+    ];
+
+
+  if(!s){
+
+    return {
+      ok:false,
+      reason:
+        'Option series not found'
+    };
+
+  }
+
+
+  const m =
+    p.optType === 'CE'
+      ? s.calls
+      : s.puts;
+
+
+  const r =
+    m?.[
+      p.strike
+    ];
+
+
+  if(!r){
+
+    return {
+      ok:false,
+      reason:
+        'Option strike/type not found'
+    };
+
+  }
+
+
+  if(!r.ra){
+
+    return {
+      ok:false,
+      reason:
+        'Option has no risk array'
+    };
+
+  }
+
+
+  return {
+
+    ok:true,
+
+    kind:'OPT',
+
+    rec:r,
+
+    und,
+
+    series:s
+
+  };
+
+}
+
+
+/* =================================================================
+   VALIDATION
+================================================================= */
+
+function valid(
+  store,
+  p
+){
+
+  const e = [];
+
+
+  if(!p.underlying)
+    e.push(
+      'Missing underlying'
+    );
+
+
+  if(!/^(FUT|OPT)$/.test(
+    p.instrument
+  ))
+    e.push(
+      'Invalid instrument'
+    );
+
+
+  if(!/^\d{8}$/.test(
+    p.expiry || ''
+  ))
+    e.push(
+      'Invalid expiry'
+    );
+
+
+  if(
+    p.instrument === 'OPT' &&
+    (
+      !Number.isFinite(
+        p.strike
+      ) ||
+      !['CE','PE'].includes(
+        p.optType
+      )
+    )
+  )
+    e.push(
+      'Invalid option'
+    );
+
+
+  if(
+    !['BUY','SELL'].includes(
+      p.side
+    )
+  )
+    e.push(
+      'Invalid side'
+    );
+
+
+  if(!(p.lots > 0))
+    e.push(
+      'Invalid lots'
+    );
+
+
+  if(e.length)
+    return {
+      valid:false,
+      errors:e
+    };
+
+
+  const l =
+    lookup(
+      store,
+      p
+    );
+
+
+  return l.ok
+
+    ? {
+        valid:true,
+        errors:[],
+        lookup:l
+      }
+
+    : {
+        valid:false,
+        errors:[
+          l.reason
+        ]
+      };
+
+}
+
+
+/* =================================================================
+   COMPOSITE DELTA
+================================================================= */
+
+function compositeDelta(l){
+
+  if(l.kind === 'FUT')
+    return 1;
+
+
+  const d =
+    Number(
+      l.rec.raDelta
+    );
+
+
+  if(Number.isFinite(d))
+    return d;
+
+
+  const x =
+    Number(
+      l.rec.d
+    );
+
+
+  return Number.isFinite(x)
+    ? x
+    : null;
+
+}
+
+
+/* =================================================================
+   GROUP RISK
+================================================================= */
+
+function groupRisk(
+  store,
+  positions
+){
+
+  const combined =
+    zero();
+
+
+  const per = [];
+
+
+  for(
+    const p
+    of positions
+  ){
+
+    const q =
+      valid(
+        store,
+        p
+      );
+
+
+    if(!q.valid){
+
+      per.push({
+
+        p,
+
+        valid:false,
+
+        errors:q.errors
+
+      });
+
+      continue;
+
+    }
+
+
+    const signed =
+      (
+        p.side === 'BUY'
+          ? 1
+          : -1
+      ) *
+      p.lots;
+
+
+    addScaled(
+      combined,
+      q.lookup.rec.ra,
+      signed
+    );
+
+
+    const s =
+      zero();
+
+
+    addScaled(
+      s,
+      q.lookup.rec.ra,
+      signed
+    );
+
+
+    const w =
+      worst(s);
+
+
+    const d =
+      compositeDelta(
+        q.lookup
+      );
+
+
+    per.push({
+
+      p,
+
+      valid:true,
+
+      signed,
+
+      ra:q.lookup.rec.ra,
+
+      standalone:w.risk,
+
+      worstIdx:w.idx,
+
+      lookup:q.lookup,
+
+      delta:d,
+
+      signedDelta:
+        d == null
+          ? null
+          : d * signed
+
+    });
+
+  }
+
+
+  const w =
+    worst(
+      combined
+    );
+
+
+  const gross =
+    per
+      .filter(x=>x.valid)
+      .reduce(
+        (a,x)=>
+          a + x.standalone,
+        0
+      );
+
+
+  return {
+
+    combined,
+
+    worstIdx:w.idx,
+
+    scanning:w.risk,
+
+    gross,
+
+    benefit:
+      Math.max(
+        0,
+        gross-w.risk
+      ),
+
+    per
+
+  };
+
+}
+
+
+/* =================================================================
+   NET OPTION VALUE
+================================================================= */
+
+function netOptionValue(
+  per
+){
+
+  let n = 0;
+
+  const rows = [];
+
+
+  for(
+    const x
+    of per
+  ){
+
+    if(
+      !x.valid ||
+      x.p.instrument !== 'OPT'
+    )
+      continue;
+
+
+    const p =
+      Number(
+        x.lookup.rec.p
+      );
+
+
+    if(!Number.isFinite(p))
+      continue;
+
+
+    const c =
+      x.signed * p;
+
+
+    n += c;
+
+
+    rows.push({
+
+      p:x.p,
+
+      price:p,
+
+      contribution:c
+
+    });
+
+  }
+
+
+  return {
+
+    value:n,
+
+    rows
+
+  };
+
+}
+
+
+/* =================================================================
+   FAR CONTRACT VALUE
+================================================================= */
+
+function farContractValue(
+  store,
+  cc,
+  expiry
+){
+
+  const f =
+    store.futures[
+      cc
+    ]?.[
+      expiry
+    ];
+
+
+  if(!f)
+    return 0;
+
+
+  const p =
+    Number(f.p);
+
+
+  if(!Number.isFinite(p))
+    return 0;
+
+
+  const cvf =
+    Number(f.cvf);
+
+
+  return Math.abs(
+    p *
+    (
+      Number.isFinite(cvf)
+        ? cvf
+        : 1
+    )
+  );
+
+}
+
+
+/* =================================================================
+   INDEX CHECK
+================================================================= */
+
+function likelyIndex(cc){
+
+  return [
+    'NIFTY',
+    'BANKNIFTY',
+    'FINNIFTY',
+    'MIDCPNIFTY',
+    'NIFTYNXT50'
+  ].includes(
+    String(cc).toUpperCase()
+  );
+
+}
+
+
+/* =================================================================
+   SPREAD RATE
+================================================================= */
+
+function spreadRate(
+  sp,
+  cc
+){
+
+  const r =
+    Number(
+      sp.rateVal
+    );
+
+
+  if(
+    Number.isFinite(r) &&
+    r > 0
+  )
+    return r;
+
+
+  /*
+     Fallback only when the
+     PCSPAN definition has no rate.
+  */
+
+  return likelyIndex(cc)
+    ? 1.75
+    : 2.2;
+
+}
+
+
+/* =================================================================
+   CALENDAR SPREAD
+================================================================= */
+
+function calendarSpread(
+  store,
+  cc,
+  positions
+){
+
+  const und =
+    store.underlyings[
+      cc
+    ];
+
+
+  if(!und)
+    return {
+      charge:0,
+      rows:[]
+    };
+
+
+  const deltas =
+    new Map();
+
+
+  for(
+    const p
+    of positions
+  ){
+
+    const q =
+      valid(
+        store,
+        p
+      );
+
+
+    if(!q.valid)
+      continue;
+
+
+    const d =
+      compositeDelta(
+        q.lookup
+      );
+
+
+    if(d == null)
+      continue;
+
+
+    const signed =
+      (
+        p.side === 'BUY'
+          ? 1
+          : -1
+      ) *
+      p.lots;
+
+
+    deltas.set(
+
+      p.expiry,
+
+      (
+        deltas.get(
+          p.expiry
+        ) || 0
+      ) +
+      d * signed
+
+    );
+
+  }
+
+
+  /*
+     Current-day index expiry
+     is excluded from calendar spread.
+  */
+
+  if(
+    likelyIndex(cc) &&
+    store.meta.date
+  ){
+
+    deltas.delete(
+      store.meta.date
+    );
+
+  }
+
+
+  let exps =
+    [
+      ...deltas.keys()
+    ]
+    .filter(
+      e =>
+        Math.abs(
+          deltas.get(e)
+        ) > 1e-12
+    )
+    .sort();
+
+
+  const rows = [];
+
+  let charge = 0;
+
+
+  for(
+    const sp
+    of und.spreads || []
+  ){
+
+    if(sp.legs.length < 2)
+      continue;
+
+
+    for(
+      let i=0;
+      i<sp.legs.length;
+      i++
+    ){
+
+      for(
+        let j=i+1;
+        j<sp.legs.length;
+        j++
+      ){
+
+        let a =
+          sp.legs[i].pe;
+
+        let b =
+          sp.legs[j].pe;
+
+
+        if(
+          !deltas.has(a) ||
+          !deltas.has(b) ||
+          a === b
+        )
+          continue;
+
+
+        let da =
+          deltas.get(a);
+
+        let db =
+          deltas.get(b);
+
+
+        if(
+          Math.sign(da) ===
+          Math.sign(db)
+        )
+          continue;
+
+
+        const matched =
+          Math.min(
+            Math.abs(da),
+            Math.abs(db)
+          );
+
+
+        if(matched <= 0)
+          continue;
+
+
+        const near =
+          a < b ? a : b;
+
+        const far =
+          a < b ? b : a;
+
+
+        const rate =
+          spreadRate(
+            sp,
+            cc
+          );
+
+
+        const cv =
+          farContractValue(
+            store,
+            cc,
+            far
+          );
+
+
+        let c;
+
+
+        if(
+          String(
+            sp.chargeMeth || ''
+          ).toUpperCase() === 'F'
+        ){
+
+          c =
+            matched *
+            rate;
+
+        }else{
+
+          c =
+            matched *
+            cv *
+            rate /
+            100;
+
+        }
+
+
+        if(
+          c > 0 &&
+          Number.isFinite(c)
+        ){
+
+          charge += c;
+
+
+          rows.push({
+
+            spread:sp.spread,
+
+            near,
+
+            far,
+
+            matchedDelta:matched,
+
+            rate,
+
+            farContractValue:cv,
+
+            chargeMeth:
+              String(
+                sp.chargeMeth || ''
+              ).toUpperCase(),
+
+            rowCharge:c,
+
+            charge
+
+          });
+
+
+          deltas.set(
+            a,
+            da -
+            Math.sign(da) *
+            matched
+          );
+
+
+          deltas.set(
+            b,
+            db -
+            Math.sign(db) *
+            matched
+          );
+
+        }
+
+      }
+
+    }
+
+  }
+
+
+  return {
+
+    charge,
+
+    rows
+
+  };
+
+}
+
+
+/* =================================================================
+   SOM
+================================================================= */
+
+function somCharge(
+  store,
+  cc,
+  positions,
+  scanningPlusSpread
+){
+
+  const und =
+    store.underlyings[
+      cc
+    ];
+
+
+  if(
+    !und ||
+    !und.somTiers?.length
+  )
+    return {
+      val:0,
+      shortNotional:0,
+      tier:null
+    };
+
+
+  let shortNotional = 0;
+
+
+  for(
+    const p
+    of positions
+  ){
+
+    if(
+      p.instrument !== 'OPT' ||
+      p.side !== 'SELL'
+    )
+      continue;
+
+
+    const q =
+      valid(
+        store,
+        p
+      );
+
+
+    if(!q.valid)
+      continue;
+
+
+    const underlyingFuture =
+      store.futures[
+        cc
+      ]?.[
+        p.expiry
+      ];
+
+
+    const underPrice =
+      Number(
+        underlyingFuture?.p
+      );
+
+
+    const cvf =
+      Number(
+        underlyingFuture?.cvf
+      );
+
+
+    const factor =
+      Number.isFinite(cvf)
+        ? cvf
+        : 1;
+
+
+    if(
+      Number.isFinite(
+        underPrice
+      )
+    ){
+
+      shortNotional +=
+        Math.abs(
+          p.lots *
+          underPrice *
+          factor
+        );
+
+    }
+
+  }
+
+
+  const tier =
+    und.somTiers.find(
+
+      t =>
+        (
+          t.from == null ||
+          shortNotional >= t.from
+        ) &&
+        (
+          t.to == null ||
+          shortNotional <= t.to
+        )
+
+    );
+
+
+  return {
+
+    val:
+      tier &&
+      Number.isFinite(
+        tier.val
+      )
+        ? Math.max(
+            0,
+            tier.val
+          )
+        : 0,
+
+    shortNotional,
+
+    tier
+
+  };
+
+}
+
+
+/* =================================================================
+   COMPLETE CALCULATION
+================================================================= */
+
+function calculate(
+  store,
+  positions
+){
+
+  const by =
+    new Map();
+
+
+  for(
+    const p
+    of positions
+  ){
+
+    if(
+      !by.has(
+        p.underlying
+      )
+    ){
+
+      by.set(
+        p.underlying,
+        []
+      );
+
+    }
+
+
+    by
+      .get(
+        p.underlying
+      )
+      .push(p);
+
+  }
+
+
+  const results = [];
+
+  const invalid = [];
+
+
+  let scan = 0;
+  let spread = 0;
+  let nov = 0;
+  let benefit = 0;
+  let final = 0;
+  let somTotal = 0;
+
+
+  for(
+    const [cc,ps]
+    of by
+  ){
+
+    const g =
+      groupRisk(
+        store,
+        ps
+      );
+
+
+    g.per
+      .filter(
+        x=>!x.valid
+      )
+      .forEach(
+        x =>
+          invalid.push({
+            pos:x.p,
+            errors:x.errors
+          })
+      );
+
+
+    const vp =
+      ps.filter(
+        p =>
+          valid(
+            store,
+            p
+          ).valid
+      );
+
+
+    const sp =
+      calendarSpread(
+        store,
+        cc,
+        vp
+      );
+
+
+    const n =
+      netOptionValue(
+        g.per
+      );
+
+
+    const spanRisk =
+      g.scanning +
+      sp.charge;
+
+
+    const somInfo =
+      somCharge(
+        store,
+        cc,
+        vp,
+        spanRisk
+      );
+
+
+    /*
+       SOM is a floor, not an add-on.
+
+       SPAN requirement is the
+       larger of:
+
+       Scanning + Spread
+       OR
+       SOM
+    */
+
+    const spanReq =
+      Math.max(
+        spanRisk,
+        somInfo.val
+      );
+
+
+    /*
+       Net option value is then
+       deducted.
+    */
+
+    const margin =
+      Math.max(
+        0,
+        spanReq -
+        n.value
+      );
+
+
+    scan +=
+      g.scanning;
+
+    spread +=
+      sp.charge;
+
+    nov +=
+      n.value;
+
+    benefit +=
+      g.benefit;
+
+    final +=
+      margin;
+
+    somTotal +=
+      somInfo.val;
+
+
+    results.push({
+
+      cc,
+
+      g,
+
+      sp,
+
+      n,
+
+      som:somInfo.val,
+
+      somInfo,
+
+      spanRisk,
+
+      spanReq,
+
+      pre:
+        spanReq -
+        n.value,
+
+      margin
+
+    });
+
+  }
+
+
+  return {
+
+    results,
+
+    invalid,
+
+    totals:{
+
+      scanningRisk:scan,
+
+      spreadCharge:spread,
+
+      shortOptionMinimum:
+        somTotal,
+
+      netOptionValue:nov,
+
+      nettingBenefit:benefit,
+
+      finalMargin:final
+
+    }
+
+  };
+
+}
+
+
+/* =================================================================
+   STATE
+================================================================= */
+
+const S = {
+
+  store:null,
+
+  positions:[],
+
+  result:null
+
+};
+
+
+const $ =
+  id =>
+    document.getElementById(id);
+
+
+const money =
+  n => {
+
+    if(n == null)
+      return '—';
+
+
+    return (
+      n < 0
+        ? '-'
+        : ''
+    ) +
+    '₹' +
+    Math.abs(n)
+      .toLocaleString(
+        'en-IN',
+        {
+          minimumFractionDigits:2,
+          maximumFractionDigits:2
+        }
+      );
+
+  };
+
+
+function date(x){
+
+  return x &&
+         x.length === 8
+
+    ? x.slice(6) +
+      '-' +
+      x.slice(4,6) +
+      '-' +
+      x.slice(0,4)
+
+    : x || '—';
+
+}
+
+
+/* =================================================================
+   TABS
+================================================================= */
+
+function tab(name){
+
+  document
+    .querySelectorAll('.tab')
+    .forEach(
+      b =>
+        b.classList.toggle(
+          'active',
+          b.dataset.tab === name
+        )
+    );
+
+
+  document
+    .querySelectorAll('.page')
+    .forEach(
+      p =>
+        p.classList.toggle(
+          'active',
+          p.id === name
+        )
+    );
+
+}
+
+
+document
+  .querySelectorAll('.tab')
+  .forEach(
+    b =>
+      b.onclick = () =>
+        !b.disabled &&
+        tab(b.dataset.tab)
+  );
+
+
+function enable(){
+
+  document
+    .querySelectorAll('.tab')
+    .forEach(
+      b =>
+        b.disabled = false
+    );
+
+}
+
+
+/* =================================================================
+   POSITION INPUTS
+================================================================= */
+
+function refreshInputs(){
+
+  if(!S.store)
+    return;
+
+
+  const cc =
+    $('u')
+      .value
+      .trim()
+      .toUpperCase();
+
+
+  const opt =
+    $('inst').value === 'OPT';
+
+
+  $('exp').innerHTML = '';
+
+
+  let es =
+    opt
+      ? Object.keys(
+          S.store.options[cc] || {}
+        )
+      : Object.keys(
+          S.store.futures[cc] || {}
+        );
+
+
+  es.sort();
+
+
+  es.forEach(
+    e =>
+      $('exp').append(
+        new Option(
+          date(e),
+          e
+        )
+      )
+  );
+
+
+  refreshStrikes();
+
+}
+
+
+function refreshStrikes(){
+
+  const opt =
+    $('inst').value === 'OPT';
+
+
+  $('strikeBox').style.display =
+    opt ? '' : 'none';
+
+
+  $('typeBox').style.display =
+    opt ? '' : 'none';
+
+
+  $('strike').innerHTML = '';
+
+
+  if(!opt)
+    return;
+
+
+  const s =
+    S.store
+      .options[
+        $('u')
+          .value
+          .trim()
+          .toUpperCase()
+      ]?.[
+        $('exp').value
+      ];
+
+
+  if(!s)
+    return;
+
+
+  Object.keys(
+    $('otype').value === 'CE'
+      ? s.calls
+      : s.puts
+  )
+  .map(Number)
+  .sort(
+    (a,b)=>a-b
+  )
+  .forEach(
+    k =>
+      $('strike').append(
+        new Option(
+          k,
+          k
+        )
+      )
+  );
+
+}
+
+
+$('u').oninput =
+  refreshInputs;
+
+$('inst').onchange =
+  refreshInputs;
+
+$('exp').onchange =
+  refreshStrikes;
+
+$('otype').onchange =
+  refreshStrikes;
+
+
+/* =================================================================
+   POSITION TABLE
+================================================================= */
+
+function renderPositions(){
+
+  $('ptable').innerHTML = '';
+
+
+  S.positions.forEach(
+    (p,i)=>{
+
+      const q =
+        S.store
+          ? valid(
+              S.store,
+              p
+            )
+          : {
+              valid:false,
+              errors:['No file']
+            };
+
+
+      const tr =
+        document.createElement(
+          'tr'
+        );
+
+
+      [
+        i+1,
+        p.underlying,
+        p.instrument,
+        date(p.expiry),
+        p.strike ?? '—',
+        p.optType ?? '—',
+        p.side,
+        p.lots
+      ]
+      .forEach(
+        (x,j)=>{
+
+          const td =
+            document.createElement(
+              'td'
+            );
+
+
+          td.textContent = x;
+
+
+          if(j === 7)
+            td.className = 'num';
+
+
+          tr.append(td);
+
+        }
+      );
+
+
+      const st =
+        document.createElement(
+          'td'
+        );
+
+
+      st.textContent =
+        q.valid
+          ? 'OK'
+          : q.errors.join(' ');
+
+
+      st.className =
+        q.valid
+          ? 'green'
+          : 'red';
+
+
+      tr.append(st);
+
+
+      const rm =
+        document.createElement(
+          'td'
+        );
+
+
+      const b =
+        document.createElement(
+          'button'
+        );
+
+
+      b.textContent = '✕';
+
+      b.className =
+        'secondary';
+
+
+      b.onclick = () => {
+
+        S.positions.splice(
+          i,
+          1
+        );
+
+        renderPositions();
+
+      };
+
+
+      rm.append(b);
+
+      tr.append(rm);
+
+      $('ptable').append(tr);
+
+    }
+  );
+
+}
+
+
+/* =================================================================
+   ADD POSITION
+================================================================= */
+
+$('add').onclick = () => {
+
+  const p = {
+
+    underlying:
+      $('u')
+        .value
+        .trim()
+        .toUpperCase(),
+
+    instrument:
+      $('inst').value,
+
+    expiry:
+      $('exp').value,
+
+    strike:
+      $('inst').value === 'OPT'
+        ? Number(
+            $('strike').value
+          )
+        : null,
+
+    optType:
+      $('inst').value === 'OPT'
+        ? $('otype').value
+        : null,
+
+    side:
+      $('side').value,
+
+    lots:
+      Number(
+        $('lots').value
+      ) || 0
+
+  };
+
+
+  const q =
+    valid(
+      S.store,
+      p
+    );
+
+
+  if(!q.valid){
+
+    $('posmsg').innerHTML =
+      '<div class="note err">' +
+      q.errors.join(' ') +
+      '</div>';
+
+    return;
+
+  }
+
+
+  S.positions.push(p);
+
+  $('posmsg').innerHTML = '';
+
+  renderPositions();
+
+};
+
+
+/* =================================================================
+   CLEAR
+================================================================= */
+
+$('clear').onclick = () => {
+
+  S.positions = [];
+
+  S.result = null;
+
+  renderPositions();
+
+};
+
+
+/* =================================================================
+   CALCULATE
+================================================================= */
+
+$('calculate').onclick = () => {
+
+  if(!S.store){
+
+    alert(
+      'Load PCSPAN file first.'
+    );
+
+    return;
+
+  }
+
+
+  if(!S.positions.length){
+
+    alert(
+      'Add at least one position.'
+    );
+
+    return;
+
+  }
+
+
+  S.result =
+    calculate(
+      S.store,
+      S.positions
+    );
+
+
+  renderResults();
+
+  renderDebug();
+
+  tab('results');
+
+};
+
+
+/* =================================================================
+   RESULTS — EVERY NUMBER EXPLAINED WITH ITS OWN ACTUAL FIGURES
+
+   There is no generic/static formula text in this view. Every
+   explanation below is built at render time from the numbers
+   that this specific calculation actually produced.
+================================================================= */
+
+function renderResults(){
+
+  const r =
+    S.result;
+
+
+  if(!r){
+
+    $('resultsBox').innerHTML =
+      '<div class="note">No calculation yet.</div>';
+
+    return;
+
+  }
+
+
+  const t =
+    r.totals;
+
+
+  let h = '';
+
+
+  /* ===============================================================
+     FINAL NUMBER
+  =============================================================== */
+
+  h += `
+
+  <div class="card big">
+
+    <div class="amount">
+      ${money(t.finalMargin)}
+    </div>
+
+    <div class="muted">
+      TOTAL SPAN MARGIN — ELM / EXPOSURE EXCLUDED
+    </div>
+
+  </div>
+
+  `;
+
+
+  /* ===============================================================
+     TOTALS — with the actual arithmetic behind each line
+  =============================================================== */
+
+  h += `
+
+  <div class="card">
+
+    <h3>
+      Portfolio Totals — plain-language summary
+    </h3>
+
+    <div class="note info">
+      This is just the sum of every underlying's own numbers,
+      shown below one line at a time. Each line tells you what
+      the number is, where it came from, and how it was added up.
+      The full underlying-by-underlying math is further down the page.
+    </div>
+
+
+    <div class="calc-step">
+
+      <div class="title">
+        1. Scanning Risk = ${money(t.scanningRisk)}
+      </div>
+
+      <div class="why">
+        <b>What this is:</b> the worst-case loss the exchange
+        estimates for your positions, before any spread discount.
+        <br><br>
+        <b>Where it comes from:</b> for every underlying you hold,
+        we take its own worst-case loss number (shown further down
+        for each underlying) and simply add them together.
+      </div>
+
+      <div class="formula">
+        ${
+          r.results
+            .map(x=>`${esc(x.cc)} worst-case loss = ${money(x.g.scanning)}`)
+            .join('<br>')
+        }
+        <br><b>Total = ${money(t.scanningRisk)}</b>
+      </div>
+
+    </div>
+
+
+    <div class="calc-step">
+
+      <div class="title">
+        2. Calendar Spread Charge = ${money(t.spreadCharge)}
+      </div>
+
+      <div class="why">
+        <b>What this is:</b> a small extra charge (or discount versus
+        holding the same position in a single expiry) that applies
+        only when you hold opposite positions in two different
+        expiry months of the same underlying — for example, long
+        one month and short the next.
+        <br><br>
+        ${
+          t.spreadCharge > 0
+            ? 'This applies to you because at least one underlying in your portfolio has such opposite positions across two expiries. See exactly which one below.'
+            : 'This is zero for you because none of your underlyings have opposite positions sitting in two different expiries at the same time.'
+        }
+      </div>
+
+      <div class="formula">
+        ${
+          r.results
+            .map(x=>`${esc(x.cc)} spread charge = ${money(x.sp.charge)}`)
+            .join('<br>')
+        }
+        <br><b>Total = ${money(t.spreadCharge)}</b>
+      </div>
+
+    </div>
+
+
+    <div class="calc-step">
+
+      <div class="title">
+        3. Short Option Minimum (SOM) = ${money(t.shortOptionMinimum)}
+      </div>
+
+      <div class="why">
+        <b>What this is:</b> a minimum margin the exchange insists
+        on whenever you have sold (written) options, regardless of
+        how low the scanning risk works out to be. It exists so
+        option sellers always keep aside a baseline amount.
+        <br><br>
+        <b>Important:</b> this is not added on top of scanning risk.
+        It is only used if it is bigger than (Scanning Risk + Spread
+        Charge) for that underlying — in which case it replaces that
+        number instead.
+        <br><br>
+        ${
+          t.shortOptionMinimum > 0
+            ? 'This applied to at least one underlying in your portfolio — check the per-underlying section below to see which one and why.'
+            : 'This did not raise your margin anywhere in this portfolio — your scanning risk plus spread charge was already higher than any SOM minimum that applied.'
+        }
+      </div>
+
+    </div>
+
+
+    <div class="calc-step">
+
+      <div class="title">
+        4. Net Option Value = ${money(t.netOptionValue)}
+      </div>
+
+      <div class="why">
+        <b>What this is:</b> the net premium sitting in your option
+        positions right now, using the option prices from the
+        PCSPAN file. This amount is subtracted from your risk
+        requirement, because it is value you already hold (if you
+        bought options) or already owe (if you sold options).
+        <br><br>
+        ${
+          t.netOptionValue >= 0
+            ? 'This is a positive number for you, which means you have paid more option premium than you have received (you are a net buyer of options overall). This positive amount reduces your final margin.'
+            : 'This is a negative number for you, which means you have received more option premium than you have paid (you are a net seller of options overall). This negative amount increases your final margin.'
+        }
+      </div>
+
+      <div class="formula">
+        ${
+          r.results
+            .map(x=>`${esc(x.cc)} net option value = ${money(x.n.value)}`)
+            .join('<br>')
+        }
+        <br><b>Total = ${money(t.netOptionValue)}</b>
+      </div>
+
+    </div>
+
+
+    <div class="calc-step">
+
+      <div class="title">
+        5. Final SPAN Margin = ${money(t.finalMargin)}
+      </div>
+
+      <div class="why">
+        <b>How the four numbers above combine, in plain words:</b>
+        <br><br>
+        Step A — add Scanning Risk and Spread Charge together.
+        <br>
+        Step B — if the SOM minimum for that underlying is bigger
+        than Step A's result, use SOM instead.
+        <br>
+        Step C — subtract the Net Option Value from whichever number
+        Step B gave you.
+        <br>
+        Step D — if that comes out negative, treat it as zero
+        (you can never owe less than nothing).
+        <br>
+        Step E — add up Step D's result across every underlying you
+        hold. That total is your Final SPAN Margin.
+      </div>
+
+      <div class="formula">
+        Scanning Risk (${money(t.scanningRisk)}) + Spread Charge (${money(t.spreadCharge)})
+        <br>then compared against SOM (${money(t.shortOptionMinimum)}) per underlying
+        <br>minus Net Option Value (${money(t.netOptionValue)})
+        <br><b>= ${money(t.finalMargin)}</b>
+      </div>
+
+    </div>
+
+  </div>
+
+  `;
+
+
+  /* ===============================================================
+     UNDERLYING BREAKDOWN TABLE
+  =============================================================== */
+
+  let rows = `
+
+  <table>
+
+    <thead>
+
+      <tr>
+
+        <th>Underlying</th>
+
+        <th class="num">
+          Scanning
+        </th>
+
+        <th class="num">
+          Calendar Spread
+        </th>
+
+        <th class="num">
+          Scanning + Spread
+        </th>
+
+        <th class="num">
+          SOM
+        </th>
+
+        <th class="num">
+          SPAN Requirement
+        </th>
+
+        <th class="num">
+          Net Option Value
+        </th>
+
+        <th class="num">
+          Final SPAN
+        </th>
+
+      </tr>
+
+    </thead>
+
+    <tbody>
+
+  `;
+
+
+  r.results.forEach(
+    x => {
+
+      rows += `
+
+      <tr>
+
+        <td>
+          ${esc(x.cc)}
+        </td>
+
+        <td class="num">
+          ${money(x.g.scanning)}
+        </td>
+
+        <td class="num">
+          ${money(x.sp.charge)}
+        </td>
+
+        <td class="num">
+          ${money(
+            x.g.scanning +
+            x.sp.charge
+          )}
+        </td>
+
+        <td class="num">
+          ${money(x.som)}
+        </td>
+
+        <td class="num">
+          ${money(x.spanReq)}
+        </td>
+
+        <td class="num">
+          ${money(x.n.value)}
+        </td>
+
+        <td class="num">
+          <b>
+            ${money(x.margin)}
+          </b>
+        </td>
+
+      </tr>
+
+      `;
+
+    }
+  );
+
+
+  rows += `
+
+    </tbody>
+
+  </table>
+
+  `;
+
+
+  h += `
+
+  <div class="card">
+
+    <h3>
+      Underlying-by-Underlying Calculation
+    </h3>
+
+    <div style="overflow:auto">
+
+      ${rows}
+
+    </div>
+
+  </div>
+
+  `;
+
+
+  /* ===============================================================
+     DETAILED PER-UNDERLYING EXPLANATION
+     — every number here is that underlying's own real figure
+  =============================================================== */
+
+  r.results.forEach(
+    x => {
+
+      const vals =
+        x.g.combined || [];
+
+      const validPer =
+        x.g.per.filter(p=>p.valid);
+
+
+      h += `
+
+      <div class="card">
+
+        <h3>
+          ${esc(x.cc)} — full working for ${money(x.margin)}
+        </h3>
+
+        <div class="note info">
+          Six simple steps. Every number below is your own data —
+          nothing here is a generic example.
+        </div>
+
+
+        <div class="calc-step">
+
+          <div class="title">
+            Step 1 of 6 — Your positions in ${esc(x.cc)}
+          </div>
+
+          <div class="why">
+            You hold ${validPer.length} position(s) in ${esc(x.cc)}.
+            For each one, the PCSPAN file gives 16 "what-if" numbers
+            called the risk array — one number for each of 16 possible
+            market-move scenarios. That risk array is multiplied by
+            how many lots you hold, with a plus sign for BUY and a
+            minus sign for SELL. The "standalone risk" below is just
+            that position's own single worst scenario, shown so you
+            can sanity-check it on its own before it gets combined
+            with your other positions.
+          </div>
+
+          <div class="formula">
+            ${
+              validPer
+                .map(p=>`${esc(positionLabel(p.p))}<br>&nbsp;&nbsp;→ counted as ${p.signed} (${esc(p.p.side)} × ${p.p.lots} lots)<br>&nbsp;&nbsp;→ on its own, this position's worst-case loss = ${money(p.standalone)}`)
+                .join('<br><br>')
+            }
+          </div>
+
+        </div>
+
+
+        <div class="calc-step">
+
+          <div class="title">
+            Step 2 of 6 — Combine all positions, pick the worst scenario
+          </div>
+
+          <div class="why">
+            All your ${esc(x.cc)} positions are added together,
+            scenario by scenario, into one combined row of 16 numbers
+            (the full table is further below). Whichever of those 16
+            numbers is the largest becomes your Scanning Risk — this
+            is the exchange's estimate of your worst-case one-day
+            loss on ${esc(x.cc)}.
+            <br><br>
+            For your portfolio, the largest of the 16 combined numbers
+            turned out to be Scenario ${x.g.worstIdx+1}, worth
+            ${money(vals[x.g.worstIdx])}. If this had been negative,
+            the Scanning Risk would be shown as ₹0 instead, since
+            risk is never counted as less than zero.
+          </div>
+
+          <div class="formula">
+            Worst of the 16 combined scenarios = Scenario ${x.g.worstIdx+1} = ${money(vals[x.g.worstIdx])}
+            <br><b>Scanning Risk = ${money(x.g.scanning)}</b>
+          </div>
+
+        </div>
+
+
+        ${
+          x.sp.rows.length
+            ? `
+            <div class="calc-step">
+
+              <div class="title">
+                Step 3 of 6 — Calendar spread charge = ${money(x.sp.charge)}
+              </div>
+
+              <div class="why">
+                A calendar spread charge applies because you hold
+                opposite-direction positions in two different expiry
+                months of ${esc(x.cc)} — for example, long one month
+                and short the next. This charge is calculated using
+                the spread rate and rules that come directly from the
+                exchange's PCSPAN file for ${esc(x.cc)}, not from any
+                assumption made by this calculator.
+                <br><br>
+                For each pair of expiries matched below: the smaller
+                of the two opposing quantities ("matched delta") is
+                multiplied by the value of the far-month contract,
+                then by the exchange's spread rate.
+              </div>
+
+              <div class="formula">
+                ${
+                  x.sp.rows
+                    .map(s=>
+                      `${date(s.near)} (near month) offsetting against ${date(s.far)} (far month):<br>&nbsp;&nbsp;matched quantity = ${s.matchedDelta.toFixed(4)}<br>&nbsp;&nbsp;far month contract value = ${money(s.farContractValue)}<br>&nbsp;&nbsp;exchange spread rate = ${s.rate}${s.chargeMeth==='F'?' (flat amount per unit)':'%'}<br>&nbsp;&nbsp;→ charge for this pair = ${money(s.rowCharge)}`
+                    )
+                    .join('<br><br>')
+                }
+              </div>
+
+            </div>
+            `
+            : `
+            <div class="calc-step">
+
+              <div class="title">
+                Step 3 of 6 — Calendar spread charge = ₹0.00
+              </div>
+
+              <div class="why">
+                This charge only applies when you hold opposite
+                positions in two different expiry months of the same
+                underlying. You don't have that in ${esc(x.cc)}, so
+                there is nothing to charge here.
+              </div>
+
+            </div>
+            `
+        }
+
+
+        <div class="calc-step">
+
+          <div class="title">
+            Step 4 of 6 — Short Option Minimum (SOM) check
+          </div>
+
+          <div class="why">
+            This step only matters if you have sold options in
+            ${esc(x.cc)}. The exchange adds up the notional value of
+            all your sold options here, then checks it against a
+            table of minimum-margin tiers from the PCSPAN file.
+            The bigger of (Scanning Risk + Spread Charge) and this
+            SOM minimum is what actually gets used going forward.
+          </div>
+
+          <div class="formula">
+            ${
+              x.somInfo.tier
+                ? `Your sold-option notional in ${esc(x.cc)} = ${money(x.somInfo.shortNotional)}<br>This falls in the exchange's minimum-margin tier for ${money(x.somInfo.tier.from)} to ${money(x.somInfo.tier.to)}<br><b>SOM minimum = ${money(x.som)}</b>`
+                : `Your sold-option notional in ${esc(x.cc)} = ${money(x.somInfo.shortNotional)}<br>No SOM tier applied here (either you have no sold options, or this underlying's file has no SOM table)<br><b>SOM minimum = ${money(x.som)}</b>`
+            }
+            <br><br>
+            Comparing: Scanning Risk + Spread Charge = ${money(x.g.scanning+x.sp.charge)},
+            versus SOM minimum = ${money(x.som)}.
+            <br><b>${
+              x.spanReq === x.som && x.som > (x.g.scanning+x.sp.charge)
+                ? `The SOM minimum is higher, so ${money(x.som)} is used as your requirement going forward.`
+                : `Scanning Risk + Spread Charge is higher (or equal), so ${money(x.g.scanning+x.sp.charge)} is used as your requirement going forward. SOM did not increase it.`
+            }</b>
+          </div>
+
+        </div>
+
+
+        <div class="calc-step">
+
+          <div class="title">
+            Step 5 of 6 — Net option value = ${money(x.n.value)}
+          </div>
+
+          <div class="why">
+            This adds up the current market value of every option
+            you hold in ${esc(x.cc)}, using the option prices from
+            the PCSPAN file. Money you've paid for options you
+            bought works in your favour here (it lowers your margin);
+            money you've received for options you sold works against
+            you (it raises your margin).
+          </div>
+
+          <div class="formula">
+            ${
+              x.n.rows.length
+                ? x.n.rows
+                    .map(nr=>`${esc(positionLabel(nr.p))}<br>&nbsp;&nbsp;option price from file = ${money(nr.price)}<br>&nbsp;&nbsp;→ contributes ${money(nr.contribution)}`)
+                    .join('<br><br>')
+                : 'You have no option positions in ' + esc(x.cc) + ', so this is ₹0.'
+            }
+          </div>
+
+        </div>
+
+
+        <div class="calc-step">
+
+          <div class="title">
+            Step 6 of 6 — Final SPAN for ${esc(x.cc)} = ${money(x.margin)}
+          </div>
+
+          <div class="why">
+            Take the requirement from Step 4 (${money(x.spanReq)}),
+            subtract the net option value from Step 5
+            (${money(x.n.value)}). If the result were negative, it
+            would be shown as ₹0 — you never owe a negative margin.
+          </div>
+
+          <div class="formula">
+            ${money(x.spanReq)} − ${money(x.n.value)} = <b>${money(x.margin)}</b>
+          </div>
+
+        </div>
+
+
+        <h4>
+          Reference: the full 16-scenario table used in Step 2
+        </h4>
+
+
+        <div class="scenario-wrap">
+
+          <table class="scenario-table">
+
+            <thead>
+
+              <tr>
+
+                <th>
+                  Scenario
+                </th>
+
+                <th>
+                  Scenario Description
+                </th>
+
+                <th>
+                  Combined Value
+                </th>
+
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              ${
+                vals
+                  .map(
+                    (v,i)=>`
+
+                    <tr>
+
+                      <td>
+                        S${i+1}
+                      </td>
+
+                      <td>
+                        ${esc(
+                          SCENARIO_NAMES[i]
+                        )}
+                      </td>
+
+                      <td
+                        class="${
+                          i === x.g.worstIdx
+                            ? 'worst-cell'
+                            : ''
+                        }"
+                      >
+                        ${money(v)}
+                      </td>
+
+                    </tr>
+
+                  `
+                  )
+                  .join('')
+              }
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+
+        <h4>
+          Reference: each position's raw 16 numbers, straight from the PCSPAN file
+        </h4>
+
+
+        <div class="scenario-wrap">
+
+          <table class="scenario-table">
+
+            <thead>
+
+              <tr>
+
+                <th>
+                  Position
+                </th>
+
+                <th>
+                  Signed Lots
+                </th>
+
+                <th>
+                  Contract ID
+                </th>
+
+                <th>
+                  Standalone Risk
+                </th>
+
+                <th>
+                  Risk Array S1–S16
+                </th>
+
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              ${
+                validPer
+                  .map(
+                    p=>`
+
+                    <tr>
+
+                      <td style="text-align:left">
+
+                        ${esc(
+                          positionLabel(
+                            p.p
+                          )
+                        )}
+
+                      </td>
+
+
+                      <td>
+                        ${p.signed}
+                      </td>
+
+
+                      <td>
+                        ${esc(
+                          p.lookup.rec.cId ||
+                          '—'
+                        )}
+                      </td>
+
+
+                      <td>
+                        ${money(
+                          p.standalone
+                        )}
+                      </td>
+
+
+                      <td class="ra-cell">
+
+                        ${
+                          p.ra
+                            .map(
+                              v =>
+                                Number(v)
+                                  .toFixed(2)
+                            )
+                            .join(' | ')
+                        }
+
+                      </td>
+
+                    </tr>
+
+                  `
+                  )
+                  .join('')
+              }
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+
+      `;
+
+    }
+  );
+
+
+  /* ===============================================================
+     INVALID
+  =============================================================== */
+
+  if(r.invalid.length){
+
+    h += `
+
+    <div class="card">
+
+      <h3>
+        Invalid / Excluded Positions
+      </h3>
+
+      <div class="note err">
+
+        ${
+          r.invalid
+            .map(
+              x =>
+                esc(
+                  positionLabel(x.pos) +
+                  ' — ' +
+                  x.errors.join(' ')
+                )
+            )
+            .join('<br>')
+        }
+
+      </div>
+
+    </div>
+
+    `;
+
+  }
+
+
+  /* ===============================================================
+     SCOPE
+  =============================================================== */
+
+  h += `
+
+  <div class="card">
+
+    <h3>
+      Calculation Scope
+    </h3>
+
+    <div class="note info">
+
+      This calculator shows <b>SPAN only</b>.
+
+      <br><br>
+
+      ELM / Exposure Margin,
+      broker-specific add-ons,
+      additional extreme-loss charges outside the
+      PCSPAN SPAN calculation, and premium pay-in
+      are excluded.
+
+    </div>
+
+  </div>
+
+  `;
+
+
+  $('resultsBox').innerHTML =
+    h;
+
+}
+
+
+/* =================================================================
+   DEBUG
+================================================================= */
+
+function renderDebug(){
+
+  const r =
+    S.result;
+
+
+  const b =
+    $('debugBox');
+
+
+  b.innerHTML = '';
+
+
+  if(!r)
+    return;
+
+
+  r.results.forEach(
+    x => {
+
+      let h = `
+
+      <div class="card">
+
+        <h3>
+          ${esc(x.cc)}
+        </h3>
+
+        <div class="note info">
+          This is the raw technical data behind the ${esc(x.cc)}
+          numbers on the Results tab — useful for double-checking
+          against the exchange file. See the Results tab for the
+          plain-language, step-by-step explanation.
+        </div>
+
+
+        <div class="kv">
+
+          <div>
+            Scanning Risk
+          </div>
+
+          <div>
+            ${money(x.g.scanning)}
+          </div>
+
+
+          <div>
+            Worst Scenario
+          </div>
+
+          <div>
+            Scenario S${x.g.worstIdx + 1} of 16
+            =
+            ${money(x.g.scanning)}
+          </div>
+
+
+          <div>
+            Calendar Spread
+          </div>
+
+          <div>
+            ${money(x.sp.charge)}
+          </div>
+
+
+          <div>
+            SOM
+          </div>
+
+          <div>
+            ${money(x.som)}
+          </div>
+
+
+          <div>
+            Net Option Value
+          </div>
+
+          <div>
+            ${money(x.n.value)}
+          </div>
+
+
+          <div>
+            Final SPAN
+          </div>
+
+          <div>
+            <b>
+              ${money(x.margin)}
+            </b>
+          </div>
+
+        </div>
+
+      `;
+
+
+      if(x.g.per.some(p=>p.valid)){
+
+        h += `
+
+        <div class="note">
+          <b>Composite Delta</b> = how much a position's value moves
+          for a 1-unit move in the underlying (futures always = 1;
+          options use the delta supplied in the PCSPAN file).
+          <b>Signed Delta</b> = Composite Delta × your signed lots
+          (BUY is positive, SELL is negative) — this is what gets
+          used to check for calendar-spread matching.
+        </div>
+
+        `;
+
+      }
+
+
+      x.g.per.forEach(
+        p => {
+
+          if(!p.valid)
+            return;
+
+
+          h += `
+
+          <h4>
+
+            ${esc(
+              positionLabel(p.p)
+            )}
+
+          </h4>
+
+
+          <div class="kv">
+
+            <div>
+              Signed contracts
+            </div>
+
+            <div>
+              ${p.signed}
+            </div>
+
+
+            <div>
+              Composite Delta
+            </div>
+
+            <div>
+              ${p.delta ?? '—'}
+            </div>
+
+
+            <div>
+              Signed Delta
+            </div>
+
+            <div>
+              ${p.signedDelta ?? '—'}
+            </div>
+
+
+            <div>
+              Standalone Risk
+            </div>
+
+            <div>
+              ${money(p.standalone)}
+            </div>
+
+          </div>
+
+          `;
+
+        }
+      );
+
+
+      if(x.sp.rows.length){
+
+        h += `
+
+        <h4>
+          Calendar Spread Matching
+        </h4>
+
+        <div class="note">
+          <b>Matched Delta</b> = the smaller of the two opposing
+          delta amounts across the two expiries — only this matched
+          portion earns the spread charge/discount.
+        </div>
+
+
+        <table>
+
+          <tr>
+
+            <th>
+              Near
+            </th>
+
+            <th>
+              Far
+            </th>
+
+            <th>
+              Matched Delta
+            </th>
+
+            <th>
+              Rate
+            </th>
+
+            <th>
+              Far Contract Value
+            </th>
+
+            <th>
+              Charge
+            </th>
+
+          </tr>
+
+        `;
+
+
+        x.sp.rows.forEach(
+          s => {
+
+            h += `
+
+            <tr>
+
+              <td>
+                ${date(s.near)}
+              </td>
+
+              <td>
+                ${date(s.far)}
+              </td>
+
+              <td>
+                ${s.matchedDelta.toFixed(4)}
+              </td>
+
+              <td>
+                ${s.rate}
+              </td>
+
+              <td>
+                ${money(
+                  s.farContractValue
+                )}
+              </td>
+
+              <td>
+                ${money(
+                  s.rowCharge
+                )}
+              </td>
+
+            </tr>
+
+            `;
+
+          }
+        );
+
+
+        h += '</table>';
+
+      }
+
+
+      h += '</div>';
+
+
+      b.innerHTML += h;
+
+    }
+  );
+
+}
+
+
+/* =================================================================
+   EXPIRY DAY
+================================================================= */
+
+function renderExpiry(){
+
+  const r =
+    S.result;
+
+
+  if(!r){
+
+    $('expiryBox').innerHTML =
+      '<div class="note">Calculate first.</div>';
+
+    return;
+
+  }
+
+
+  const today =
+    S.store.meta.date;
+
+
+  const exp =
+    S.positions.filter(
+      p =>
+        p.expiry === today
+    );
+
+
+  const sur =
+    S.positions.filter(
+      p =>
+        p.expiry !== today
+    );
+
+
+  const a =
+    calculate(
+      S.store,
+      S.positions
+    );
+
+
+  const b =
+    calculate(
+      S.store,
+      sur
+    );
+
+
+  $('expiryBox').innerHTML = `
+
+  <div class="card">
+
+    <h3>
+      Expiry-Day Analysis
+    </h3>
+
+    <div class="note info">
+      <b>What this tab does:</b> it splits your portfolio into two
+      groups — positions expiring on the PCSPAN file's date, and
+      everything else — then runs the full SPAN calculation twice:
+      once on your whole portfolio, and once with just the
+      still-alive (non-expiring) positions. This gives you a rough
+      sense of how your margin requirement would change right after
+      today's expiring contracts settle.
+    </div>
+
+    <div class="kv">
+
+      <div>
+        PCSPAN File Date
+      </div>
+
+      <div>
+        ${date(today)}
+      </div>
+
+
+      <div>
+        Positions Expiring Today
+      </div>
+
+      <div>
+        ${exp.length}
+      </div>
+
+
+      <div>
+        SPAN Margin — Whole Portfolio
+      </div>
+
+      <div>
+        ${money(
+          a.totals.finalMargin
+        )}
+      </div>
+
+
+      <div>
+        SPAN Margin — After Today's Expiry
+      </div>
+
+      <div>
+        ${money(
+          b.totals.finalMargin
+        )}
+      </div>
+
+    </div>
+
+
+    <div class="note info">
+
+      One exception to note: for index contracts (NIFTY, BANKNIFTY,
+      etc.), the current day's expiry is never used for the
+      calendar-spread calculation in the first place — the exchange
+      excludes it regardless of this tab.
+
+      <br><br>
+
+      This estimate excludes ELM / Exposure Margin and any
+      broker-specific add-ons, same as the Results tab.
+
+    </div>
+
+  </div>
+
+  `;
+
+}
+
+
+/* =================================================================
+   FILE LOAD
+================================================================= */
+
+function loadFile(f){
+
+  $('loadmsg').textContent =
+    'Reading ' +
+    f.name +
+    ' ...';
+
+
+  const rd =
+    new FileReader();
+
+
+  rd.onload = () => {
+
+    try{
+
+      S.store =
+        parsePCSPAN(
+          rd.result
+        );
+
+
+      $('status').textContent =
+        f.name +
+        ' — ' +
+        S.store.counts.underlyings +
+        ' underlyings loaded';
+
+
+      $('loadmsg').textContent =
+        'Loaded ' +
+        S.store.counts.contracts
+          .toLocaleString() +
+        ' contracts / ' +
+        S.store.counts.riskArrays
+          .toLocaleString() +
+        ' risk arrays.';
+
+
+      $('loadmsg').className =
+        'note info';
+
+
+      enable();
+
+
+      $('fileInfo').innerHTML = `
+
+      <div class="card">
+
+        <h3>
+          File Information
+        </h3>
+
+
+        <div class="grid g4">
+
+
+          <div class="stat">
+
+            <div class="v">
+              ${date(
+                S.store.meta.date
+              )}
+            </div>
+
+            <div class="l">
+              Margin Date
+            </div>
+
+          </div>
+
+
+          <div class="stat">
+
+            <div class="v">
+              ${S.store.counts.underlyings}
+            </div>
+
+            <div class="l">
+              Underlyings
+            </div>
+
+          </div>
+
+
+          <div class="stat">
+
+            <div class="v">
+              ${S.store.counts.contracts}
+            </div>
+
+            <div class="l">
+              Contracts
+            </div>
+
+          </div>
+
+
+          <div class="stat">
+
+            <div class="v">
+              ${S.store.counts.riskArrays}
+            </div>
+
+            <div class="l">
+              Risk Arrays
+            </div>
+
+          </div>
+
+
+        </div>
+
+      </div>
+
+      `;
+
+
+      $('symbols').innerHTML =
+        '';
+
+
+      Object.keys(
+        S.store.underlyings
+      )
+      .sort()
+      .forEach(
+        x =>
+          $('symbols').append(
+            new Option(
+              x,
+              x
+            )
+          )
+      );
+
+
+      refreshInputs();
+
+      renderPositions();
+
+
+      /*
+         Automatically move to Positions
+         after successful file loading.
+      */
+
+      tab('positions');
+
+
+    }
+    catch(e){
+
+      $('loadmsg').textContent =
+        'Parse error: ' +
+        e.message;
+
+
+      $('loadmsg').className =
+        'note err';
+
+      console.error(e);
+
+    }
+
+  };
+
+
+  rd.onerror = () => {
+
+    $('loadmsg').textContent =
+      'Unable to read file.';
+
+
+    $('loadmsg').className =
+      'note err';
+
+  };
+
+
+  rd.readAsText(f);
+
+}
+
+
+/* =================================================================
+   FILE EVENTS
+================================================================= */
+
+$('file').onchange =
+  e => {
+
+    if(
+      e.target.files[0]
+    )
+      loadFile(
+        e.target.files[0]
+      );
+
+  };
+
+
+$('drop').onclick =
+  () =>
+    $('file').click();
+
+
+$('drop').ondragover =
+  e =>
+    e.preventDefault();
+
+
+$('drop').ondrop =
+  e => {
+
+    e.preventDefault();
+
+
+    if(
+      e.dataTransfer &&
+      e.dataTransfer.files &&
+      e.dataTransfer.files[0]
+    ){
+
+      loadFile(
+        e.dataTransfer.files[0]
+      );
+
+    }
+
+  };
+
+
+/* =================================================================
+   INITIAL POSITION UI
+================================================================= */
+
+$('strikeBox').style.display =
+  'none';
+
+$('typeBox').style.display =
+  'none';
+
+</script>
+
+</body>
+</html>
