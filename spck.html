@@ -371,6 +371,41 @@ pre{
   font-weight:800;
   color:var(--accent-dark)
 }
+
+.csv-map-row{
+  display:grid;
+  grid-template-columns:1fr 1fr auto;
+  gap:8px;
+  align-items:center;
+  padding:6px 0;
+  border-bottom:1px solid var(--border)
+}
+
+.csv-map-row:last-child{border-bottom:0}
+
+.csv-map-row .fld{
+  font-size:12px;
+  font-weight:700;
+  color:var(--text)
+}
+
+.csv-map-row .req{color:var(--red)}
+
+.badge{
+  display:inline-block;
+  font-size:10px;
+  padding:2px 7px;
+  border-radius:10px;
+  background:var(--accent-soft);
+  color:var(--accent-dark);
+  font-weight:700;
+  text-transform:uppercase
+}
+
+.badge.warn{
+  background:#fbf6e2;
+  color:#8a6d1f
+}
 </style>
 </head>
 
@@ -610,8 +645,11 @@ pre{
       class="muted"
       style="margin-top:6px"
     >
-      Map the broker columns. Net quantity is used as contracts/lots
-      exactly as supplied.
+      Columns are auto-detected from the header row (Kotak/Zerodha
+      style net-position exports work out of the box). Review the
+      mapping below, then preview and import. Net quantity is used
+      as contracts/lots exactly as supplied — positive = BUY,
+      negative = SELL.
     </div>
 
     <div id="csvmap"></div>
@@ -3375,6 +3413,870 @@ $('clear').onclick = () => {
 
 
 /* =================================================================
+   BROKER CSV IMPORT
+   — parses a broker "net position" export, auto-detects which
+     column is which (Kotak/5paisa/Zerodha-style headers), lets
+     the user review/adjust the mapping, then converts rows into
+     positions using the same `valid()` lookup as manual entry.
+================================================================= */
+
+const CSV_TARGET_FIELDS = [
+
+  {
+    key:'underlying',
+    label:'Underlying Symbol',
+    required:true,
+    guesses:['Symbol','Underlying','Sym']
+  },
+
+  {
+    key:'instrument',
+    label:'Instrument Type',
+    required:true,
+    guesses:['Inst','Instrument','InstType','Inst Type']
+  },
+
+  {
+    key:'netQty',
+    label:'Net Qty (signed, +BUY / -SELL)',
+    required:true,
+    guesses:['Net Qty','NetQty','Net Quantity']
+  },
+
+  {
+    key:'expiry',
+    label:'Expiry Date',
+    required:true,
+    guesses:['Expiry Date','Expiry','ExpiryDate']
+  },
+
+  {
+    key:'optType',
+    label:'Option Type (CE/PE)',
+    required:false,
+    guesses:['Opt Type','OptType','Option Type']
+  },
+
+  {
+    key:'strike',
+    label:'Strike Price',
+    required:false,
+    guesses:['Strike Price','Strike','StrikePrice']
+  }
+
+];
+
+
+const Scsv = {
+
+  headers:[],
+
+  rows:[],
+
+  mapping:{}
+
+};
+
+
+function parseCSVText(text){
+
+  const rows = [];
+
+  let row = [];
+
+  let field = '';
+
+  let inQuotes = false;
+
+
+  for(
+    let i=0;
+    i<text.length;
+    i++
+  ){
+
+    const c =
+      text[i];
+
+
+    if(inQuotes){
+
+      if(c === '"'){
+
+        if(text[i+1] === '"'){
+
+          field += '"';
+
+          i++;
+
+        }else{
+
+          inQuotes = false;
+
+        }
+
+      }else{
+
+        field += c;
+
+      }
+
+      continue;
+
+    }
+
+
+    if(c === '"'){
+
+      inQuotes = true;
+
+    }else if(c === ','){
+
+      row.push(field);
+
+      field = '';
+
+    }else if(c === '\r'){
+
+      /* ignore */
+
+    }else if(c === '\n'){
+
+      row.push(field);
+
+      rows.push(row);
+
+      row = [];
+
+      field = '';
+
+    }else{
+
+      field += c;
+
+    }
+
+  }
+
+
+  if(
+    field.length ||
+    row.length
+  ){
+
+    row.push(field);
+
+    rows.push(row);
+
+  }
+
+
+  return rows.filter(
+    r =>
+      r.some(
+        c =>
+          String(c).trim() !== ''
+      )
+  );
+
+}
+
+
+function guessColumn(headers,candidates){
+
+  const lower =
+    headers.map(
+      h =>
+        h.trim().toLowerCase()
+    );
+
+
+  for(
+    const cand
+    of candidates
+  ){
+
+    const idx =
+      lower.indexOf(
+        cand.toLowerCase()
+      );
+
+
+    if(idx >= 0)
+      return idx;
+
+  }
+
+
+  return -1;
+
+}
+
+
+function mapInstrumentValue(v){
+
+  const s =
+    String(v || '')
+      .toUpperCase();
+
+
+  if(s.includes('FUT'))
+    return 'FUT';
+
+
+  if(s.includes('OPT'))
+    return 'OPT';
+
+
+  return null;
+
+}
+
+
+function mapOptTypeValue(v){
+
+  const s =
+    String(v || '')
+      .trim()
+      .toUpperCase();
+
+
+  if(s === 'CE' || s === 'PE')
+    return s;
+
+
+  if(s === 'C')
+    return 'CE';
+
+
+  if(s === 'P')
+    return 'PE';
+
+
+  return null;
+
+}
+
+
+function renderCSVMap(){
+
+  const box =
+    $('csvmap');
+
+
+  if(!Scsv.headers.length){
+
+    box.innerHTML = '';
+
+    return;
+
+  }
+
+
+  let h = `
+
+  <div class="note info" style="margin-top:10px">
+    ${Scsv.headers.length} column(s) detected,
+    ${Scsv.rows.length} data row(s) found.
+    Columns were auto-matched by header name below —
+    change any dropdown if a column was guessed wrong.
+  </div>
+
+  <div class="card" style="background:var(--panel2);box-shadow:none">
+
+  `;
+
+
+  CSV_TARGET_FIELDS.forEach(
+    f => {
+
+      h += `
+
+      <div class="csv-map-row">
+
+        <div class="fld">
+          ${esc(f.label)}
+          ${
+            f.required
+              ? '<span class="req">*</span>'
+              : ''
+          }
+        </div>
+
+        <select
+          class="csvfield"
+          data-field="${f.key}"
+        >
+
+          <option value="-1">
+            — none —
+          </option>
+
+          ${
+            Scsv.headers
+              .map(
+                (hd,i)=>
+                  `<option value="${i}" ${
+                    Scsv.mapping[f.key] === i
+                      ? 'selected'
+                      : ''
+                  }>${esc(hd)}</option>`
+              )
+              .join('')
+          }
+
+        </select>
+
+        <span class="badge ${
+          Scsv.mapping[f.key] >= 0
+            ? ''
+            : 'warn'
+        }">
+          ${
+            Scsv.mapping[f.key] >= 0
+              ? 'matched'
+              : (f.required ? 'not found' : 'optional')
+          }
+        </span>
+
+      </div>
+
+      `;
+
+    }
+  );
+
+
+  h += `
+
+  </div>
+
+  <div class="toolbar" style="margin-top:10px">
+
+    <button
+      class="secondary"
+      id="csvPreviewBtn"
+    >
+      Preview Rows
+    </button>
+
+    <button id="csvImportBtn">
+      Import Positions →
+    </button>
+
+  </div>
+
+  <div id="csvPreview"></div>
+
+  `;
+
+
+  box.innerHTML = h;
+
+
+  box
+    .querySelectorAll('.csvfield')
+    .forEach(
+      sel => {
+
+        sel.onchange = () => {
+
+          Scsv.mapping[
+            sel.dataset.field
+          ] = Number(sel.value);
+
+
+          renderCSVPreview();
+
+        };
+
+      }
+    );
+
+
+  $('csvPreviewBtn').onclick =
+    renderCSVPreview;
+
+  $('csvImportBtn').onclick =
+    importCSVPositions;
+
+}
+
+
+function buildCSVPositions(){
+
+  const m =
+    Scsv.mapping;
+
+  const out = [];
+
+
+  if(
+    m.underlying == null || m.underlying < 0 ||
+    m.instrument == null || m.instrument < 0 ||
+    m.netQty == null || m.netQty < 0 ||
+    m.expiry == null || m.expiry < 0
+  )
+    return out;
+
+
+  Scsv.rows.forEach(
+    (r,ri) => {
+
+      const underlying =
+        String(
+          r[m.underlying] || ''
+        )
+        .trim()
+        .toUpperCase();
+
+
+      if(!underlying)
+        return;
+
+
+      const instrument =
+        mapInstrumentValue(
+          r[m.instrument]
+        );
+
+
+      /*
+         Non-derivative rows (cash equity,
+         mutual fund, etc) are silently skipped —
+         SPAN only applies to FUT/OPT.
+      */
+
+      if(!instrument)
+        return;
+
+
+      const netQtyRaw =
+        parseFloat(
+          r[m.netQty]
+        );
+
+
+      if(
+        !Number.isFinite(netQtyRaw) ||
+        netQtyRaw === 0
+      )
+        return;
+
+
+      const side =
+        netQtyRaw > 0
+          ? 'BUY'
+          : 'SELL';
+
+      const lots =
+        Math.abs(netQtyRaw);
+
+
+      const expiry =
+        normalizeExpiry(
+          String(
+            r[m.expiry] || ''
+          ).trim()
+        );
+
+
+      let strike = null;
+
+      let optType = null;
+
+
+      if(instrument === 'OPT'){
+
+        if(
+          m.strike != null &&
+          m.strike >= 0
+        ){
+
+          const sv =
+            parseFloat(
+              r[m.strike]
+            );
+
+
+          if(Number.isFinite(sv))
+            strike = sv;
+
+        }
+
+
+        if(
+          m.optType != null &&
+          m.optType >= 0
+        ){
+
+          optType =
+            mapOptTypeValue(
+              r[m.optType]
+            );
+
+        }
+
+      }
+
+
+      out.push({
+
+        rowIndex:ri,
+
+        underlying,
+
+        instrument,
+
+        expiry,
+
+        strike:
+          instrument === 'OPT'
+            ? strike
+            : null,
+
+        optType:
+          instrument === 'OPT'
+            ? optType
+            : null,
+
+        side,
+
+        lots
+
+      });
+
+    }
+  );
+
+
+  return out;
+
+}
+
+
+function renderCSVPreview(){
+
+  const box =
+    $('csvPreview');
+
+  const positions =
+    buildCSVPositions();
+
+
+  if(!positions.length){
+
+    box.innerHTML =
+      '<div class="note err">' +
+      'No derivative (FUT/OPT) rows could be built from the ' +
+      'current column mapping. Check the required fields above.' +
+      '</div>';
+
+    return;
+
+  }
+
+
+  let rows =
+    positions
+      .map(
+        p => {
+
+          const q =
+            S.store
+              ? valid(
+                  S.store,
+                  {
+                    underlying:p.underlying,
+                    instrument:p.instrument,
+                    expiry:p.expiry,
+                    strike:p.strike,
+                    optType:p.optType,
+                    side:p.side,
+                    lots:p.lots
+                  }
+                )
+              : {
+                  valid:false,
+                  errors:['Load a PCSPAN file to validate']
+                };
+
+
+          return `
+
+          <tr>
+
+            <td>${esc(p.underlying)}</td>
+            <td>${esc(p.instrument)}</td>
+            <td>${esc(date(p.expiry))}</td>
+            <td>${p.strike ?? '—'}</td>
+            <td>${p.optType ?? '—'}</td>
+            <td>${p.side}</td>
+            <td class="num">${p.lots}</td>
+
+            <td class="${
+              q.valid ? 'green' : 'red'
+            }">
+              ${
+                q.valid
+                  ? 'OK'
+                  : q.errors.join(' ')
+              }
+            </td>
+
+          </tr>
+
+          `;
+
+        }
+      )
+      .join('');
+
+
+  box.innerHTML = `
+
+  <div class="muted" style="margin:8px 0">
+    ${positions.length} derivative position(s) parsed from the CSV.
+  </div>
+
+  <div style="overflow:auto">
+
+    <table>
+
+      <thead>
+
+        <tr>
+
+          <th>Underlying</th>
+          <th>Instrument</th>
+          <th>Expiry</th>
+          <th>Strike</th>
+          <th>Type</th>
+          <th>Side</th>
+          <th class="num">Lots</th>
+          <th>Status</th>
+
+        </tr>
+
+      </thead>
+
+      <tbody>
+        ${rows}
+      </tbody>
+
+    </table>
+
+  </div>
+
+  `;
+
+}
+
+
+function importCSVPositions(){
+
+  if(!S.store){
+
+    alert(
+      'Load a PCSPAN file first — positions are validated ' +
+      'against it as they are imported.'
+    );
+
+    return;
+
+  }
+
+
+  const positions =
+    buildCSVPositions();
+
+
+  if(!positions.length){
+
+    alert(
+      'No valid derivative rows found with the current column mapping.'
+    );
+
+    return;
+
+  }
+
+
+  let added = 0;
+
+  let skipped = 0;
+
+  const skippedReasons = [];
+
+
+  positions.forEach(
+    p => {
+
+      const pos = {
+
+        underlying:p.underlying,
+
+        instrument:p.instrument,
+
+        expiry:p.expiry,
+
+        strike:p.strike,
+
+        optType:p.optType,
+
+        side:p.side,
+
+        lots:p.lots
+
+      };
+
+
+      const q =
+        valid(
+          S.store,
+          pos
+        );
+
+
+      if(q.valid){
+
+        S.positions.push(pos);
+
+        added++;
+
+      }else{
+
+        skipped++;
+
+        skippedReasons.push(
+
+          esc(
+            positionLabel(pos) +
+            ' — ' +
+            q.errors.join(' ')
+          )
+
+        );
+
+      }
+
+    }
+  );
+
+
+  renderPositions();
+
+
+  $('posmsg').innerHTML = `
+
+  <div class="note ${
+    skipped ? 'err' : 'info'
+  }">
+
+    Imported ${added} position(s) from CSV.
+
+    ${
+      skipped
+        ? `<br>${skipped} row(s) skipped (not found in the loaded ` +
+          `PCSPAN file, or invalid):<br>` +
+          skippedReasons.join('<br>')
+        : ''
+    }
+
+  </div>
+
+  `;
+
+}
+
+
+function loadCSV(f){
+
+  const rd =
+    new FileReader();
+
+
+  rd.onload = () => {
+
+    const rows =
+      parseCSVText(
+        rd.result
+      );
+
+
+    if(!rows.length){
+
+      $('csvmap').innerHTML =
+        '<div class="note err">' +
+        'Empty or unreadable CSV file.' +
+        '</div>';
+
+      return;
+
+    }
+
+
+    Scsv.headers =
+      rows[0].map(
+        h => h.trim()
+      );
+
+    Scsv.rows =
+      rows.slice(1);
+
+
+    Scsv.mapping = {};
+
+
+    CSV_TARGET_FIELDS.forEach(
+      f => {
+
+        Scsv.mapping[f.key] =
+          guessColumn(
+            Scsv.headers,
+            f.guesses
+          );
+
+      }
+    );
+
+
+    renderCSVMap();
+
+    renderCSVPreview();
+
+  };
+
+
+  rd.onerror = () => {
+
+    $('csvmap').innerHTML =
+      '<div class="note err">' +
+      'Unable to read CSV file.' +
+      '</div>';
+
+  };
+
+
+  rd.readAsText(f);
+
+}
+
+
+$('csv').onchange =
+  e => {
+
+    if(
+      e.target.files[0]
+    )
+      loadCSV(
+        e.target.files[0]
+      );
+
+  };
+
+
+/* =================================================================
    CALCULATE
 ================================================================= */
 
@@ -4832,6 +5734,15 @@ function loadFile(f){
       refreshInputs();
 
       renderPositions();
+
+
+      /*
+         If a CSV was already loaded before the PCSPAN file,
+         refresh its preview now that validation data exists.
+      */
+
+      if(Scsv.headers.length)
+        renderCSVPreview();
 
 
       /*
