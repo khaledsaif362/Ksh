@@ -1,38 +1,480 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>RS KHALED</title>
-  <link rel="stylesheet" href="style.css"> 
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Position Files</title>
+
+    <link rel="stylesheet" href="STYLE.css">
+
+    <!-- =========================
+         PAGE-SCOPED FIXES
+         (this page only — STYLE.css
+         is shared, so these are not
+         edited there)
+
+         1) STYLE.css sets
+            html, body { overflow:hidden; height:100% }
+            which clips anything taller than the
+            viewport instead of scrolling — restored
+            to normal scrolling here.
+
+         2) STYLE.css's .window rule uses a fixed
+            438px width with a -200px right margin,
+            which pushes the title bar outside the
+            400px-wide .card. Neutralised here so
+            the title bar stays inside the card at
+            any zoom level.
+    ========================== -->
+
+    <style>
+
+        html, body {
+            overflow: auto !important;
+            height: auto !important;
+            min-height: 100%;
+        }
+
+        .card {
+            max-width: 480px;
+        }
+
+        .window {
+            width: 100% !important;
+            margin: 0 0 15px 0 !important;
+            background-color: transparent !important;
+            box-shadow: none !important;
+            border: none !important;
+        }
+
+        .title-bar {
+            padding: 8px 12px !important;
+        }
+
+    </style>
+
+
+    <!-- =========================
+         MANUAL SCRIP STYLES
+         side panel — sits in the empty
+         margin beside the card, does not
+         cover the page
+    ========================== -->
+
+    <style>
+
+        /* trigger strip left in the main card */
+
+        .manual-section {
+            margin: 8px 0;
+            padding: 5px 7px;
+            border: 1px solid #c9c9c9;
+            border-radius: 5px;
+            font-size: 11px;
+        }
+
+        .manual-head {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .manual-head strong {
+            font-size: 12px;
+            flex: 1;
+        }
+
+        .manual-section button,
+        .manual-drawer button {
+            font-size: 12px !important;
+            padding: 3px 9px !important;
+            width: auto !important;
+            min-width: 0 !important;
+            height: auto !important;
+            margin: 0 !important;
+            line-height: 1.4 !important;
+            cursor: pointer;
+        }
+
+        .manual-count {
+            font-size: 10px;
+            color: #555;
+        }
+
+        /* side panel: anchored to the right edge,
+           in the open margin next to the centered card.
+           No overlay/backdrop — the rest of the page
+           stays usable. */
+
+        .manual-drawer {
+            display: none;
+            position: fixed;
+            top: 0;
+            right: 0;
+            height: 100%;
+            width: 360px;
+            max-width: 92vw;
+            background: #fff;
+            border-left: 1px solid #c9c9c9;
+            box-shadow: -3px 0 10px rgba(0,0,0,0.12);
+            z-index: 1000;
+            flex-direction: column;
+        }
+
+        .manual-drawer.open {
+            display: flex;
+        }
+
+        .manual-drawer-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .manual-drawer-head strong {
+            font-size: 14px;
+            flex: 1;
+        }
+
+        .manual-drawer-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 12px;
+        }
+
+        .manual-notice {
+            font-size: 11px;
+            color: #8a4b00;
+            background: #fff4e0;
+            border: 1px solid #f0d3a0;
+            border-radius: 3px;
+            padding: 4px 7px;
+            margin-bottom: 10px;
+        }
+
+        /* one card per scrip, fields wrap freely,
+           comfortable size, no forced single line */
+
+        .manual-row {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 8px;
+            margin-bottom: 8px;
+        }
+
+        .manual-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .manual-field {
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 90px;
+        }
+
+        .manual-field label {
+            font-size: 11px;
+            color: #555;
+            margin-bottom: 2px;
+            white-space: nowrap;
+        }
+
+        .manual-field input,
+        .manual-field select {
+            width: 100% !important;
+            min-width: 0 !important;
+            height: 28px !important;
+            font-size: 13px !important;
+            padding: 3px 5px !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+        }
+
+        .manual-row-foot {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 6px;
+        }
+
+    </style>
+
 </head>
+
 <body>
-  <div class="card"><div class="window"><div class="title-bar">
-    Position Files
-</div></div>
 
-    <label for="client1">Client ID 1: &nbsp; &nbsp;
-    <input type="text" id="client1" placeholder="Client 1 (Required)" style="width: 291px;">
+<div class="card">
 
-    <label for="client2">Client ID 2: &nbsp; &nbsp;
-    <input type="text" id="client2" placeholder="Client 2 (Optional)" style="width: 290px;">
-
-   <div style="display: flex; align-items: center; gap: 10px;">
-  <label for="expiry">Expiry Date:</label>
-<input type="date" id="expiry" style="width: 291px; margin-top: 8px;" />  
-</div>
-    <!-- Checkboxes container -->
-    <div id="checkboxContainer">
-      <div class="checkbox-item">
-        <input type="checkbox" id="all" onclick="toggleAll()">
-        <label for="all">Select All</label>
-      </div>
-      <!-- More checkboxes will be added dynamically here -->
+    <div class="window">
+        <div class="title-bar">
+            Position Files
+        </div>
     </div>
 
-    <!-- Moved the button OUTSIDE -->
-    <button onclick="generate()">Generate Files</button>
-  </div><div class="footer">© Khaled</div>
-  <script src="POSscript.js"></script>
+
+    <!-- =========================
+         SEGMENT TABS
+    ========================== -->
+
+    <div class="tab-bar" role="tablist">
+
+        <button class="tab active"
+                onclick="changeTab('FO',this)">
+            FO
+        </button>
+
+        <button class="tab"
+                onclick="changeTab('CD',this)">
+            CD
+        </button>
+
+        <button class="tab"
+                onclick="changeTab('MCX',this)">
+            MCX
+        </button>
+
+        <button class="tab"
+                onclick="changeTab('NCDEX',this)">
+            NCDEX
+        </button>
+
+        <button class="tab"
+                onclick="changeTab('NSECOM',this)">
+            NSECOM
+        </button>
+
+    </div>
+
+
+    <input type="hidden"
+           id="positionType"
+           value="FO">
+
+
+    <!-- =========================
+         CLIENT 1
+    ========================== -->
+
+    <div class="form-row">
+
+        <label>
+            Client ID 1
+        </label>
+
+        <input type="text"
+               id="client1">
+
+    </div>
+
+
+    <!-- =========================
+         CLIENT 2
+    ========================== -->
+
+    <div class="form-row">
+
+        <label>
+            Client ID 2
+        </label>
+
+        <input type="text"
+               id="client2">
+
+    </div>
+
+
+    <!-- =========================
+         NSE EXPIRY
+    ========================== -->
+
+    <div class="form-row"
+         id="commonExpiryRow">
+
+        <label for="expiry"
+               style="width:230px; white-space:nowrap;">
+
+            NSE Expiry
+
+        </label>
+
+        <input type="date"
+               id="expiry">
+
+    </div>
+
+
+    <!-- =========================
+         BSE EXPIRY
+    ========================== -->
+
+    <div class="form-row"
+         id="sensexBankexExpiryRow">
+
+        <label for="sensexBankexExpiry"
+               style="width:230px; white-space:nowrap;">
+
+            BSE Expiry
+
+        </label>
+
+        <input type="date"
+               id="sensexBankexExpiry">
+
+    </div>
+
+
+    
+
+
+    <!-- =========================
+         SYMBOL EXPIRY
+         MCX / CD / NCDEX / NSECOM
+    ========================== -->
+
+    <div id="symbolExpiryContainer"
+         style="display:none;">
+    </div>
+
+
+
+
+
+
+<!-- =========================
+         ADDITIONAL STRIKES
+         FO + MCX
+    ========================== -->
+
+    <div class="form-row"
+         id="additionalStrikeRow">
+
+        <label for="additionalStrikes"
+               style="width:230px; white-space:nowrap;">
+
+            Additional Strikes
+
+        </label>
+
+        <input type="number"
+               id="additionalStrikes"
+               min="0"
+               value="0">
+
+    </div>
+
+
+
+
+
+
+
+    <!-- =========================
+         MANUAL SCRIP ENTRY
+         (trigger strip only —
+          the editor opens in a
+          side panel that sits in
+          the open margin next to
+          the card)
+    ========================== -->
+
+    <div class="manual-section" id="manualSection">
+
+        <div class="manual-head">
+
+            <strong>
+                Manual Scrips
+            </strong>
+
+            <span class="manual-count" id="manualCount">
+            </span>
+
+            <button type="button"
+                    onclick="openManualDrawer()">
+                Open
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================
+         MANUAL SCRIP SIDE PANEL
+    ========================== -->
+
+    <div class="manual-drawer" id="manualDrawer">
+
+        <div class="manual-drawer-head">
+
+            <strong>
+                Manual Scrips
+            </strong>
+
+            <button type="button"
+                    onclick="addManualRow()">
+                + Add Symbol
+            </button>
+
+            <button type="button"
+                    onclick="closeManualDrawer()">
+                Close
+            </button>
+
+        </div>
+
+        <div class="manual-drawer-body">
+
+            <div class="manual-notice"
+                 id="manualNotice"
+                 style="display:none;">
+
+                Manual mode ON — only the scrips below are written.
+
+            </div>
+
+            <div id="manualContainer">
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================
+         FO FILE CHECKBOXES
+    ========================== -->
+
+    <div id="checkboxContainer">
+    </div>
+
+
+    <!-- =========================
+         GENERATE BUTTON
+    ========================== -->
+
+    <div class="button-group">
+
+        <button onclick="generate()">
+            Generate Position Files
+        </button>
+
+    </div>
+
+
+</div>
+
+
+<div class="footer">
+    © Khaled
+</div>
+
+
+<script src="POS.js"></script>
+
 </body>
 </html>
