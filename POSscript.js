@@ -31,6 +31,35 @@ const fileNames = {
 
 
 /* =========================================================
+   SHORT CHECKBOX LABEL
+
+   The FO filenames are long
+   ("Position_ICCL_FO_0_CM_6538_2026"), which pushes the
+   checkbox list wide. This pulls out just the exchange
+   (ICCL / NCL) and segment (CM / TM) for display, while
+   the checkbox's value/id still carries the full filename
+   used when generating the download.
+========================================================= */
+
+function shortFileLabel(name) {
+
+    const match =
+        name.match(/^Position_([A-Z]+)_FO_0_(CM|TM)_/);
+
+
+    if (match) {
+
+        return match[1] + " " + match[2];
+
+    }
+
+
+    return name;
+
+}
+
+
+/* =========================================================
    STRIKE STEPS
 ========================================================= */
 
@@ -890,7 +919,7 @@ function loadFiles() {
                         value="${name}">
 
                     <label for="${name}">
-                        ${name}
+                        ${shortFileLabel(name)}
                     </label>
 
                 </div>
