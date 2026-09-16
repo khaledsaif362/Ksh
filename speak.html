@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Peak Margin Calculator</title>
+<style>
+  :root{
+    --ink:#0f1b2d;
+    --ink-soft:#3d4a5c;
+    --panel:#ffffff;
+    --bg:#eef1f5;
+    --line:#dde3ea;
+    --accent:#1d5f8a;
+    --accent-soft:#e7eff5;
+    --up:#166a49;
+    --up-bg:#e7f5ee;
+    --down:#9c2b28;
+    --down-bg:#fbeceb;
+    --mono: ui-monospace, "JetBrains Mono", "SF Mono", Consolas, monospace;
+  }
+  :root:not([data-theme="light"]){
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#e8edf4; --ink-soft:#a7b3c2; --panel:#152233; --bg:#0b131e;
+      --line:#28374a; --accent:#6fb2df; --accent-soft:#1c2c3d;
+      --up:#5fcf9c; --up-bg:#123526; --down:#f3897f; --down-bg:#3a1a18;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#e8edf4; --ink-soft:#a7b3c2; --panel:#152233; --bg:#0b131e;
+    --line:#28374a; --accent:#6fb2df; --accent-soft:#1c2c3d;
+    --up:#5fcf9c; --up-bg:#123526; --down:#f3897f; --down-bg:#3a1a18;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .shell{max-width:980px;margin:0 auto;padding:28px 20px 60px}
+
+  .masthead{margin-bottom:26px}
+  .masthead .eyebrow{font-size:12.5px;color:var(--ink-soft);letter-spacing:.02em;margin-bottom:6px}
+  .masthead h1{font-size:26px;margin:0 0 4px;font-weight:650;letter-spacing:-.01em}
+  .masthead p{margin:0;color:var(--ink-soft);font-size:14px}
+
+  /* pipeline */
+  .pipeline{
+    display:flex;align-items:stretch;gap:0;overflow-x:auto;
+    margin:22px 0 28px;padding-bottom:4px;
+  }
+  .pstep{
+    flex:1 1 0;min-width:118px;background:var(--panel);border:1px solid var(--line);
+    border-radius:10px;padding:12px 13px;position:relative;
+  }
+  .pstep + .pstep{margin-left:18px}
+  .pstep + .pstep::before{
+    content:"→";position:absolute;left:-17px;top:50%;transform:translateY(-50%);
+    color:var(--ink-soft);font-size:14px;
+  }
+  .pstep .plabel{font-size:11px;color:var(--ink-soft);margin-bottom:6px}
+  .pstep .pvalue{font-family:var(--mono);font-size:16px;font-weight:600;white-space:nowrap}
+  .pstep.result{border-color:var(--accent)}
+  .pstep.final .pvalue.neg{color:var(--down)}
+  .pstep.final .pvalue.pos{color:var(--up)}
+
+  .panel{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:20px 20px 22px;margin-bottom:18px;
+  }
+  .panel h2{font-size:13px;font-weight:650;margin:0 0 16px;color:var(--ink-soft)}
+
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 16px}
+  @media(max-width:640px){.grid{grid-template-columns:repeat(2,1fr)}}
+  .field label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:6px}
+  .field .hint{font-size:11px;color:var(--ink-soft);opacity:.7}
+  .field input{
+    width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:8px;
+    background:var(--bg);color:var(--ink);font-family:var(--mono);font-size:14px;
+  }
+  .field input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+
+  .actions{display:flex;gap:10px;margin-top:18px}
+  button{border:0;border-radius:8px;padding:10px 18px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit}
+  button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-primary:hover{filter:brightness(1.08)}
+  .btn-ghost{background:transparent;color:var(--ink-soft);border:1px solid var(--line)}
+  .btn-ghost:hover{color:var(--ink);border-color:var(--ink-soft)}
+
+  .result-row{display:flex;align-items:baseline;justify-content:space-between;gap:20px;flex-wrap:wrap}
+  .result-row .big{font-family:var(--mono);font-size:34px;font-weight:650}
+  .result-row .big.neg{color:var(--down)}
+  .result-row .big.pos{color:var(--up)}
+  .result-row .tag{
+    font-size:12px;padding:4px 10px;border-radius:999px;font-weight:650;
+  }
+  .tag.neg{color:var(--down);background:var(--down-bg)}
+  .tag.pos{color:var(--up);background:var(--up-bg)}
+
+  .steps{margin-top:20px;display:flex;flex-direction:column;gap:10px}
+  .step{
+    display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:14px;
+    padding:13px 14px;border:1px solid var(--line);border-radius:9px;background:var(--bg);
+  }
+  .step .num{
+    width:22px;height:22px;border-radius:50%;background:var(--accent-soft);color:var(--accent);
+    font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center;
+  }
+  .step .body .name{font-size:13px;font-weight:600;color:var(--ink)}
+  .step .body .calc{font-family:var(--mono);font-size:12.5px;color:var(--ink-soft);margin-top:3px}
+  .step .out{font-family:var(--mono);font-size:16px;font-weight:650;text-align:right;white-space:nowrap}
+  .step.final{border-color:var(--accent)}
+  .step .out.neg{color:var(--down)}
+  .step .out.pos{color:var(--up)}
+
+  .note{font-size:12px;color:var(--ink-soft);margin-top:16px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="masthead">
+    <div class="eyebrow">RMS · Risk Management</div>
+    <h1>Peak Margin Calculator</h1>
+    <p>Peak → Exchange Utilization → Ignored Peak → Final Peak → Available Balance</p>
+  </div>
+
+  <div class="pipeline" id="pipeline"></div>
+
+  <div class="panel">
+    <h2>Inputs</h2>
+    <div class="grid">
+      <div class="field">
+        <label for="receivable">Receivable</label>
+        <input id="receivable" type="number" step="0.01" value="2216">
+      </div>
+      <div class="field">
+        <label for="peak">Peak</label>
+        <input id="peak" type="number" step="0.01" value="4433.8">
+      </div>
+      <div class="field">
+        <label for="exchUtilize">Exchange Utilization</label>
+        <input id="exchUtilize" type="number" step="0.01" value="443.4">
+      </div>
+      <div class="field">
+        <label for="qty">Quantity (base)</label>
+        <input id="qty" type="number" step="0.01" value="1108">
+        <div class="hint">shares / lots used in the ignored-peak calc</div>
+      </div>
+      <div class="field">
+        <label for="peakPct">Peak %</label>
+        <input id="peakPct" type="number" step="0.01" value="20">
+      </div>
+      <div class="field">
+        <label for="multiplier">Multiplier</label>
+        <input id="multiplier" type="number" step="0.01" value="2">
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn-primary" id="calcBtn">Calculate</button>
+      <button class="btn-ghost" id="resetBtn" type="button">Reset to defaults</button>
+      <button class="btn-ghost" id="clearBtn" type="button">Clear</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Result</h2>
+    <div class="result-row">
+      <div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-bottom:4px">Available balance</div>
+        <div class="big" id="availBig">0</div>
+      </div>
+      <div class="tag" id="availTag">—</div>
+    </div>
+
+    <div class="steps" id="steps"></div>
+  </div>
+
+  <p class="note">Formula chain: Peak after exchange utilization = Peak − Exchange Utilization. Ignored peak = Multiplier × Quantity × Peak% ÷ 100. Final peak = (Peak − Exchange Utilization) − Ignored peak. Available balance = Receivable − Final peak.</p>
+
+</div>
+
+<script>
+const ids=['receivable','peak','exchUtilize','qty','peakPct','multiplier'];
+const defaults={
+  receivable:2216, peak:4433.8, exchUtilize:443.4,
+  qty:1108, peakPct:20, multiplier:2
+};
+
+function val(id){ return Number(document.getElementById(id).value) || 0; }
+function fmt(n){ return Number(n).toLocaleString('en-IN',{maximumFractionDigits:2}); }
+
+function calculate(){
+  const receivable = val('receivable');
+  const peak = val('peak');
+  const exchUtilize = val('exchUtilize');
+  const qty = val('qty');
+  const peakPct = val('peakPct');
+  const multiplier = val('multiplier');
+
+  const peakAfterExch = peak - exchUtilize;
+  const ignoredPeak = multiplier * qty * peakPct / 100;
+  const finalPeak = peakAfterExch - ignoredPeak;
+  const available = receivable - finalPeak;
+  const isNeg = available < 0;
+
+  document.getElementById('pipeline').innerHTML = `
+    <div class="pstep"><div class="plabel">Peak</div><div class="pvalue">${fmt(peak)}</div></div>
+    <div class="pstep"><div class="plabel">Exchange utilization</div><div class="pvalue">${fmt(exchUtilize)}</div></div>
+    <div class="pstep"><div class="plabel">Ignored peak</div><div class="pvalue">${fmt(ignoredPeak)}</div></div>
+    <div class="pstep result"><div class="plabel">Final peak</div><div class="pvalue">${fmt(finalPeak)}</div></div>
+    <div class="pstep final result"><div class="plabel">Available balance</div><div class="pvalue ${isNeg?'neg':'pos'}">${fmt(available)}</div></div>
+  `;
+
+  document.getElementById('availBig').textContent = fmt(available);
+  document.getElementById('availBig').className = 'big ' + (isNeg?'neg':'pos');
+  const tag = document.getElementById('availTag');
+  tag.textContent = isNeg ? 'Shortfall' : 'Surplus';
+  tag.className = 'tag ' + (isNeg?'neg':'pos');
+
+  document.getElementById('steps').innerHTML = `
+    <div class="step">
+      <div class="num">1</div>
+      <div class="body">
+        <div class="name">Peak after exchange utilization</div>
+        <div class="calc">Peak − Exchange utilization&nbsp; =&nbsp; ${fmt(peak)} − ${fmt(exchUtilize)}</div>
+      </div>
+      <div class="out">${fmt(peakAfterExch)}</div>
+    </div>
+    <div class="step">
+      <div class="num">2</div>
+      <div class="body">
+        <div class="name">Ignored peak</div>
+        <div class="calc">Multiplier × Quantity × Peak%÷100&nbsp; =&nbsp; ${fmt(multiplier)} × ${fmt(qty)} × ${fmt(peakPct)}÷100</div>
+      </div>
+      <div class="out">${fmt(ignoredPeak)}</div>
+    </div>
+    <div class="step">
+      <div class="num">3</div>
+      <div class="body">
+        <div class="name">Final peak</div>
+        <div class="calc">Step 1 − Step 2&nbsp; =&nbsp; ${fmt(peakAfterExch)} − ${fmt(ignoredPeak)}</div>
+      </div>
+      <div class="out">${fmt(finalPeak)}</div>
+    </div>
+    <div class="step final">
+      <div class="num">4</div>
+      <div class="body">
+        <div class="name">Available balance</div>
+        <div class="calc">Receivable − Final peak&nbsp; =&nbsp; ${fmt(receivable)} − ${fmt(finalPeak)}</div>
+      </div>
+      <div class="out ${isNeg?'neg':'pos'}">${fmt(available)}</div>
+    </div>
+  `;
+}
+
+function resetToDefaults(){
+  ids.forEach(id=>{ document.getElementById(id).value = defaults[id]; });
+  calculate();
+}
+
+function clearAll(){
+  ids.forEach(id=>{ document.getElementById(id).value = ''; });
+  calculate();
+}
+
+ids.forEach(id=>{
+  document.getElementById(id).addEventListener('input', calculate);
+});
+document.getElementById('calcBtn').addEventListener('click', calculate);
+document.getElementById('resetBtn').addEventListener('click', resetToDefaults);
+document.getElementById('clearBtn').addEventListener('click', clearAll);
+
+calculate();
+</script>
+</body>
+</html>
