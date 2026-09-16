@@ -43,14 +43,42 @@
 
         .window {
             width: 100% !important;
-            margin: 0 0 15px 0 !important;
+            margin: 0 0 12px 0 !important;
             background-color: transparent !important;
             box-shadow: none !important;
             border: none !important;
         }
 
         .title-bar {
-            padding: 8px 12px !important;
+            padding: 6px 10px !important;
+            font-size: 13px !important;
+            border-radius: 8px !important;
+        }
+
+        /* compact FO file checkboxes —
+           short labels (ICCL CM etc.) laid out
+           side by side instead of one per line */
+
+        #checkboxContainer {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 4px 14px !important;
+            padding: 8px !important;
+            max-height: none !important;
+        }
+
+        #checkboxContainer .checkbox-item {
+            flex: 0 0 auto;
+            margin-bottom: 2px !important;
+        }
+
+        #checkboxContainer .checkbox-item label {
+            font-size: 12px !important;
+        }
+
+        #checkboxContainer .checkbox-item input[type="checkbox"] {
+            width: 15px !important;
+            height: 15px !important;
         }
 
     </style>
@@ -474,7 +502,7 @@
 </div>
 
 
-<script src="POSscript.js"></script>
+<script src="POSscripts.js"></script>
 
 </body>
 </html>
