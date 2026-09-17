@@ -73,34 +73,55 @@
         }
 
         /*
-         * Tabs — flex instead of grid, and allowed
-         * to wrap onto a second row rather than being
-         * forced into 5 equal (and on a phone, too
-         * narrow) columns.
+         * Tabs — all 5 segments in a single row,
+         * sized down to fit a phone screen instead
+         * of wrapping onto a second line.
          */
 
         .tab-bar {
             display: flex !important;
-            flex-wrap: wrap !important;
-            gap: 4px !important;
+            flex-wrap: nowrap !important;
+            gap: 3px !important;
         }
 
         .tab {
-            flex: 1 1 30% !important;
+            flex: 1 1 0 !important;
             width: auto !important;
-            height: 34px !important;
-            font-size: 12px !important;
+            min-width: 0 !important;
+            height: 32px !important;
+            font-size: 10.5px !important;
+            padding: 0 2px !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
+
+        /*
+         * Client ID / expiry rows — label and input
+         * back on one line, side by side.
+         */
 
         .form-row {
             display: flex !important;
-            flex-direction: column !important;
-            gap: 3px !important;
-            margin-bottom: 10px !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 8px !important;
+            margin-bottom: 8px !important;
         }
 
         .form-row label {
+            flex: 0 0 100px !important;
+            width: 100px !important;
             margin: 0 !important;
+            font-size: 12px !important;
+        }
+
+        .form-row input,
+        .form-row select {
+            flex: 1 !important;
+            min-width: 0 !important;
+            height: 30px !important;
+            font-size: 12px !important;
         }
 
         /* compact FO file checkboxes —
@@ -141,9 +162,12 @@
 
     <style>
 
-        /* trigger strip left in the main card */
+        /* trigger strip left in the main card —
+           also the anchor point the popup opens
+           against */
 
         .manual-section {
+            position: relative;
             margin: 8px 0;
             padding: 5px 7px;
             border: 1px solid #c9c9c9;
@@ -179,33 +203,22 @@
             color: #555;
         }
 
-        /* popup: centered modal with a backdrop,
-           not anchored to a side */
-
-        .manual-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.4);
-            z-index: 999;
-        }
-
-        .manual-overlay.open {
-            display: block;
-        }
+        /* popup: opens directly under the Manual
+           Scrips row, on top of the form itself
+           (not a separate full-page modal) */
 
         .manual-drawer {
             display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: min(94vw, 480px);
-            max-height: 82vh;
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            max-height: 60vh;
             background: #fff;
+            border: 1px solid #c9c9c9;
             border-radius: 10px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
-            z-index: 1000;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+            z-index: 50;
             flex-direction: column;
             overflow: hidden;
         }
@@ -286,6 +299,7 @@
         .manual-row-foot {
             display: flex;
             justify-content: flex-end;
+            gap: 8px;
             margin-top: 6px;
         }
 
@@ -462,9 +476,9 @@
 
     <!-- =========================
          MANUAL SCRIP ENTRY
-         (trigger strip only —
-          the editor opens as a
-          centered popup)
+         (trigger strip only — clicking Open
+          drops a popup directly onto the form
+          below it, with a row ready to fill in)
     ========================== -->
 
     <div class="manual-section" id="manualSection">
@@ -479,55 +493,45 @@
             </span>
 
             <button type="button"
-                    onclick="openManualDrawer()">
+                    onclick="openManualPanel()">
                 Open
             </button>
 
         </div>
 
-    </div>
 
+        <!-- =========================
+             MANUAL SCRIP POPUP
+        ========================== -->
 
-    <!-- =========================
-         MANUAL SCRIP POPUP
-    ========================== -->
+        <div class="manual-drawer" id="manualDrawer">
 
-    <div class="manual-overlay"
-         id="manualOverlay"
-         onclick="closeManualDrawer()">
-    </div>
+            <div class="manual-drawer-head">
 
-    <div class="manual-drawer" id="manualDrawer">
+                <strong>
+                    Manual Scrips
+                </strong>
 
-        <div class="manual-drawer-head">
-
-            <strong>
-                Manual Scrips
-            </strong>
-
-            <button type="button"
-                    onclick="addManualRow()">
-                + Add Symbol
-            </button>
-
-            <button type="button"
-                    onclick="closeManualDrawer()">
-                Close
-            </button>
-
-        </div>
-
-        <div class="manual-drawer-body">
-
-            <div class="manual-notice"
-                 id="manualNotice"
-                 style="display:none;">
-
-                Manual mode ON — only the scrips below are written.
+                <button type="button"
+                        onclick="closeManualDrawer()">
+                    Close
+                </button>
 
             </div>
 
-            <div id="manualContainer">
+            <div class="manual-drawer-body">
+
+                <div class="manual-notice"
+                     id="manualNotice"
+                     style="display:none;">
+
+                    Manual mode ON — only the scrips below are written.
+
+                </div>
+
+                <div id="manualContainer">
+                </div>
+
             </div>
 
         </div>
