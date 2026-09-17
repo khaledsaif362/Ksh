@@ -35,10 +35,27 @@
             overflow: auto !important;
             height: auto !important;
             min-height: 100%;
+            width: 100% !important;
         }
 
+        /*
+         * Force the card to fit the actual screen
+         * regardless of how wide the surrounding page
+         * / iframe is set up. min() caps it at 480px
+         * on desktop but never exceeds 94% of the
+         * real viewport on a phone.
+         */
+
         .card {
-            max-width: 480px;
+            width: min(94vw, 480px) !important;
+            max-width: min(94vw, 480px) !important;
+            margin: 16px auto !important;
+            box-sizing: border-box !important;
+        }
+
+        .card * {
+            box-sizing: border-box !important;
+            max-width: 100%;
         }
 
         .window {
@@ -53,6 +70,37 @@
             padding: 6px 10px !important;
             font-size: 13px !important;
             border-radius: 8px !important;
+        }
+
+        /*
+         * Tabs — flex instead of grid, and allowed
+         * to wrap onto a second row rather than being
+         * forced into 5 equal (and on a phone, too
+         * narrow) columns.
+         */
+
+        .tab-bar {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 4px !important;
+        }
+
+        .tab {
+            flex: 1 1 30% !important;
+            width: auto !important;
+            height: 34px !important;
+            font-size: 12px !important;
+        }
+
+        .form-row {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 3px !important;
+            margin-bottom: 10px !important;
+        }
+
+        .form-row label {
+            margin: 0 !important;
         }
 
         /* compact FO file checkboxes —
@@ -131,24 +179,35 @@
             color: #555;
         }
 
-        /* side panel: anchored to the right edge,
-           in the open margin next to the centered card.
-           No overlay/backdrop — the rest of the page
-           stays usable. */
+        /* popup: centered modal with a backdrop,
+           not anchored to a side */
+
+        .manual-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 999;
+        }
+
+        .manual-overlay.open {
+            display: block;
+        }
 
         .manual-drawer {
             display: none;
             position: fixed;
-            top: 0;
-            right: 0;
-            height: 100%;
-            width: 360px;
-            max-width: 92vw;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: min(94vw, 480px);
+            max-height: 82vh;
             background: #fff;
-            border-left: 1px solid #c9c9c9;
-            box-shadow: -3px 0 10px rgba(0,0,0,0.12);
+            border-radius: 10px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
             z-index: 1000;
             flex-direction: column;
+            overflow: hidden;
         }
 
         .manual-drawer.open {
@@ -404,10 +463,8 @@
     <!-- =========================
          MANUAL SCRIP ENTRY
          (trigger strip only —
-          the editor opens in a
-          side panel that sits in
-          the open margin next to
-          the card)
+          the editor opens as a
+          centered popup)
     ========================== -->
 
     <div class="manual-section" id="manualSection">
@@ -432,8 +489,13 @@
 
 
     <!-- =========================
-         MANUAL SCRIP SIDE PANEL
+         MANUAL SCRIP POPUP
     ========================== -->
+
+    <div class="manual-overlay"
+         id="manualOverlay"
+         onclick="closeManualDrawer()">
+    </div>
 
     <div class="manual-drawer" id="manualDrawer">
 
