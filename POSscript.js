@@ -144,6 +144,71 @@ const instrumentTypes = {
 let manualRowSeq = 0;
 
 
+/*
+ * Which top-level mode the form is in — set explicitly
+ * by the Sample Positions / Manual Entry toggle at the
+ * top of the form, rather than being silently inferred
+ * from whether a symbol has been typed.
+ */
+
+let currentMode = "sample";
+
+
+/* =========================================================
+   SET MODE (Sample Positions / Manual Entry)
+========================================================= */
+
+function setMode(mode) {
+
+    currentMode = mode;
+
+
+    document
+        .querySelectorAll(".mode-btn")
+        .forEach(btn => {
+
+            btn.classList.toggle(
+                "active",
+                btn.dataset.mode === mode
+            );
+
+        });
+
+
+    const manualSection =
+        document.getElementById("manualSection");
+
+
+    if (manualSection) {
+
+        manualSection.style.display =
+            mode === "manual" ? "block" : "none";
+
+    }
+
+
+    if (mode === "manual") {
+
+        openManualPanel();
+
+    }
+
+    else {
+
+        clearManualRows();
+
+        closeManualDrawer();
+
+    }
+
+
+    setSegmentVisibility(
+        document.getElementById("positionType").value
+    );
+
+}
+
+
 /* =========================================================
    ADD ONE MANUAL SCRIP ROW
 ========================================================= */
@@ -498,7 +563,7 @@ function refreshManualNotice() {
 
 
     const manualOn =
-        getManualEntries().length > 0;
+        currentMode === "manual";
 
 
     notice.style.display =
@@ -523,7 +588,7 @@ function refreshManualNotice() {
 function setSegmentVisibility(type) {
 
     const manualOn =
-        getManualEntries().length > 0;
+        currentMode === "manual";
 
 
     const commonExpiry =
@@ -903,12 +968,38 @@ function loadFiles() {
 
     /*
      * Manual scrips are segment specific,
-     * so they are cleared when the tab changes.
+     * so they are cleared when the tab changes,
+     * and the mode toggle resets back to Sample.
      */
 
     clearManualRows();
 
     closeManualDrawer();
+
+    currentMode = "sample";
+
+
+    document
+        .querySelectorAll(".mode-btn")
+        .forEach(btn => {
+
+            btn.classList.toggle(
+                "active",
+                btn.dataset.mode === "sample"
+            );
+
+        });
+
+
+    const manualSectionEl =
+        document.getElementById("manualSection");
+
+
+    if (manualSectionEl) {
+
+        manualSectionEl.style.display = "none";
+
+    }
 
 
     /* =====================================================
@@ -1278,14 +1369,38 @@ function generateSegment(
        the built-in template positions are skipped.
     ===================================================== */
 
+    /* =====================================================
+       MANUAL MODE
+
+       Driven by the Sample Positions / Manual Entry
+       toggle at the top of the form. If Manual Entry is
+       selected, ONLY the scrips entered in the popup are
+       written to the file — the built-in template
+       positions are skipped entirely.
+    ===================================================== */
+
     const manualActive =
-        getManualEntries().length > 0;
+        currentMode === "manual";
 
 
     let manualRows = null;
 
 
     if (manualActive) {
+
+        if (getManualEntries().length === 0) {
+
+            alert(
+                "Manual Entry is selected but no scrip " +
+                "has been added yet. Open Manual Scrips " +
+                "and add at least one, or switch back to " +
+                "Sample Positions."
+            );
+
+            return;
+
+        }
+
 
         manualRows =
             buildManualRows(
@@ -1972,7 +2087,7 @@ function generate() {
        FO VALIDATION
     ===================================================== */
 
-    if (type === "FO" && getManualEntries().length === 0) {
+    if (type === "FO" && currentMode !== "manual") {
 
         if (!nseExpiry) {
 
