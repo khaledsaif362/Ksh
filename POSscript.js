@@ -1,6 +1,13 @@
 /* =========================================================
-   POSITION FILE NAMES
-========================================================= */
+   POSITION FILES - COMPLETE POSscript.js
+   ========================================================= */
+
+"use strict";
+
+
+/* =========================================================
+   FILE NAMES
+   ========================================================= */
 
 const fileNames = {
 
@@ -31,83 +38,30 @@ const fileNames = {
 
 
 /* =========================================================
-   SHORT CHECKBOX LABEL
-
-   The FO filenames are long
-   ("Position_ICCL_FO_0_CM_6538_2026"), which pushes the
-   checkbox list wide. This pulls out just the exchange
-   (ICCL / NCL) and segment (CM / TM) for display, while
-   the checkbox's value/id still carries the full filename
-   used when generating the download.
-========================================================= */
-
-function shortFileLabel(name) {
-
-    const match =
-        name.match(/^Position_([A-Z]+)_FO_0_(CM|TM)_/);
-
-
-    if (match) {
-
-        return match[1] + " " + match[2];
-
-    }
-
-
-    return name;
-
-}
-
-
-/* =========================================================
    STRIKE STEPS
-========================================================= */
+   ========================================================= */
 
 const strikeSteps = {
 
-    /* =========================
-       NSE / BSE
-    ========================== */
-
     NIFTY: 50,
-
     SENSEX: 100,
-
     BANKEX: 100,
-
     TCS: 20,
 
-
-    /* =========================
-       MCX
-    ========================== */
-
     CRUDEOIL: 100,
-
     NATURALGAS: 5,
-
     COPPER: 10,
-
     SILVERM: 500,
-
     GOLD: 1000,
-
     GOLDM: 100,
-
     SILVER: 500
 
 };
 
 
 /* =========================================================
-   MANUAL SCRIP ENTRY
-========================================================= */
-
-/*
- * Instrument type codes available per segment.
- * Codes ending with "O" are treated as options
- * (strike + CE/PE), everything else as futures.
- */
+   INSTRUMENT TYPES
+   ========================================================= */
 
 const instrumentTypes = {
 
@@ -143,51 +97,357 @@ const instrumentTypes = {
 
 let manualRowSeq = 0;
 
-
-/*
- * Which top-level mode the form is in — set explicitly
- * by the Sample Positions / Manual Entry toggle at the
- * top of the form, rather than being silently inferred
- * from whether a symbol has been typed.
- */
-
 let currentMode = "sample";
 
 
 /* =========================================================
-   SET MODE (Sample Positions / Manual Entry)
-========================================================= */
+   SHORT FILE LABEL
+   ========================================================= */
+
+function shortFileLabel(name) {
+
+    const match =
+        name.match(
+            /^Position_([A-Z]+)_FO_0_(CM|TM)_/
+        );
+
+    if (match) {
+
+        return match[1] + " " + match[2];
+
+    }
+
+    return name;
+
+}
+
+
+/* =========================================================
+   HELPER
+   ========================================================= */
+
+function el(id) {
+
+    return document.getElementById(id);
+
+}
+
+
+/* =========================================================
+   CREATE MODE RADIO BUTTONS
+   =========================================================
+
+   This is important.
+
+   Even if old HTML contains:
+       .mode-toggle
+       .mode-btn
+
+   we replace it with proper radio buttons.
+
+   ========================================================= */
+
+function createModeControls() {
+
+    let existing =
+        document.getElementById("modeToggle");
+
+    if (!existing) {
+
+        return;
+
+    }
+
+
+    existing.innerHTML = `
+
+        <div class="position-mode-title">
+            Position Mode
+        </div>
+
+        <label class="position-radio">
+
+            <input
+                type="radio"
+                name="positionMode"
+                id="modeSample"
+                value="sample"
+                checked>
+
+            <span>Sample Positions</span>
+
+        </label>
+
+        <label class="position-radio">
+
+            <input
+                type="radio"
+                name="positionMode"
+                id="modeManual"
+                value="manual">
+
+            <span>Manual Entry</span>
+
+        </label>
+
+    `;
+
+
+    existing.style.display = "flex";
+
+    existing.style.alignItems = "center";
+
+    existing.style.gap = "14px";
+
+    existing.style.margin = "8px 0 12px";
+
+
+    const styleId =
+        "positionModeRuntimeStyle";
+
+
+    if (!document.getElementById(styleId)) {
+
+        const style =
+            document.createElement("style");
+
+        style.id = styleId;
+
+        style.textContent = `
+
+            #modeToggle {
+                padding: 7px 10px;
+                border: 1px solid #d5dce5;
+                border-radius: 8px;
+                background: #f8fafc;
+                flex-wrap: wrap;
+            }
+
+            .position-mode-title {
+                font-size: 12px;
+                font-weight: 700;
+                color: #183b63;
+                margin-right: 4px;
+            }
+
+            .position-radio {
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                cursor: pointer;
+                font-size: 12px;
+                font-weight: 600;
+                color: #333;
+                white-space: nowrap;
+            }
+
+            .position-radio input {
+                width: 16px !important;
+                height: 16px !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                cursor: pointer;
+            }
+
+            #manualSection {
+                display: none;
+            }
+
+            #manualDrawer {
+                display: none;
+            }
+
+            #manualDrawer.open {
+                display: flex;
+            }
+
+            .expiry-disabled {
+                opacity: 0.5 !important;
+            }
+
+            .expiry-disabled input,
+            .expiry-disabled select {
+                background: #eeeeee !important;
+                color: #888 !important;
+                cursor: not-allowed !important;
+            }
+
+            .manual-row {
+                border: 1px solid #d6dce4;
+                border-radius: 8px;
+                padding: 10px;
+                margin-bottom: 10px;
+                background: #fafcff;
+            }
+
+            .manual-grid {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .manual-field {
+                display: flex;
+                flex-direction: column;
+                flex: 1 1 100px;
+                min-width: 90px;
+            }
+
+            .manual-field label {
+                font-size: 10px;
+                color: #555;
+                margin-bottom: 3px;
+                font-weight: 600;
+            }
+
+            .manual-field input,
+            .manual-field select {
+                width: 100% !important;
+                height: 30px !important;
+                font-size: 12px !important;
+                padding: 3px 6px !important;
+                margin: 0 !important;
+                box-sizing: border-box !important;
+            }
+
+            .manual-foot {
+                display: flex;
+                justify-content: flex-end;
+                gap: 7px;
+                margin-top: 8px;
+            }
+
+            .manual-foot button {
+                width: auto !important;
+                height: auto !important;
+                padding: 5px 10px !important;
+                font-size: 11px !important;
+            }
+
+            .manual-drawer {
+                position: absolute;
+                inset: 0;
+                z-index: 100;
+                background: white;
+                border-radius: 14px;
+                box-shadow: 0 8px 30px rgba(0,0,0,.28);
+                flex-direction: column;
+                overflow: hidden;
+            }
+
+            .manual-drawer-head {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 10px 12px;
+                border-bottom: 1px solid #ddd;
+            }
+
+            .manual-drawer-head strong {
+                flex: 1;
+                font-size: 14px;
+            }
+
+            .manual-drawer-body {
+                flex: 1;
+                overflow-y: auto;
+                padding: 10px 12px;
+            }
+
+            .manual-notice {
+                font-size: 11px;
+                color: #805000;
+                background: #fff5df;
+                border: 1px solid #efd29b;
+                border-radius: 5px;
+                padding: 6px 8px;
+                margin-bottom: 10px;
+            }
+
+            .manual-section {
+                display: none;
+            }
+
+        `;
+
+        document.head.appendChild(style);
+
+    }
+
+
+    document
+        .querySelectorAll(
+            'input[name="positionMode"]'
+        )
+        .forEach(radio => {
+
+            radio.addEventListener(
+                "change",
+                function () {
+
+                    setMode(this.value);
+
+                }
+            );
+
+        });
+
+}
+
+
+/* =========================================================
+   SET MODE
+   ========================================================= */
 
 function setMode(mode) {
 
     currentMode = mode;
 
 
-    document
-        .querySelectorAll(".mode-btn")
-        .forEach(btn => {
+    const sample =
+        el("modeSample");
 
-            btn.classList.toggle(
-                "active",
-                btn.dataset.mode === mode
-            );
+    const manual =
+        el("modeManual");
 
-        });
+
+    if (sample) {
+
+        sample.checked =
+            mode === "sample";
+
+    }
+
+
+    if (manual) {
+
+        manual.checked =
+            mode === "manual";
+
+    }
 
 
     const manualSection =
-        document.getElementById("manualSection");
+        el("manualSection");
 
 
     if (manualSection) {
 
         manualSection.style.display =
-            mode === "manual" ? "block" : "none";
+            mode === "manual"
+                ? "block"
+                : "none";
 
     }
 
 
     if (mode === "manual") {
+
+        clearManualRows();
+
+        setSegmentVisibility(
+            el("positionType").value
+        );
 
         openManualPanel();
 
@@ -199,214 +459,33 @@ function setMode(mode) {
 
         closeManualDrawer();
 
+        setSegmentVisibility(
+            el("positionType").value
+        );
+
     }
 
-
-    setSegmentVisibility(
-        document.getElementById("positionType").value
-    );
-
 }
 
 
 /* =========================================================
-   ADD ONE MANUAL SCRIP ROW
-========================================================= */
+   OPEN MANUAL PANEL
+   ========================================================= */
 
-function addManualRow() {
+function openManualPanel() {
 
-    const type =
-        document.getElementById("positionType").value;
-
-
-    const container =
-        document.getElementById("manualContainer");
-
-
-    const id =
-        ++manualRowSeq;
-
-
-    const options =
-        (instrumentTypes[type] || [])
-            .map(
-                ([code, label]) =>
-                    `<option value="${code}">${code} — ${label}</option>`
-            )
-            .join("");
-
-
-    const row =
-        document.createElement("div");
-
-
-    row.className = "manual-row";
-
-    row.id = "manualRow_" + id;
-
-
-    row.innerHTML = `
-
-        <div class="manual-grid">
-
-            <div class="manual-field">
-                <label>Symbol</label>
-                <input type="text"
-                       class="m-symbol"
-                       placeholder="e.g. RELIANCE"
-                       oninput="this.value=this.value.toUpperCase(); refreshManualNotice();">
-            </div>
-
-            <div class="manual-field">
-                <label>Instrument</label>
-                <select class="m-inst"
-                        onchange="syncManualRow(${id})">
-                    ${options}
-                </select>
-            </div>
-
-            <div class="manual-field">
-                <label>Expiry</label>
-                <input type="date" class="m-expiry">
-            </div>
-
-            <div class="manual-field">
-                <label>CE / PE</label>
-                <select class="m-opt" disabled>
-                    <option value="CE">CE</option>
-                    <option value="PE">PE</option>
-                </select>
-            </div>
-
-            <div class="manual-field">
-                <label>Strike</label>
-                <input type="number" class="m-strike" step="any" disabled>
-            </div>
-
-            <div class="manual-field">
-                <label>Qty (Lot Size)</label>
-                <input type="number" class="m-lot" min="1" step="any" value="1">
-            </div>
-
-            <div class="manual-field">
-                <label>Price</label>
-                <input type="number" class="m-price" step="any" value="0">
-            </div>
-
-        </div>
-
-        <div class="manual-row-foot">
-            <button type="button"
-                    onclick="addManualRow()">
-                + Add Symbol
-            </button>
-            <button type="button"
-                    onclick="removeManualRow(${id})">
-                Remove
-            </button>
-        </div>
-
-    `;
-
-
-    container.appendChild(row);
-
-
-    openManualDrawer();
-
-
-    syncManualRow(id);
-
-    refreshManualNotice();
-
-}
-
-
-/* =========================================================
-   ENABLE / DISABLE OPTION FIELDS
-========================================================= */
-
-function syncManualRow(id) {
-
-    const row =
-        document.getElementById("manualRow_" + id);
-
-
-    if (!row) {
+    if (currentMode !== "manual") {
 
         return;
 
     }
 
 
-    const inst =
-        row.querySelector(".m-inst").value;
-
-
-    const isOption =
-        inst.endsWith("O");
-
-
-    row.querySelector(".m-opt").disabled = !isOption;
-
-    row.querySelector(".m-strike").disabled = !isOption;
-
-}
-
-
-/* =========================================================
-   REMOVE MANUAL SCRIP ROW
-========================================================= */
-
-function removeManualRow(id) {
-
-    const row =
-        document.getElementById("manualRow_" + id);
-
-
-    if (row) {
-
-        row.remove();
-
-    }
-
-
-    refreshManualNotice();
-
-}
-
-
-/* =========================================================
-   CLEAR ALL MANUAL ROWS
-========================================================= */
-
-function clearManualRows() {
-
-    document.getElementById("manualContainer").innerHTML = "";
-
-    refreshManualNotice();
-
-}
-
-
-/* =========================================================
-   OPEN / CLOSE THE MANUAL SCRIP POPUP
-========================================================= */
-
-/* =========================================================
-   OPEN / CLOSE THE MANUAL SCRIP POPUP
-========================================================= */
-
-/*
- * Called from the trigger button. If there's nothing
- * entered yet, this adds a row straight away so the
- * person doesn't have to click Open and then
- * + Add Symbol separately.
- */
-
-function openManualPanel() {
-
-    if (document.querySelectorAll(".manual-row").length === 0) {
+    if (
+        document.querySelectorAll(
+            ".manual-row"
+        ).length === 0
+    ) {
 
         addManualRow();
 
@@ -421,59 +500,399 @@ function openManualPanel() {
 }
 
 
+/* =========================================================
+   OPEN DRAWER
+   ========================================================= */
+
 function openManualDrawer() {
 
-    document
-        .getElementById("manualDrawer")
-        .classList.add("open");
+    const drawer =
+        el("manualDrawer");
 
-}
-
-
-function closeManualDrawer() {
-
-    document
-        .getElementById("manualDrawer")
-        .classList.remove("open");
-
-}
-
-
-/* =========================================================
-   UPDATE TRIGGER STRIP COUNT
-========================================================= */
-
-function refreshManualCount() {
-
-    const el =
-        document.getElementById("manualCount");
-
-
-    if (!el) {
+    if (!drawer) {
 
         return;
 
     }
 
 
-    const n =
-        getManualEntries().length;
-
-
-    el.textContent =
-        n ? n + " added" : "";
+    drawer.classList.add("open");
 
 }
 
 
 /* =========================================================
-   READ MANUAL ROWS
-========================================================= */
+   CLOSE DRAWER
+   ========================================================= */
+
+function closeManualDrawer() {
+
+    const drawer =
+        el("manualDrawer");
+
+    if (!drawer) {
+
+        return;
+
+    }
+
+
+    drawer.classList.remove("open");
+
+}
+
+
+/* =========================================================
+   DONE MANUAL
+   ========================================================= */
+
+function doneManualEntry() {
+
+    const entries =
+        getManualEntries();
+
+
+    if (!entries.length) {
+
+        alert(
+            "Please add at least one manual scrip."
+        );
+
+        return;
+
+    }
+
+
+    closeManualDrawer();
+
+}
+
+
+/* =========================================================
+   ADD MANUAL ROW
+   ========================================================= */
+
+function addManualRow() {
+
+    const type =
+        el("positionType").value;
+
+
+    const container =
+        el("manualContainer");
+
+
+    if (!container) {
+
+        return;
+
+    }
+
+
+    const id =
+        ++manualRowSeq;
+
+
+    const options =
+        (instrumentTypes[type] || [])
+            .map(
+                item => {
+
+                    return `
+                        <option value="${item[0]}">
+                            ${item[0]} — ${item[1]}
+                        </option>
+                    `;
+
+                }
+            )
+            .join("");
+
+
+    const row =
+        document.createElement("div");
+
+
+    row.className =
+        "manual-row";
+
+
+    row.id =
+        "manualRow_" + id;
+
+
+    row.innerHTML = `
+
+        <div class="manual-grid">
+
+            <div class="manual-field">
+
+                <label>Symbol</label>
+
+                <input
+                    type="text"
+                    class="m-symbol"
+                    placeholder="e.g. RELIANCE">
+
+            </div>
+
+
+            <div class="manual-field">
+
+                <label>Instrument</label>
+
+                <select class="m-inst">
+
+                    ${options}
+
+                </select>
+
+            </div>
+
+
+            <div class="manual-field">
+
+                <label>Expiry</label>
+
+                <input
+                    type="date"
+                    class="m-expiry">
+
+            </div>
+
+
+            <div class="manual-field">
+
+                <label>CE / PE</label>
+
+                <select
+                    class="m-opt"
+                    disabled>
+
+                    <option value="CE">
+                        CE
+                    </option>
+
+                    <option value="PE">
+                        PE
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="manual-field">
+
+                <label>Strike</label>
+
+                <input
+                    type="number"
+                    class="m-strike"
+                    step="any"
+                    disabled>
+
+            </div>
+
+
+            <div class="manual-field">
+
+                <label>Qty / Lot Size</label>
+
+                <input
+                    type="number"
+                    class="m-lot"
+                    min="1"
+                    step="any"
+                    value="1">
+
+            </div>
+
+
+            <div class="manual-field">
+
+                <label>Price</label>
+
+                <input
+                    type="number"
+                    class="m-price"
+                    step="any"
+                    value="0">
+
+            </div>
+
+        </div>
+
+
+        <div class="manual-foot">
+
+            <button
+                type="button"
+                onclick="addManualRow()">
+
+                + Add Symbol
+
+            </button>
+
+
+            <button
+                type="button"
+                onclick="removeManualRow(${id})">
+
+                Remove
+
+            </button>
+
+        </div>
+
+    `;
+
+
+    container.appendChild(row);
+
+
+    const symbol =
+        row.querySelector(".m-symbol");
+
+
+    symbol.addEventListener(
+        "input",
+        function () {
+
+            this.value =
+                this.value.toUpperCase();
+
+        }
+    );
+
+
+    row
+        .querySelector(".m-inst")
+        .addEventListener(
+            "change",
+            function () {
+
+                syncManualRow(id);
+
+            }
+        );
+
+
+    syncManualRow(id);
+
+    openManualDrawer();
+
+}
+
+
+/* =========================================================
+   SYNC MANUAL ROW
+   ========================================================= */
+
+function syncManualRow(id) {
+
+    const row =
+        el("manualRow_" + id);
+
+
+    if (!row) {
+
+        return;
+
+    }
+
+
+    const inst =
+        row.querySelector(
+            ".m-inst"
+        ).value;
+
+
+    const isOption =
+        inst.endsWith("O");
+
+
+    const option =
+        row.querySelector(
+            ".m-opt"
+        );
+
+
+    const strike =
+        row.querySelector(
+            ".m-strike"
+        );
+
+
+    option.disabled =
+        !isOption;
+
+
+    strike.disabled =
+        !isOption;
+
+
+    if (!isOption) {
+
+        option.value = "CE";
+
+        strike.value = "";
+
+    }
+
+}
+
+
+/* =========================================================
+   REMOVE MANUAL ROW
+   ========================================================= */
+
+function removeManualRow(id) {
+
+    const row =
+        el("manualRow_" + id);
+
+
+    if (row) {
+
+        row.remove();
+
+    }
+
+}
+
+
+/* =========================================================
+   CLEAR MANUAL ROWS
+   ========================================================= */
+
+function clearManualRows() {
+
+    const container =
+        el("manualContainer");
+
+
+    if (container) {
+
+        container.innerHTML = "";
+
+    }
+
+}
+
+
+/* =========================================================
+   GET MANUAL ENTRIES
+   ========================================================= */
 
 function getManualEntries() {
 
     const rows =
-        [...document.querySelectorAll(".manual-row")];
+        [
+            ...document.querySelectorAll(
+                ".manual-row"
+            )
+        ];
 
 
     const entries = [];
@@ -482,7 +901,9 @@ function getManualEntries() {
     rows.forEach(row => {
 
         const symbol =
-            row.querySelector(".m-symbol")
+            row.querySelector(
+                ".m-symbol"
+            )
                 .value
                 .trim()
                 .toUpperCase();
@@ -496,7 +917,13 @@ function getManualEntries() {
 
 
         const inst =
-            row.querySelector(".m-inst").value;
+            row.querySelector(
+                ".m-inst"
+            ).value;
+
+
+        const isOption =
+            inst.endsWith("O");
 
 
         entries.push({
@@ -505,31 +932,38 @@ function getManualEntries() {
 
             inst: inst,
 
-            isOption: inst.endsWith("O"),
+            isOption: isOption,
 
-            expiry: row.querySelector(".m-expiry").value,
+            expiry:
+                row.querySelector(
+                    ".m-expiry"
+                ).value,
 
-            optType: row.querySelector(".m-opt").value,
+            optType:
+                row.querySelector(
+                    ".m-opt"
+                ).value,
 
-            strike: row.querySelector(".m-strike").value.trim(),
+            strike:
+                row.querySelector(
+                    ".m-strike"
+                ).value.trim(),
 
-            /*
-             * Strike step is picked up automatically from
-             * the known lookup table (strikeSteps). If the
-             * symbol isn't in that table, additional strikes
-             * are simply not generated for it.
-             */
-
-            step: strikeSteps[symbol] || 0,
+            step:
+                strikeSteps[symbol] || 0,
 
             lot:
                 parseFloat(
-                    row.querySelector(".m-lot").value
+                    row.querySelector(
+                        ".m-lot"
+                    ).value
                 ) || 0,
 
             price:
                 parseFloat(
-                    row.querySelector(".m-price").value
+                    row.querySelector(
+                        ".m-price"
+                    ).value
                 ) || 0
 
         });
@@ -543,1596 +977,30 @@ function getManualEntries() {
 
 
 /* =========================================================
-   MANUAL MODE NOTICE
-========================================================= */
-
-function refreshManualNotice() {
-
-    refreshManualCount();
-
-
-    const notice =
-        document.getElementById("manualNotice");
-
-
-    if (!notice) {
-
-        return;
-
-    }
-
-
-    const manualOn =
-        currentMode === "manual";
-
-
-    notice.style.display =
-        manualOn
-            ? "block"
-            : "none";
-
-
-    setSegmentVisibility(
-        document.getElementById("positionType").value
-    );
-
-}
-
-
-/* =========================================================
-   SHOW / HIDE SEGMENT FIELDS
-   Manual mode hides the template driven expiry inputs,
-   because every manual scrip carries its own expiry.
-========================================================= */
+   SEGMENT VISIBILITY
+   ========================================================= */
 
 function setSegmentVisibility(type) {
 
-    const manualOn =
+    const manual =
         currentMode === "manual";
 
 
     const commonExpiry =
-        document.getElementById("commonExpiryRow");
+        el("commonExpiryRow");
 
 
     const bseExpiry =
-        document.getElementById("sensexBankexExpiryRow");
+        el("sensexBankexExpiryRow");
 
 
-    const additionalStrike =
-        document.getElementById("additionalStrikeRow");
+    const additional =
+        el("additionalStrikeRow");
 
 
     const symbolExpiry =
-        document.getElementById("symbolExpiryContainer");
+        el("symbolExpiryContainer");
 
 
-    if (manualOn) {
-
-        commonExpiry.style.display = "none";
-
-        bseExpiry.style.display = "none";
-
-        symbolExpiry.style.display = "none";
-
-        additionalStrike.style.display = "flex";
-
-        return;
-
-    }
-
-
-    commonExpiry.style.display =
-        type === "FO" ? "flex" : "none";
-
-
-    bseExpiry.style.display =
-        type === "FO" ? "flex" : "none";
-
-
-    additionalStrike.style.display =
-        (type === "FO" || type === "MCX") ? "flex" : "none";
-
-
-    symbolExpiry.style.display =
-        type === "FO" ? "none" : "block";
-
-}
-
-
-/* =========================================================
-   BUILD CSV ROWS FROM MANUAL ENTRIES
-========================================================= */
-
-function buildManualRows(
-    type,
-    headerFields,
-    client1,
-    client2,
-    currentDate,
-    additionalStrikes
-) {
-
-    const entries =
-        getManualEntries();
-
-
-    /* =====================================================
-       BASE ROW
-       Every column that the user does not control
-       (Sgmt, Src, member ids, etc.) is copied from
-       the first template row of the segment.
-    ===================================================== */
-
-    const baseRow =
-        rawCSVs[type]
-            .trim()
-            .split("\n")[1]
-            .split(",");
-
-
-    const idx = {};
-
-    headerFields.forEach((h, i) => {
-
-        idx[h.trim()] = i;
-
-    });
-
-
-    const set = (cols, name, value) => {
-
-        if (idx[name] !== undefined) {
-
-            cols[idx[name]] = value;
-
-        }
-
-    };
-
-
-    const rows = [];
-
-
-    for (const e of entries) {
-
-        /* =================================================
-           VALIDATION
-        ================================================= */
-
-        if (!e.expiry) {
-
-            alert(
-                "Please select an expiry for " +
-                e.symbol +
-                "."
-            );
-
-            return null;
-
-        }
-
-
-        if (!e.lot || e.lot <= 0) {
-
-            alert(
-                "Please enter a valid lot size for " +
-                e.symbol +
-                "."
-            );
-
-            return null;
-
-        }
-
-
-        if (e.isOption && e.strike === "") {
-
-            alert(
-                "Please enter a strike price for " +
-                e.symbol +
-                "."
-            );
-
-            return null;
-
-        }
-
-
-        const expiry =
-            e.expiry.replaceAll("-", "");
-
-
-        const qty =
-            e.lot;
-
-
-        const val =
-            qty * e.price;
-
-
-        /* =================================================
-           STRIKE LIST
-           Original strike + additional strikes
-        ================================================= */
-
-        const strikes = [];
-
-
-        if (e.isOption) {
-
-            const base =
-                parseFloat(e.strike);
-
-
-            strikes.push(base);
-
-
-            if (e.step > 0 && additionalStrikes > 0) {
-
-                for (let i = 1; i <= additionalStrikes; i++) {
-
-                    strikes.push(
-                        base + (e.step * i)
-                    );
-
-                }
-
-            }
-
-        }
-
-        else {
-
-            strikes.push(null);
-
-        }
-
-
-        /* =================================================
-           BUILD ROWS
-        ================================================= */
-
-        strikes.forEach(strike => {
-
-            const makeRow = (clientId, isBuy) => {
-
-                const cols = [...baseRow];
-
-
-                set(cols, "ClntId", clientId);
-
-                set(cols, "FinInstrmTp", e.inst);
-
-                set(cols, "TckrSymb", e.symbol);
-
-                set(cols, "XpryDt", expiry);
-
-                set(cols, "FininstrmActlXpryDt", expiry);
-
-                set(cols, "RptgDt", currentDate);
-
-                set(cols, "BizDt", currentDate);
-
-                set(cols, "NewBrdLotQty", String(e.lot));
-
-
-                set(
-                    cols,
-                    "StrkPric",
-                    strike === null ? "" : String(strike)
-                );
-
-
-                set(
-                    cols,
-                    "OptnTp",
-                    e.isOption ? e.optType : ""
-                );
-
-
-                /* opening positions */
-
-                set(cols, "OpngLngQty", "0");
-
-                set(cols, "OpngLngVal", "0");
-
-                set(cols, "OpngShrtQty", "0");
-
-                set(cols, "OpngShrtVal", "0");
-
-
-                /* traded positions */
-
-                set(cols, "OpnBuyTradgQty", isBuy ? String(qty) : "0");
-
-                set(cols, "OpnBuyTradgVal", isBuy ? String(val) : "0");
-
-                set(cols, "OpnSellTradgQty", isBuy ? "0" : String(qty));
-
-                set(cols, "OpnSellTradgVal", isBuy ? "0" : String(val));
-
-
-                /* pre exercise */
-
-                set(cols, "PreExrcAssgndLngQty", "0");
-
-                set(cols, "PreExrcAssgndLngVal", "0");
-
-                set(cols, "PreExrcAssgndShrtQty", "0");
-
-                set(cols, "PreExrcAssgndShrtVal", "0");
-
-
-                set(cols, "ExrcdQty", "0");
-
-                set(cols, "AssgndQty", "0");
-
-
-                /* post exercise */
-
-                set(cols, "PstExrcAssgndLngQty", isBuy ? String(qty) : "0");
-
-                set(cols, "PstExrcAssgndLngVal", isBuy ? String(val) : "0");
-
-                set(cols, "PstExrcAssgndShrtQty", isBuy ? "0" : String(qty));
-
-                set(cols, "PstExrcAssgndShrtVal", isBuy ? "0" : String(val));
-
-
-                /* settlement */
-
-                set(cols, "SttlmPric", String(e.price));
-
-                set(cols, "PrmAmt", "0");
-
-                set(cols, "DalyMrkToMktSettlmVal", "0");
-
-                set(cols, "FutrsFnlSttlmVal", "0");
-
-                set(cols, "ExrcAssgndVal", "0");
-
-
-                return cols.join(",");
-
-            };
-
-
-            rows.push(
-                makeRow(client1, true)
-            );
-
-
-            if (client2) {
-
-                rows.push(
-                    makeRow(client2, false)
-                );
-
-            }
-
-        });
-
-    }
-
-
-    return rows;
-
-}
-
-
-/* =========================================================
-   LOAD FILES
-========================================================= */
-
-function loadFiles() {
-
-    const type =
-        document.getElementById("positionType").value;
-
-
-    const container =
-        document.getElementById("checkboxContainer");
-
-
-    const commonExpiry =
-        document.getElementById("commonExpiryRow");
-
-
-    const bseExpiry =
-        document.getElementById("sensexBankexExpiryRow");
-
-
-    const additionalStrike =
-        document.getElementById("additionalStrikeRow");
-
-
-    const symbolExpiry =
-        document.getElementById("symbolExpiryContainer");
-
-
-    /* =========================
-       RESET
-    ========================== */
-
-    commonExpiry.style.display = "none";
-
-    bseExpiry.style.display = "none";
-
-    additionalStrike.style.display = "none";
-
-    symbolExpiry.style.display = "none";
-
-    container.innerHTML = "";
-
-
-    /*
-     * Manual scrips are segment specific,
-     * so they are cleared when the tab changes,
-     * and the mode toggle resets back to Sample.
-     */
-
-    clearManualRows();
-
-    closeManualDrawer();
-
-    currentMode = "sample";
-
-
-    document
-        .querySelectorAll(".mode-btn")
-        .forEach(btn => {
-
-            btn.classList.toggle(
-                "active",
-                btn.dataset.mode === "sample"
-            );
-
-        });
-
-
-    const manualSectionEl =
-        document.getElementById("manualSection");
-
-
-    if (manualSectionEl) {
-
-        manualSectionEl.style.display = "none";
-
-    }
-
-
-    /* =====================================================
-       FO
-    ===================================================== */
-
-    if (type === "FO") {
-
-        container.style.display = "block";
-
-
-        container.innerHTML = `
-
-            <div class="checkbox-item">
-
-                <input
-                    type="checkbox"
-                    id="all"
-                    onclick="toggleAll()">
-
-                <label for="all">
-                    Select All
-                </label>
-
-            </div>
-
-        `;
-
-
-        fileNames.FO.forEach(name => {
-
-            container.innerHTML += `
-
-                <div class="checkbox-item">
-
-                    <input
-                        type="checkbox"
-                        class="f"
-                        id="${name}"
-                        value="${name}">
-
-                    <label for="${name}">
-                        ${shortFileLabel(name)}
-                    </label>
-
-                </div>
-
-            `;
-
-        });
-
-    }
-
-
-    /* =====================================================
-       MCX / CD / NCDEX / NSECOM
-    ===================================================== */
-
-    else if (
-        ["CD", "MCX", "NCDEX", "NSECOM"]
-            .includes(type)
-    ) {
-
-        container.style.display = "none";
-
-
-        buildExpiryInputs(type);
-
-    }
-
-
-    setSegmentVisibility(type);
-
-}
-
-
-/* =========================================================
-   SELECT / UNSELECT ALL FO FILES
-========================================================= */
-
-function toggleAll() {
-
-    const isChecked =
-        document.getElementById("all").checked;
-
-
-    document
-        .querySelectorAll(".f")
-        .forEach(cb => {
-
-            cb.checked = isChecked;
-
-        });
-
-}
-
-
-/* =========================================================
-   RAW CSV TEMPLATES
-========================================================= */
-
-const rawCSVs = {
-
-
-    /* =====================================================
-       FO
-    ===================================================== */
-
-    FO: `Sgmt,Src,RptgDt,BizDt,TradRegnOrgn,ClrMmbId,BrkrOrCtdnPtcptId,ClntTp,ClntId,FinInstrmTp,ISIN,TckrSymb,XpryDt,FininstrmActlXpryDt,StrkPric,OptnTp,NewBrdLotQty,OpngLngQty,OpngLngVal,OpngShrtQty,OpngShrtVal,OpnBuyTradgQty,OpnBuyTradgVal,OpnSellTradgQty,OpnSellTradgVal,PreExrcAssgndLngQty,PreExrcAssgndLngVal,PreExrcAssgndShrtQty,PreExrcAssgndShrtVal,ExrcdQty,AssgndQty,PstExrcAssgndLngQty,PstExrcAssgndLngVal,PstExrcAssgndShrtQty,PstExrcAssgndShrtVal,SttlmPric,RefRate,PrmAmt,DalyMrkToMktSettlmVal,FutrsFnlSttlmVal,ExrcAssgndVal,Rmks,Rsvd1,Rsvd2,Rsvd3,Rsvd4
-FO,NCL,20260627,20260627,1,6538,6538,C,A101,STF,,SBIN,20250625,20250625,,,750,0,0,0,0,750,75000,0,0,0,0,0,0,0,0,750,75000,0,0,1000,,0,-3420,0,0,,,,,
-FO,NCL,20260627,20260627,1,6538,6538,C,A101,IDF,,BANKNIFTY,20250625,20250625,,,30,0,0,0,0,30,7500,0,0,0,0,0,0,0,0,30,7500,0,0,60000,,0,41880,0,0,,,,,
-FO,NCL,20260627,20260627,1,6538,6538,C,A101,IDO,,NIFTY,20250625,20250625,25000,CE,65,0,0,0,0,65,7500,0,0,0,0,0,0,0,0,65,7500,0,0,25000,,0,0,0,0,,,,,
-FO,NCL,20260627,20260627,1,6538,6538,C,A101,STO,,TCS,20250625,20250625,3000,CE,225,0,0,0,0,225,63000,0,0,0,0,0,0,0,0,225,63000,0,0,3000,,0,0,0,0,,,,,
-FO,NCL,20260627,20260627,1,6538,6538,C,A101,IDF,,SENSEX,20250625,20250625,,,20,0,0,0,0,100,7430000,0,0,0,0,0,0,0,0,100,7430000,0,0,77500,,0,0,0,0,,,,,
-FO,NCL,20260627,20260627,1,6538,6538,C,A101,IDO,,SENSEX,20250625,20250625,78000,CE,20,0,0,0,0,100,1060447,0,0,0,0,0,0,0,0,100,1060447,0,0,1450,,0,0,0,0,,,,,
-FO,NCL,20260627,20260627,1,6538,6538,C,A101,IDO,,BANKEX,20250625,20250625,60000,PE,30,0,0,0,0,150,107400,0,0,0,0,0,0,0,0,150,107400,0,0,716,,0,0,0,0,,,,,
-FO,NCL,20260627,20260627,1,6538,6538,C,A11,STF,,SBIN,20250625,20250625,,,750,0,0,0,0,0,0,750,75000,0,0,0,0,0,0,0,0,750,75000,1000,,0,-3420,0,0,,,,,
-FO,NCL,20260627,20260627,1,6538,6538,C,A11,IDF,,BANKNIFTY,20250625,20250625,,,30,0,0,0,0,0,0,30,7500,0,0,0,0,0,0,0,0,30,7500,60000,,0,41880,0,0,,,,,
-FO,NCL,20260627,20260627,1,6538,6538,C,A11,IDO,,NIFTY,20250625,20250625,25000,CE,65,0,0,0,0,0,0,65,7500,0,0,0,0,0,0,0,0,65,7500,25000,,0,0,0,0,,,,,
-FO,NCL,20260627,20260627,1,6538,6538,C,A11,STO,,TCS,20250625,20250625,3000,CE,225,0,0,0,0,0,0,225,63000,0,0,0,0,0,0,0,0,225,63000,3000,,0,0,0,0,,,,,
-FO,NCL,20260627,20260627,1,6538,6538,C,A11,IDF,,SENSEX,20250625,20250625,,,20,0,0,0,0,0,0,100,7430000,0,0,0,0,0,0,0,0,100,7430000,77500,,0,0,0,0,,,,,
-FO,NCL,20260627,20260627,1,6538,6538,C,A11,IDO,,SENSEX,20250625,20250625,78000,CE,20,0,0,0,0,0,0,100,1060447,0,0,0,0,0,0,0,0,100,1060447,1450,,0,0,0,0,,,,,
-FO,NCL,20260627,20260627,1,6538,6538,C,A11,IDO,,BANKEX,20250625,20250625,60000,PE,30,0,0,0,0,0,0,150,107400,0,0,0,0,0,0,0,0,150,107400,716,,0,0,0,0,,,,,
-`,
-
-
-
-    /* =====================================================
-       MCX
-    ===================================================== */
-
-    MCX: `Sgmt,Src,RptgDt,BizDt,TradRegnOrgn,ClrMmbId,BrkrOrCtdnPtcptId,ClntTp,ClntId,FinInstrmTp,ISIN,TckrSymb,XpryDt,FininstrmActlXpryDt,StrkPric,OptnTp,NewBrdLotQty,OpngLngQty,OpngLngVal,OpngShrtQty,OpngShrtVal,OpnBuyTradgQty,OpnBuyTradgVal,OpnSellTradgQty,OpnSellTradgVal,PreExrcAssgndLngQty,PreExrcAssgndLngVal,PreExrcAssgndShrtQty,PreExrcAssgndShrtVal,ExrcdQty,AssgndQty,PstExrcAssgndLngQty,PstExrcAssgndLngVal,PstExrcAssgndShrtQty,PstExrcAssgndShrtVal,SttlmPric,RefRate,PrmAmt,DalyMrkToMktSettlmVal,FutrsFnlSttlmVal,ExrcAssgndVal,Rmks,Rsvd1,Rsvd2,Rsvd3,Rsvd4
-CO,MCXCCL,22-01-2026,22-01-2026,1,56645,56645,C,KS52,COF,,CRUDEOIL,30-06-2026,30-06-2026,,,1,0,0,0,0,1,654000,0,0,0,0,0,0,0,0,1,654000,0,0,6500,,0,0,,0,,,,,
-CO,MCXCCL,22-01-2026,22-01-2026,1,56645,56645,C,KS52,COF,,SILVERM,25-06-2026,25-06-2026,,,1,0,0,0,0,1,1180525,0,0,0,0,0,0,0,0,1,1180525,0,0,230000,,0,0,,0,,,,,
-CO,MCXCCL,22-01-2026,22-01-2026,1,56645,56645,C,KS52,FUO,,COPPER,23-06-2026,23-06-2026,1200,PE,1,0,0,0,0,1,15000,0,0,0,0,0,0,0,0,1,15000,0,0,6,,0,0,,0,,,,,
-CO,MCXCCL,26-06-2025,26-06-2025,1,56645,56645,C,KS52,FUO,,NATURALGAS,30-06-2026,30-06-2026,300,CE,1,0,0,0,0,1,20000,0,0,0,0,0,0,0,0,1,20000,1,0,10,,0,0,,0,,,,,
-CO,MCXCCL,22-01-2026,22-01-2026,1,56645,56645,C,KS53,COF,,CRUDEOIL,30-06-2026,30-06-2026,,,1,0,0,0,0,0,0,1,654000,0,0,0,0,0,0,0,0,1,654000,6500,,0,0,,0,,,,,
-CO,MCXCCL,22-01-2026,22-01-2026,1,56645,56645,C,KS53,COF,,SILVERM,25-06-2026,25-06-2026,,,1,0,0,0,0,0,0,1,1180525,0,0,0,0,0,0,0,0,1,1180525,230000,,0,0,,0,,,,,
-CO,MCXCCL,22-01-2026,22-01-2026,1,56645,56645,C,KS53,FUO,,COPPER,23-06-2026,23-06-2026,1200,PE,1,0,0,0,0,0,0,1,15000,0,0,0,0,0,0,0,0,1,15000,6,,0,0,,0,,,,,
-CO,MCXCCL,26-06-2025,26-06-2025,1,56645,56645,C,KS53,FUO,,NATURALGAS,30-06-2026,30-06-2026,300,CE,1,0,0,0,0,0,0,1,20000,0,0,0,0,0,0,0,0,1,20000,10,,0,0,,0,,,,,
-`,
-
-
-    /* =====================================================
-       CD
-    ===================================================== */
-
-    CD: `Sgmt,Src,RptgDt,BizDt,TradRegnOrgn,ClrMmbId,BrkrOrCtdnPtcptId,ClntTp,ClntId,FinInstrmTp,ISIN,TckrSymb,XpryDt,FininstrmActlXpryDt,StrkPric,OptnTp,NewBrdLotQty,OpngLngQty,OpngLngVal,OpngShrtQty,OpngShrtVal,OpnBuyTradgQty,OpnBuyTradgVal,OpnSellTradgQty,OpnSellTradgVal,PreExrcAssgndLngQty,PreExrcAssgndLngVal,PreExrcAssgndShrtQty,PreExrcAssgndShrtVal,ExrcdQty,AssgndQty,PstExrcAssgndLngQty,PstExrcAssgndLngVal,PstExrcAssgndShrtQty,PstExrcAssgndShrtVal,SttlmPric,RefRate,PrmAmt,DalyMrkToMktSettlmVal,FutrsFnlSttlmVal,ExrcAssgndVal,Rmks,Rsvd1,Rsvd2,Rsvd3,Rsvd4
-CD,NCL,09-05-2024,09-05-2024,1,M52040,90144,C,KS53,CDF,,GBPINR,12-06-2026,12-06-2026,,,1000,0,0,0,0,1,10000,0,0,0,0,0,0,0,0,1,10000,0,0,96,100.13,0,0,0,0,,,,,
-CD,NCL,09-05-2024,09-05-2024,1,M52040,90144,C,KS53,CDO,,USDINR,12-06-2026,12-06-2026,94,CE,1000,0,0,0,0,1,1200,0,0,0,0,0,0,0,0,1,1200,0,0,96,100.13,0,0,0,0,,,,,
-CD,NCL,09-05-2024,09-05-2024,1,M52040,90144,C,KS54,CDF,,GBPINR,12-06-2026,12-06-2026,,,1000,0,0,0,0,0,0,1,10000,0,0,0,0,0,0,0,0,1,10000,96,100.13,0,0,0,0,,,,,
-CD,NCL,09-05-2024,09-05-2024,1,M52040,90144,C,KS54,CDO,,USDINR,12-06-2026,12-06-2026,94,CE,1000,0,0,0,0,0,0,1,1200,0,0,0,0,0,0,0,0,1,1200,96,100.13,0,0,0,0,,,,,
-`,
-
-
-
-    /* =====================================================
-       NCDEX
-    ===================================================== */
-
-    NCDEX: `Sgmt,Src,RptgDt,BizDt,TradRegnOrgn,ClrMmbId,BrkrOrCtdnPtcptId,ClntTp,ClntId,FinInstrmTp,ISIN,TckrSymb,XpryDt,FininstrmActlXpryDt,StrkPric,OptnTp,NewBrdLotQty,OpngLngQty,OpngLngVal,OpngShrtQty,OpngShrtVal,OpnBuyTradgQty,OpnBuyTradgVal,OpnSellTradgQty,OpnSellTradgVal,PreExrcAssgndLngQty,PreExrcAssgndLngVal,PreExrcAssgndShrtQty,PreExrcAssgndShrtVal,ExrcdQty,AssgndQty,PstExrcAssgndLngQty,PstExrcAssgndLngVal,PstExrcAssgndShrtQty,PstExrcAssgndShrtVal,SttlmPric,RefRate,PrmAmt,DalyMrkToMktSettlmVal,FutrsFnlSttlmVal,ExrcAssgndVal,Rmks,Rsvd1,Rsvd2,Rsvd3,Rsvd4
-CO,NCCL,17-07-2026,17-07-2026,1,M51085,00094,C,KS52,COF,,COCUDAKL,20-08-2026,20-08-2026,0,,10,0,0,0,0,10,382100,0,0,0,0,0,0,0,0,10,382100,0,0,3805,,0,-1600,0,0,,,,,
-CO,NCCL,17-07-2026,17-07-2026,1,M51085,00094,C,KS52,COF,,DHANIYA,20-08-2026,20-08-2026,0,,5,0,0,0,0,10,1559400,0,0,0,0,0,0,0,0,10,1559400,0,0,15886,,0,29200,0,0,,,,,
-CO,NCCL,17-07-2026,17-07-2026,1,M51085,00094,C,KS53,COF,,COCUDAKL,20-08-2026,20-08-2026,0,,10,0,0,0,0,0,0,10,382100,0,0,0,0,0,0,0,0,10,382100,3805,,0,-1600,0,0,,,,,
-CO,NCCL,17-07-2026,17-07-2026,1,M51085,00094,C,KS53,COF,,DHANIYA,20-08-2026,20-08-2026,0,,5,10,0,0,0,0,0,10,1559400,0,0,0,0,0,0,0,0,10,1559400,15886,,0,29200,0,0,,,,,
-
-`,
-
-
-    /* =====================================================
-       NSE COM
-    ===================================================== */
-
-    NSECOM: `Sgmt,Src,RptgDt,BizDt,TradRegnOrgn,ClrMmbId,BrkrOrCtdnPtcptId,ClntTp,ClntId,FinInstrmTp,ISIN,TckrSymb,XpryDt,FininstrmActlXpryDt,StrkPric,OptnTp,NewBrdLotQty,OpngLngQty,OpngLngVal,OpngShrtQty,OpngShrtVal,OpnBuyTradgQty,OpnBuyTradgVal,OpnSellTradgQty,OpnSellTradgVal,PreExrcAssgndLngQty,PreExrcAssgndLngVal,PreExrcAssgndShrtQty,PreExrcAssgndShrtVal,ExrcdQty,AssgndQty,PstExrcAssgndLngQty,PstExrcAssgndLngVal,PstExrcAssgndShrtQty,PstExrcAssgndShrtVal,SttlmPric,RefRate,PrmAmt,DalyMrkToMktSettlmVal,FutrsFnlSttlmVal,ExrcAssgndVal,Rmks,Rsvd1,Rsvd2,Rsvd3,Rsvd4
-CO,NCL,22-01-2026,22-01-2026,1,56645,56645,C,KS52,COF,,CRUDEOIL,30-06-2026,30-06-2026,,,1,0,0,0,0,1,654000,0,0,0,0,0,0,0,0,1,654000,0,0,6500,,0,0,,0,,,,,
-CO,NCL,22-01-2026,22-01-2026,1,56645,56645,C,KS52,COF,,SILVERM,25-06-2026,25-06-2026,,,1,0,0,0,0,1,1180525,0,0,0,0,0,0,0,0,1,1180525,0,0,230000,,0,0,,0,,,,,
-CO,NCL,22-01-2026,22-01-2026,1,56645,56645,C,KS52,FUO,,COPPER,23-06-2026,23-06-2026,1200,PE,1,0,0,0,0,1,15000,0,0,0,0,0,0,0,0,1,15000,0,0,6,,0,0,,0,,,,,
-CO,NCL,26-06-2025,26-06-2025,1,56645,56645,C,KS52,FUO,,NATURALGAS,30-06-2026,30-06-2026,300,CE,1,0,0,0,0,1,20000,0,0,0,0,0,0,0,0,1,20000,1,0,10,,0,0,,0,,,,,
-CO,NCL,22-01-2026,22-01-2026,1,56645,56645,C,KS53,COF,,CRUDEOIL,30-06-2026,30-06-2026,,,1,0,0,0,0,0,0,1,654000,0,0,0,0,0,0,0,0,1,654000,6500,,0,0,,0,,,,,
-CO,NCL,22-01-2026,22-01-2026,1,56645,56645,C,KS53,COF,,SILVERM,25-06-2026,25-06-2026,,,1,0,0,0,0,0,0,1,1180525,0,0,0,0,0,0,0,0,1,1180525,230000,,0,0,,0,,,,,
-CO,NCL,22-01-2026,22-01-2026,1,56645,56645,C,KS53,FUO,,COPPER,23-06-2026,23-06-2026,1200,PE,1,0,0,0,0,0,0,1,15000,0,0,0,0,0,0,0,0,1,15000,6,,0,0,,0,,,,,
-CO,NCL,26-06-2025,26-06-2025,1,56645,56645,C,KS53,FUO,,NATURALGAS,30-06-2026,30-06-2026,300,CE,1,0,0,0,0,0,0,1,20000,0,0,0,0,0,0,0,0,1,20000,10,,0,0,,0,,,,,
-`
-
-};
-
-
-/* =========================================================
-   CHANGE TAB
-========================================================= */
-
-function changeTab(type, btn) {
-
-    document.getElementById("positionType").value = type;
-
-
-    document
-        .querySelectorAll(".tab")
-        .forEach(t => {
-
-            t.classList.remove("active");
-
-        });
-
-
-    btn.classList.add("active");
-
-
-    loadFiles();
-
-}
-
-
-/* =========================================================
-   GENERATE SEGMENT
-========================================================= */
-
-function generateSegment(
-    type,
-    client1,
-    client2,
-    expiryInput
-) {
-
-    const expiry =
-        expiryInput
-            ? expiryInput.replaceAll("-", "")
-            : "";
-
-
-    const rawCSV =
-        rawCSVs[type];
-
-
-    if (!rawCSV) {
-
-        alert(
-            type +
-            " CSV template not found."
-        );
-
-        return;
-
-    }
-
-
-    const lines =
-        rawCSV
-            .trim()
-            .split("\n");
-
-
-    const header =
-        lines[0];
-
-
-    const data =
-        lines.slice(1);
-
-
-    const headerFields =
-        header.split(",");
-
-
-    const clntIdIdx =
-        headerFields.indexOf("ClntId");
-
-
-    const xpryIdx =
-        headerFields.indexOf("XpryDt");
-
-
-    const fxpryIdx =
-        headerFields.indexOf(
-            "FininstrmActlXpryDt"
-        );
-
-
-    const rptgIdx =
-        headerFields.indexOf("RptgDt");
-
-
-    const bizIdx =
-        headerFields.indexOf("BizDt");
-
-
-    const qtyIdx =
-        headerFields.indexOf(
-            "OpnBuyTradgQty"
-        );
-
-
-    const symbolIdx =
-        headerFields.indexOf(
-            "TckrSymb"
-        );
-
-
-    const strikeIdx =
-        headerFields.indexOf(
-            "StrkPric"
-        );
-
-
-    const optionTypeIdx =
-        headerFields.indexOf(
-            "OptnTp"
-        );
-
-
-    const now =
-        new Date();
-
-
-    const currentDate =
-        now.getFullYear() +
-        String(
-            now.getMonth() + 1
-        ).padStart(2, "0") +
-        String(
-            now.getDate()
-        ).padStart(2, "0");
-
-
-    const processedRows = [
-        header
-    ];
-
-
-    /* =====================================================
-       BSE EXPIRY
-       SENSEX + BANKEX
-    ===================================================== */
-
-    const bseExpiryInput =
-        document.getElementById(
-            "sensexBankexExpiry"
-        );
-
-
-    const bseExpiry =
-        bseExpiryInput &&
-        bseExpiryInput.value
-            ? bseExpiryInput.value
-                .replaceAll("-", "")
-            : "";
-
-
-    /* =====================================================
-       ADDITIONAL STRIKES
-    ===================================================== */
-
-    const additionalStrikes =
-        parseInt(
-            document.getElementById(
-                "additionalStrikes"
-            )?.value || "0",
-            10
-        );
-
-
-    /* =====================================================
-       MANUAL MODE
-
-       If the user has entered any manual scrip,
-       ONLY those scrips are written to the file and
-       the built-in template positions are skipped.
-    ===================================================== */
-
-    /* =====================================================
-       MANUAL MODE
-
-       Driven by the Sample Positions / Manual Entry
-       toggle at the top of the form. If Manual Entry is
-       selected, ONLY the scrips entered in the popup are
-       written to the file — the built-in template
-       positions are skipped entirely.
-    ===================================================== */
-
-    const manualActive =
-        currentMode === "manual";
-
-
-    let manualRows = null;
-
-
-    if (manualActive) {
-
-        if (getManualEntries().length === 0) {
-
-            alert(
-                "Manual Entry is selected but no scrip " +
-                "has been added yet. Open Manual Scrips " +
-                "and add at least one, or switch back to " +
-                "Sample Positions."
-            );
-
-            return;
-
-        }
-
-
-        manualRows =
-            buildManualRows(
-                type,
-                headerFields,
-                client1,
-                client2,
-                currentDate,
-                additionalStrikes
-            );
-
-
-        /* validation failed inside buildManualRows */
-
-        if (!manualRows) {
-
-            return;
-
-        }
-
-
-        manualRows.forEach(r => {
-
-            processedRows.push(r);
-
-        });
-
-    }
-
-
-    /* =====================================================
-       PROCESS EACH ROW
-       (skipped entirely in manual mode)
-    ===================================================== */
-
-    for (const row of (manualActive ? [] : data)) {
-
-        const cols =
-            row.split(",");
-
-
-        const qty =
-            parseFloat(
-                cols[qtyIdx]
-            );
-
-
-        /* =================================================
-           CLIENT
-        ================================================= */
-
-        if (qty > 0) {
-
-            cols[clntIdIdx] =
-                client1;
-
-        }
-
-        else if (client2) {
-
-            cols[clntIdIdx] =
-                client2;
-
-        }
-
-        else {
-
-            continue;
-
-        }
-
-
-        /* =================================================
-           FO
-        ================================================= */
-
-        if (type === "FO") {
-
-            const symbol =
-                cols[symbolIdx];
-
-
-            /* =============================================
-               SENSEX + BANKEX
-               BSE EXPIRY
-            ============================================= */
-
-            if (
-                symbol === "SENSEX" ||
-                symbol === "BANKEX"
-            ) {
-
-                if (!bseExpiry) {
-
-                    continue;
-
-                }
-
-
-                cols[xpryIdx] =
-                    bseExpiry;
-
-
-                cols[fxpryIdx] =
-                    bseExpiry;
-
-            }
-
-
-            /* =============================================
-               OTHER FO
-               NSE EXPIRY
-            ============================================= */
-
-            else {
-
-                if (!expiry) {
-
-                    continue;
-
-                }
-
-
-                cols[xpryIdx] =
-                    expiry;
-
-
-                cols[fxpryIdx] =
-                    expiry;
-
-            }
-
-
-            /* =============================================
-               FO OPTION STRIKE GENERATION
-            ============================================= */
-
-            const optionType =
-                cols[optionTypeIdx];
-
-
-            const originalStrike =
-                parseFloat(
-                    cols[strikeIdx]
-                );
-
-
-            const step =
-                strikeSteps[symbol];
-
-
-            const rowsToAdd = [
-                cols
-            ];
-
-
-            if (
-                ["CE", "PE"]
-                    .includes(optionType) &&
-
-                !isNaN(originalStrike) &&
-
-                step &&
-
-                additionalStrikes > 0
-            ) {
-
-                for (
-                    let i = 1;
-                    i <= additionalStrikes;
-                    i++
-                ) {
-
-                    const newCols =
-                        [...cols];
-
-
-                    newCols[strikeIdx] =
-                        String(
-                            originalStrike +
-                            (step * i)
-                        );
-
-
-                    rowsToAdd.push(
-                        newCols
-                    );
-
-                }
-
-            }
-
-
-            /* =============================================
-               ADD FO ROWS
-            ============================================= */
-
-            rowsToAdd.forEach(
-                newCols => {
-
-                    newCols[rptgIdx] =
-                        currentDate;
-
-
-                    newCols[bizIdx] =
-                        currentDate;
-
-
-                    processedRows.push(
-                        newCols.join(",")
-                    );
-
-                }
-            );
-
-        }
-
-
-        /* =================================================
-           MCX / CD / NCDEX / NSECOM
-        ================================================= */
-
-        else {
-
-            const symbol =
-                cols[symbolIdx];
-
-
-            /* =============================================
-               SYMBOL-SPECIFIC EXPIRY
-            ============================================= */
-
-            const input =
-                document.getElementById(
-                    `exp_${type}_${symbol}`
-                );
-
-
-            if (!input) {
-
-                continue;
-
-            }
-
-
-            if (!input.value) {
-
-                continue;
-
-            }
-
-
-            const exp =
-                input.value
-                    .replaceAll("-", "");
-
-
-            cols[xpryIdx] =
-                exp;
-
-
-            cols[fxpryIdx] =
-                exp;
-
-
-            cols[rptgIdx] =
-                currentDate;
-
-
-            cols[bizIdx] =
-                currentDate;
-
-
-            /* =============================================
-               MCX ADDITIONAL STRIKES
-
-               Only:
-                 CE
-                 PE
-
-               Not:
-                 COF
-            ============================================= */
-
-            if (type === "MCX") {
-
-                const optionType =
-                    cols[optionTypeIdx];
-
-
-                const originalStrike =
-                    parseFloat(
-                        cols[strikeIdx]
-                    );
-
-
-                const step =
-                    strikeSteps[symbol];
-
-
-                const rowsToAdd = [
-                    cols
-                ];
-
-
-                if (
-                    ["CE", "PE"]
-                        .includes(optionType) &&
-
-                    !isNaN(originalStrike) &&
-
-                    step &&
-
-                    additionalStrikes > 0
-                ) {
-
-                    for (
-                        let i = 1;
-                        i <= additionalStrikes;
-                        i++
-                    ) {
-
-                        const newCols =
-                            [...cols];
-
-
-                        newCols[strikeIdx] =
-                            String(
-                                originalStrike +
-                                (step * i)
-                            );
-
-
-                        rowsToAdd.push(
-                            newCols
-                        );
-
-                    }
-
-                }
-
-
-                /* =========================================
-                   ADD MCX ROWS
-                ========================================= */
-
-                rowsToAdd.forEach(
-                    newCols => {
-
-                        processedRows.push(
-                            newCols.join(",")
-                        );
-
-                    }
-                );
-
-            }
-
-
-            /* =============================================
-               OTHER SEGMENTS
-               CD / NCDEX / NSECOM
-            ============================================= */
-
-            else {
-
-                processedRows.push(
-                    cols.join(",")
-                );
-
-            }
-
-        }
-
-    }
-
-
-    /* =====================================================
-       FO FILE DOWNLOAD
-    ===================================================== */
-
-    if (type === "FO") {
-
-        let selected;
-
-
-        if (
-            document
-                .getElementById(
-                    "positionType"
-                )
-                .value === "ALL"
-        ) {
-
-            selected =
-                fileNames.FO.map(
-                    name => ({
-                        value: name
-                    })
-                );
-
-        }
-
-        else {
-
-            selected =
-                [
-                    ...document
-                        .querySelectorAll(
-                            ".f:checked"
-                        )
-                ];
-
-
-            if (!selected.length) {
-
-                alert(
-                    "Select at least one FO file."
-                );
-
-                return;
-
-            }
-
-        }
-
-
-        selected.forEach(cb => {
-
-            const blob =
-                new Blob(
-                    [
-                        processedRows.join(
-                            "\n"
-                        )
-                    ],
-                    {
-                        type:
-                            "text/csv"
-                    }
-                );
-
-
-            const a =
-                document.createElement(
-                    "a"
-                );
-
-
-            a.href =
-                URL.createObjectURL(
-                    blob
-                );
-
-
-            a.download =
-                cb.value +
-                ".csv";
-
-
-            a.click();
-
-
-            URL.revokeObjectURL(
-                a.href
-            );
-
-        });
-
-    }
-
-
-    /* =====================================================
-       OTHER SEGMENTS
-       MCX / CD / NCDEX / NSECOM
-    ===================================================== */
-
-    else {
-
-        fileNames[type]
-            .forEach(name => {
-
-                const blob =
-                    new Blob(
-                        [
-                            processedRows.join(
-                                "\n"
-                            )
-                        ],
-                        {
-                            type:
-                                "text/csv"
-                        }
-                    );
-
-
-                const a =
-                    document.createElement(
-                        "a"
-                    );
-
-
-                a.href =
-                    URL.createObjectURL(
-                        blob
-                    );
-
-
-                a.download =
-                    name +
-                    ".csv";
-
-
-                a.click();
-
-
-                URL.revokeObjectURL(
-                    a.href
-                );
-
-            });
-
-    }
-
-}
-
-
-/* =========================================================
-   BUILD SYMBOL EXPIRY INPUTS
-========================================================= */
-
-function buildExpiryInputs(type) {
-
-    const div =
-        document.getElementById(
-            "symbolExpiryContainer"
-        );
-
-
-    div.innerHTML = "";
-
-
-    const rawCSV =
-        rawCSVs[type];
-
-
-    if (!rawCSV) {
-
-        return;
-
-    }
-
-
-    const lines =
-        rawCSV
-            .trim()
-            .split("\n");
-
-
-    const header =
-        lines[0].split(",");
-
-
-    const symbolIdx =
-        header.indexOf(
-            "TckrSymb"
-        );
-
-
-    const symbols =
-        [
-            ...new Set(
-                lines
-                    .slice(1)
-                    .map(
-                        r =>
-                            r.split(",")[
-                                symbolIdx
-                            ]
-                    )
-            )
-        ];
-
-
-    symbols.forEach(
-        symbol => {
-
-            div.innerHTML += `
-
-                <div class="form-row">
-
-                    <label>
-
-                        ${
-                            symbol === "COPPER" ||
-                            symbol === "NATURALGAS" ||
-                            symbol === "USDINR"
-
-                                ? `${symbol} (OPT):`
-
-                                : `${symbol}:`
-                        }
-
-                    </label>
-
-                    <input
-                        type="date"
-                        id="exp_${type}_${symbol}">
-
-                </div>
-
-            `;
-
-        }
-    );
-
-}
-
-
-/* =========================================================
-   GENERATE
-========================================================= */
-
-function generate() {
-
-    const client1 =
-        document
-            .getElementById(
-                "client1"
-            )
-            .value
-            .trim();
-
-
-    const client2 =
-        document
-            .getElementById(
-                "client2"
-            )
-            .value
-            .trim();
-
-
-    const nseExpiry =
-        document
-            .getElementById(
-                "expiry"
-            )
-            .value;
-
-
-    const bseExpiry =
-        document
-            .getElementById(
-                "sensexBankexExpiry"
-            )
-            .value;
-
-
-    const type =
-        document
-            .getElementById(
-                "positionType"
-            )
-            .value;
-
-
-    /* =====================================================
-       CLIENT VALIDATION
-    ===================================================== */
-
-    if (!client1) {
-
-        alert(
-            "Please provide Client 1."
-        );
-
-        return;
-
-    }
-
-
-    /* =====================================================
-       FO VALIDATION
-    ===================================================== */
-
-    if (type === "FO" && currentMode !== "manual") {
-
-        if (!nseExpiry) {
-
-            alert(
-                "Please select NSE Expiry Date."
-            );
-
-            return;
-
-        }
-
-
-        if (!bseExpiry) {
-
-            alert(
-                "Please select BSE Expiry Date."
-            );
-
-            return;
-
-        }
-
-    }
-
-
-    /* =====================================================
-       GENERATE
-    ===================================================== */
-
-    generateSegment(
-        type,
-        client1,
-        client2,
-        nseExpiry
-    );
-
-}
-
-
-/* =========================================================
-   PAGE LOAD
-========================================================= */
-
-window.onload = function () {
-
-    loadFiles();
-
-};
+    const nseInput =
+        el("expiry");
