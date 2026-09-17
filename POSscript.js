@@ -232,6 +232,10 @@ function addManualRow() {
 
         <div class="manual-row-foot">
             <button type="button"
+                    onclick="addManualRow()">
+                + Add Symbol
+            </button>
+            <button type="button"
                     onclick="removeManualRow(${id})">
                 Remove
             </button>
@@ -324,25 +328,39 @@ function clearManualRows() {
    OPEN / CLOSE THE MANUAL SCRIP POPUP
 ========================================================= */
 
+/* =========================================================
+   OPEN / CLOSE THE MANUAL SCRIP POPUP
+========================================================= */
+
+/*
+ * Called from the trigger button. If there's nothing
+ * entered yet, this adds a row straight away so the
+ * person doesn't have to click Open and then
+ * + Add Symbol separately.
+ */
+
+function openManualPanel() {
+
+    if (document.querySelectorAll(".manual-row").length === 0) {
+
+        addManualRow();
+
+    }
+
+    else {
+
+        openManualDrawer();
+
+    }
+
+}
+
+
 function openManualDrawer() {
 
     document
         .getElementById("manualDrawer")
         .classList.add("open");
-
-
-    const overlay =
-        document.getElementById("manualOverlay");
-
-
-    if (overlay) {
-
-        overlay.classList.add("open");
-
-    }
-
-
-    document.body.style.overflow = "hidden";
 
 }
 
@@ -352,20 +370,6 @@ function closeManualDrawer() {
     document
         .getElementById("manualDrawer")
         .classList.remove("open");
-
-
-    const overlay =
-        document.getElementById("manualOverlay");
-
-
-    if (overlay) {
-
-        overlay.classList.remove("open");
-
-    }
-
-
-    document.body.style.overflow = "";
 
 }
 
