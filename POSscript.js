@@ -321,7 +321,7 @@ function clearManualRows() {
 
 
 /* =========================================================
-   OPEN / CLOSE THE MANUAL DRAWER
+   OPEN / CLOSE THE MANUAL SCRIP POPUP
 ========================================================= */
 
 function openManualDrawer() {
@@ -329,6 +329,20 @@ function openManualDrawer() {
     document
         .getElementById("manualDrawer")
         .classList.add("open");
+
+
+    const overlay =
+        document.getElementById("manualOverlay");
+
+
+    if (overlay) {
+
+        overlay.classList.add("open");
+
+    }
+
+
+    document.body.style.overflow = "hidden";
 
 }
 
@@ -338,6 +352,20 @@ function closeManualDrawer() {
     document
         .getElementById("manualDrawer")
         .classList.remove("open");
+
+
+    const overlay =
+        document.getElementById("manualOverlay");
+
+
+    if (overlay) {
+
+        overlay.classList.remove("open");
+
+    }
+
+
+    document.body.style.overflow = "";
 
 }
 
