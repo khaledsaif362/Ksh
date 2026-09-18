@@ -125,6 +125,27 @@
             font-size: 12px !important;
         }
 
+        /*
+         * BUGFIX: .form-row and #checkboxContainer above
+         * force display:flex with !important so the label
+         * + input sit on one line. That also silently
+         * defeated the JS's element.style.display = "none"
+         * on non-FO tabs (a !important stylesheet rule
+         * always beats a plain inline style), which is why
+         * NSE/BSE Expiry, Additional Strikes, and an empty
+         * checkbox box kept showing on every segment.
+         *
+         * Fix: the JS now toggles this .hidden class
+         * instead of writing inline styles directly, and
+         * .hidden — being !important and declared after —
+         * reliably wins over both rules above.
+         */
+
+        .form-row.hidden,
+        #checkboxContainer.hidden {
+            display: none !important;
+        }
+
         /* mode selector — Sample Positions / Manual
            Entry, sits below Client ID 1/2 */
 
@@ -156,7 +177,8 @@
         }
 
         /* Manual Entry mode greys out the Expiry
-           field(s) instead of hiding them */
+           field(s) and Additional Strikes instead
+           of hiding them */
 
         .form-row input:disabled,
         .form-row select:disabled {
@@ -208,30 +230,19 @@
 
     <style>
 
-        /* trigger strip left in the main card —
-           also the anchor point the popup opens
-           against */
+        /* small "(edit)" link next to the Manual
+           Entry radio label — reopens the popup
+           after it's been closed, since clicking an
+           already-checked radio fires no change event */
 
-        .manual-section {
-            margin: 8px 0;
-            padding: 5px 7px;
-            border: 1px solid #c9c9c9;
-            border-radius: 5px;
+        .manual-reopen {
+            font-weight: 400;
             font-size: 11px;
+            text-decoration: underline;
+            color: #2e7d32;
+            margin-left: 2px;
         }
 
-        .manual-head {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .manual-head strong {
-            font-size: 12px;
-            flex: 1;
-        }
-
-        .manual-section button,
         .manual-drawer button {
             font-size: 12px !important;
             padding: 3px 9px !important;
@@ -241,11 +252,6 @@
             margin: 0 !important;
             line-height: 1.4 !important;
             cursor: pointer;
-        }
-
-        .manual-count {
-            font-size: 10px;
-            color: #555;
         }
 
         /* popup: covers the full form (the whole
@@ -466,6 +472,12 @@
 
             Manual Entry
 
+            <span class="manual-reopen"
+                  id="manualReopen"
+                  style="display:none;"
+                  onclick="openManualPanel()">
+            </span>
+
         </label>
 
     </div>
@@ -557,63 +569,37 @@
 
 
     <!-- =========================
-         MANUAL SCRIP ENTRY
-         (trigger strip only — clicking Open
-          drops a popup directly onto the form
-          below it, with a row ready to fill in)
+         MANUAL SCRIP POPUP
+         (opened by the Manual Entry radio
+          above — no separate trigger box)
     ========================== -->
 
-    <div class="manual-section" id="manualSection">
+    <div class="manual-drawer" id="manualDrawer">
 
-        <div class="manual-head">
+        <div class="manual-drawer-head">
 
             <strong>
                 Manual Scrips
             </strong>
 
-            <span class="manual-count" id="manualCount">
-            </span>
-
             <button type="button"
-                    onclick="openManualPanel()">
-                Open
+                    onclick="closeManualDrawer()">
+                Close
             </button>
 
         </div>
 
+        <div class="manual-drawer-body">
 
-        <!-- =========================
-             MANUAL SCRIP POPUP
-        ========================== -->
+            <div class="manual-notice"
+                 id="manualNotice"
+                 style="display:none;">
 
-        <div class="manual-drawer" id="manualDrawer">
-
-            <div class="manual-drawer-head">
-
-                <strong>
-                    Manual Scrips
-                </strong>
-
-                <button type="button"
-                        onclick="closeManualDrawer()">
-                    Close
-                </button>
+                Manual mode ON — only the scrips below are written.
 
             </div>
 
-            <div class="manual-drawer-body">
-
-                <div class="manual-notice"
-                     id="manualNotice"
-                     style="display:none;">
-
-                    Manual mode ON — only the scrips below are written.
-
-                </div>
-
-                <div id="manualContainer">
-                </div>
-
+            <div id="manualContainer">
             </div>
 
         </div>
