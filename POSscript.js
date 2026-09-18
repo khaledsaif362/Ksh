@@ -173,18 +173,6 @@ function setMode(mode) {
         });
 
 
-    const manualSection =
-        document.getElementById("manualSection");
-
-
-    if (manualSection) {
-
-        manualSection.style.display =
-            mode === "manual" ? "block" : "none";
-
-    }
-
-
     if (mode === "manual") {
 
         openManualPanel();
@@ -200,9 +188,55 @@ function setMode(mode) {
     }
 
 
+    refreshManualReopenLink();
+
+
     setSegmentVisibility(
         document.getElementById("positionType").value
     );
+
+}
+
+
+/* =========================================================
+   SHOW / HIDE THE "(edit)" REOPEN LINK
+   Sits next to the Manual Entry radio label. Only
+   needed (and only visible) once that mode is active,
+   since clicking an already-checked radio fires no
+   change event and wouldn't otherwise reopen the popup.
+========================================================= */
+
+function refreshManualReopenLink() {
+
+    const link =
+        document.getElementById("manualReopen");
+
+
+    if (!link) {
+
+        return;
+
+    }
+
+
+    if (currentMode !== "manual") {
+
+        link.style.display = "none";
+
+        return;
+
+    }
+
+
+    link.style.display = "inline";
+
+
+    const n =
+        getManualEntries().length;
+
+
+    link.textContent =
+        n ? `(edit — ${n} added)` : "(edit)";
 
 }
 
@@ -391,15 +425,11 @@ function clearManualRows() {
    OPEN / CLOSE THE MANUAL SCRIP POPUP
 ========================================================= */
 
-/* =========================================================
-   OPEN / CLOSE THE MANUAL SCRIP POPUP
-========================================================= */
-
 /*
- * Called from the trigger button. If there's nothing
- * entered yet, this adds a row straight away so the
- * person doesn't have to click Open and then
- * + Add Symbol separately.
+ * Called from the Manual Entry radio (and the "(edit)"
+ * reopen link). If there's nothing entered yet, this
+ * adds a row straight away so the person doesn't have
+ * to select Manual Entry and then + Add Symbol separately.
  */
 
 function openManualPanel() {
@@ -548,6 +578,8 @@ function refreshManualNotice() {
 
     refreshManualCount();
 
+    refreshManualReopenLink();
+
 
     const notice =
         document.getElementById("manualNotice");
@@ -581,8 +613,18 @@ function refreshManualNotice() {
    SHOW / HIDE SEGMENT FIELDS
    Rows are shown/hidden purely based on the segment
    type, same as always. Manual Entry mode doesn't hide
-   the Expiry field(s) — it greys them out instead, since
-   every manual scrip carries its own expiry regardless.
+   the Expiry field(s) or Additional Strikes — it greys
+   them out instead, since every manual scrip carries its
+   own expiry (and strike step) regardless.
+
+   BUGFIX: these rows use the .form-row class, and its
+   page-scoped rule forces "display: flex !important" so
+   labels/inputs sit on one line. A !important stylesheet
+   rule always beats a plain inline style, so the previous
+   version here — which set element.style.display directly
+   — was silently overridden, and these rows kept showing
+   on every segment. Toggling the .hidden class (also
+   !important, declared after) fixes this reliably.
 ========================================================= */
 
 function setSegmentVisibility(type) {
@@ -607,16 +649,22 @@ function setSegmentVisibility(type) {
         document.getElementById("symbolExpiryContainer");
 
 
-    commonExpiry.style.display =
-        type === "FO" ? "flex" : "none";
+    commonExpiry.classList.toggle(
+        "hidden",
+        type !== "FO"
+    );
 
 
-    bseExpiry.style.display =
-        type === "FO" ? "flex" : "none";
+    bseExpiry.classList.toggle(
+        "hidden",
+        type !== "FO"
+    );
 
 
-    additionalStrike.style.display =
-        (type === "FO" || type === "MCX") ? "flex" : "none";
+    additionalStrike.classList.toggle(
+        "hidden",
+        !(type === "FO" || type === "MCX")
+    );
 
 
     symbolExpiry.style.display =
@@ -630,11 +678,16 @@ function setSegmentVisibility(type) {
 
 /* =========================================================
    GREY OUT / RE-ENABLE THE EXPIRY FIELD(S)
+   AND ADDITIONAL STRIKES
 ========================================================= */
 
 function setExpiryDisabled(disabled) {
 
-    ["expiry", "sensexBankexExpiry"].forEach(id => {
+    [
+        "expiry",
+        "sensexBankexExpiry",
+        "additionalStrikes"
+    ].forEach(id => {
 
         const el =
             document.getElementById(id);
@@ -665,6 +718,7 @@ function setExpiryDisabled(disabled) {
         .querySelectorAll(
             "#commonExpiryRow label, " +
             "#sensexBankexExpiryRow label, " +
+            "#additionalStrikeRow label, " +
             "#symbolExpiryContainer label"
         )
         .forEach(label => {
@@ -971,18 +1025,6 @@ function loadFiles() {
         document.getElementById("checkboxContainer");
 
 
-    const commonExpiry =
-        document.getElementById("commonExpiryRow");
-
-
-    const bseExpiry =
-        document.getElementById("sensexBankexExpiryRow");
-
-
-    const additionalStrike =
-        document.getElementById("additionalStrikeRow");
-
-
     const symbolExpiry =
         document.getElementById("symbolExpiryContainer");
 
@@ -990,12 +1032,6 @@ function loadFiles() {
     /* =========================
        RESET
     ========================== */
-
-    commonExpiry.style.display = "none";
-
-    bseExpiry.style.display = "none";
-
-    additionalStrike.style.display = "none";
 
     symbolExpiry.style.display = "none";
 
@@ -1025,15 +1061,7 @@ function loadFiles() {
         });
 
 
-    const manualSectionEl =
-        document.getElementById("manualSection");
-
-
-    if (manualSectionEl) {
-
-        manualSectionEl.style.display = "none";
-
-    }
+    refreshManualReopenLink();
 
 
     /* =====================================================
@@ -1042,7 +1070,7 @@ function loadFiles() {
 
     if (type === "FO") {
 
-        container.style.display = "block";
+        container.classList.remove("hidden");
 
 
         container.innerHTML = `
@@ -1097,7 +1125,7 @@ function loadFiles() {
             .includes(type)
     ) {
 
-        container.style.display = "none";
+        container.classList.add("hidden");
 
 
         buildExpiryInputs(type);
@@ -1818,46 +1846,22 @@ function generateSegment(
 
     if (type === "FO") {
 
-        let selected;
+        const selected =
+            [
+                ...document
+                    .querySelectorAll(
+                        ".f:checked"
+                    )
+            ];
 
 
-        if (
-            document
-                .getElementById(
-                    "positionType"
-                )
-                .value === "ALL"
-        ) {
+        if (!selected.length) {
 
-            selected =
-                fileNames.FO.map(
-                    name => ({
-                        value: name
-                    })
-                );
+            alert(
+                "Select at least one FO file."
+            );
 
-        }
-
-        else {
-
-            selected =
-                [
-                    ...document
-                        .querySelectorAll(
-                            ".f:checked"
-                        )
-                ];
-
-
-            if (!selected.length) {
-
-                alert(
-                    "Select at least one FO file."
-                );
-
-                return;
-
-            }
+            return;
 
         }
 
