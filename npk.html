@@ -1,0 +1,1648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Peak Margin Calculator</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        background: #eaf5ff;
+        color: #172b4d;
+    }
+
+    .header {
+        background: #0b3d91;
+        color: white;
+        padding: 18px 25px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .header h1 {
+        margin: 0;
+        font-size: 25px;
+        font-weight: 700;
+    }
+
+    .header p {
+        margin: 5px 0 0;
+        font-size: 13px;
+        opacity: 0.9;
+    }
+
+    .container {
+        width: 95%;
+        max-width: 1250px;
+        margin: 22px auto 40px;
+    }
+
+    .card {
+        background: white;
+        border-radius: 12px;
+        padding: 22px;
+        margin-bottom: 20px;
+        box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+        border: 1px solid #d7e8f7;
+    }
+
+    .card-title {
+        color: #0b3d91;
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 18px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #dceeff;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 15px;
+    }
+
+    .grid.order-grid {
+        grid-template-columns: repeat(3, 1fr);
+        align-items: end;
+    }
+
+    .field label {
+        display: block;
+        font-size: 13px;
+        font-weight: 700;
+        margin-bottom: 7px;
+        color: #34495e;
+    }
+
+    .field input {
+        width: 100%;
+        height: 43px;
+        border: 1px solid #b8cce0;
+        border-radius: 7px;
+        padding: 0 12px;
+        font-size: 15px;
+        outline: none;
+        background: #fff;
+    }
+
+    .field input:focus {
+        border-color: #0b3d91;
+        box-shadow: 0 0 0 3px rgba(11,61,145,0.10);
+    }
+
+    .hint {
+        font-size: 11px;
+        color: #718096;
+        margin-top: 5px;
+    }
+
+    .button-row {
+        display: flex;
+        gap: 10px;
+        margin-top: 18px;
+        flex-wrap: wrap;
+    }
+
+    button {
+        border: none;
+        border-radius: 7px;
+        padding: 11px 22px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        background: #0b3d91;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #082f70;
+    }
+
+    .btn-secondary {
+        background: #e6eef7;
+        color: #17365d;
+    }
+
+    .btn-secondary:hover {
+        background: #d5e3f1;
+    }
+
+    .results {
+        display: none;
+    }
+
+    .result-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+    }
+
+    .result-box {
+        background: #f7fbff;
+        border: 1px solid #cfe2f5;
+        border-radius: 9px;
+        padding: 15px;
+        min-height: 90px;
+    }
+
+    .result-label {
+        font-size: 12px;
+        color: #60758d;
+        font-weight: 700;
+        margin-bottom: 9px;
+    }
+
+    .result-value {
+        font-size: 21px;
+        color: #0b3d91;
+        font-weight: 700;
+        word-break: break-word;
+    }
+
+    .highlight {
+        background: #edf7ff;
+        border: 2px solid #0b3d91;
+    }
+
+    .highlight .result-value {
+        font-size: 24px;
+    }
+
+    .order-section {
+        display: none;
+    }
+
+    .status-box {
+        margin-top: 18px;
+        border-radius: 9px;
+        padding: 17px;
+        font-size: 15px;
+        font-weight: 700;
+    }
+
+    .status-reject {
+        background: #fff0f0;
+        border: 1px solid #efb4b4;
+        color: #a71919;
+    }
+
+    .status-accept {
+        background: #eefaf1;
+        border: 1px solid #b5dfbf;
+        color: #147333;
+    }
+
+    .status-warning {
+        background: #fff8e8;
+        border: 1px solid #ecd58e;
+        color: #805f00;
+    }
+
+    .formula {
+        background: #f8fbfe;
+        border-left: 4px solid #0b3d91;
+        padding: 15px 18px;
+        margin-top: 12px;
+        border-radius: 5px;
+        line-height: 1.8;
+        font-size: 13px;
+        overflow-x: auto;
+    }
+
+    .formula strong {
+        color: #0b3d91;
+    }
+
+    .message {
+        margin-top: 12px;
+        padding: 13px 15px;
+        background: #f5f9fd;
+        border: 1px solid #d6e5f3;
+        border-radius: 7px;
+        font-family: Consolas, monospace;
+        font-size: 13px;
+        white-space: pre-wrap;
+        line-height: 1.6;
+    }
+
+    .table-wrap {
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 800px;
+    }
+
+    th {
+        background: #0b3d91;
+        color: white;
+        padding: 11px;
+        font-size: 12px;
+        text-align: right;
+    }
+
+    th:first-child {
+        text-align: center;
+    }
+
+    td {
+        padding: 10px;
+        border-bottom: 1px solid #e0ebf5;
+        font-size: 13px;
+        text-align: right;
+    }
+
+    td:first-child {
+        text-align: center;
+        font-weight: 700;
+    }
+
+    tr:nth-child(even) {
+        background: #f8fbfe;
+    }
+
+    .accepted-row {
+        background: #effaf2 !important;
+    }
+
+    .rejected-row {
+        background: #fff2f2 !important;
+    }
+
+    .empty-note {
+        text-align: center;
+        color: #718096;
+        padding: 25px;
+        font-size: 13px;
+    }
+
+    .error {
+        display: none;
+        margin-top: 12px;
+        padding: 11px 14px;
+        background: #fff0f0;
+        border: 1px solid #e4b4b4;
+        border-radius: 7px;
+        color: #a71919;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .footer-note {
+        text-align: center;
+        color: #718096;
+        font-size: 11px;
+        margin-top: 18px;
+    }
+
+    @media (max-width: 1000px) {
+        .grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .result-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 650px) {
+        .container {
+            width: 94%;
+        }
+
+        .grid,
+        .grid.order-grid,
+        .result-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .header h1 {
+            font-size: 21px;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="header">
+    <h1>Peak Margin Calculator</h1>
+    <p>RMS Buyback / Peak Margin Testing Utility</p>
+</div>
+
+<div class="container">
+
+    <!-- ================= INPUT ================= -->
+    <div class="card">
+        <div class="card-title">Position Details</div>
+
+        <div class="grid">
+
+            <div class="field">
+                <label for="holdingQty">Holding / Sold Quantity</label>
+                <input
+                    type="number"
+                    id="holdingQty"
+                    min="0"
+                    step="1"
+                    placeholder="Enter quantity">
+            </div>
+
+            <div class="field">
+                <label for="holdingPrice">Holding Price</label>
+                <input
+                    type="number"
+                    id="holdingPrice"
+                    min="0"
+                    step="0.01"
+                    placeholder="Enter price">
+            </div>
+
+            <div class="field">
+                <label for="peakPct">Peak Margin %</label>
+                <input
+                    type="number"
+                    id="peakPct"
+                    min="0"
+                    step="0.01"
+                    placeholder="Enter %">
+            </div>
+
+            <div class="field">
+                <label for="cfsPct">CFS %</label>
+                <input
+                    type="number"
+                    id="cfsPct"
+                    min="0"
+                    step="0.01"
+                    placeholder="Enter %">
+            </div>
+
+            <div class="field">
+                <label for="buybackPct">Buyback Limit %</label>
+                <input
+                    type="number"
+                    id="buybackPct"
+                    min="0"
+                    step="0.01"
+                    placeholder="Enter %">
+            </div>
+
+        </div>
+
+        <div id="inputError" class="error"></div>
+
+        <div class="button-row">
+            <button class="btn-primary" type="button" onclick="calculateBase()">
+                Calculate
+            </button>
+
+            <button class="btn-secondary" type="button" onclick="clearAll()">
+                Clear
+            </button>
+        </div>
+    </div>
+
+
+    <!-- ================= BASE RESULTS ================= -->
+    <div class="card results" id="baseResults">
+
+        <div class="card-title">Initial Position Calculation</div>
+
+        <div class="result-grid">
+
+            <div class="result-box">
+                <div class="result-label">Holding Value</div>
+                <div class="result-value" id="holdingValue">₹0</div>
+            </div>
+
+            <div class="result-box">
+                <div class="result-label">Initial Peak</div>
+                <div class="result-value" id="initialPeak">₹0</div>
+            </div>
+
+            <div class="result-box">
+                <div class="result-label">Receivable</div>
+                <div class="result-value" id="receivable">₹0</div>
+            </div>
+
+            <div class="result-box highlight">
+                <div class="result-label">Initial Available Fund</div>
+                <div class="result-value" id="initialAvailable">₹0</div>
+            </div>
+
+            <div class="result-box highlight">
+                <div class="result-label">Max Buy Allowed Qty</div>
+                <div class="result-value" id="maxBuyAllowedQty">0</div>
+            </div>
+
+        </div>
+
+        <div class="formula" id="baseFormula"></div>
+
+    </div>
+
+
+    <!-- ================= ORDER TEST ================= -->
+    <div class="card order-section" id="orderSection">
+
+        <div class="card-title">Buyback Order Test</div>
+
+        <div class="grid order-grid">
+
+            <div class="field">
+                <label for="buybackQty">Buyback Quantity</label>
+                <input
+                    type="number"
+                    id="buybackQty"
+                    min="0"
+                    step="1"
+                    placeholder="Enter buyback quantity">
+            </div>
+
+            <div class="field">
+                <label for="buyPrice">Buy Price</label>
+                <input
+                    type="number"
+                    id="buyPrice"
+                    min="0"
+                    step="0.01"
+                    placeholder="Enter buyback price">
+                <div class="hint">
+                    Order value / margin is calculated using this price.
+                </div>
+            </div>
+
+            <div>
+                <button class="btn-primary" type="button" onclick="testOrder()">
+                    Test Buyback Order
+                </button>
+            </div>
+
+        </div>
+
+        <div id="orderError" class="error"></div>
+
+    </div>
+
+
+    <!-- ================= ORDER RESULTS ================= -->
+    <div class="card results" id="orderResults">
+
+        <div class="card-title">Buyback Order Calculation</div>
+
+        <div class="result-grid">
+
+            <div class="result-box">
+                <div class="result-label">Order Quantity</div>
+                <div class="result-value" id="orderQtyResult">0</div>
+            </div>
+
+            <div class="result-box">
+                <div class="result-label">Buy Price</div>
+                <div class="result-value" id="buyPriceResult">₹0</div>
+            </div>
+
+            <div class="result-box">
+                <div class="result-label">Order Value</div>
+                <div class="result-value" id="orderValue">₹0</div>
+            </div>
+
+            <div class="result-box">
+                <div class="result-label">Remaining Position</div>
+                <div class="result-value" id="remainingPosition">0</div>
+            </div>
+
+            <div class="result-box">
+                <div class="result-label">New Peak on Remaining Position</div>
+                <div class="result-value" id="newPeak">₹0</div>
+            </div>
+
+            <div class="result-box highlight">
+                <div class="result-label">Peak Hit Available Fund</div>
+                <div class="result-value" id="peakHitAvailable">₹0</div>
+            </div>
+
+            <div class="result-box highlight">
+                <div class="result-label">Calculated Margin for Order</div>
+                <div class="result-value" id="calculatedMargin">₹0</div>
+            </div>
+
+            <div class="result-box">
+                <div class="result-label">Additional Required Fund</div>
+                <div class="result-value" id="additionalRequired">₹0</div>
+            </div>
+
+            <div class="result-box">
+                <div class="result-label">Available − Margin</div>
+                <div class="result-value" id="difference">₹0</div>
+            </div>
+
+        </div>
+
+        <div id="decisionBox" class="status-box"></div>
+
+        <div class="message" id="rmsMessage"></div>
+
+        <div class="formula" id="orderFormula"></div>
+
+    </div>
+
+
+    <!-- ================= MATRIX ================= -->
+    <div class="card results" id="matrixSection">
+
+        <div class="card-title">Quantity-wise Buyback Test</div>
+
+        <div class="table-wrap">
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Qty</th>
+                        <th>Order Value</th>
+                        <th>Remaining Position</th>
+                        <th>New Peak</th>
+                        <th>Peak Hit Available Fund</th>
+                        <th>Calculated Margin</th>
+                        <th>Additional Required</th>
+                        <th>Difference</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+
+                <tbody id="matrixBody">
+                </tbody>
+            </table>
+
+        </div>
+
+    </div>
+
+    <div class="footer-note">
+        Peak Margin / Buyback RMS testing utility
+    </div>
+
+</div>
+
+
+<script>
+"use strict";
+
+/* ============================================================
+   GLOBAL STATE
+   ============================================================ */
+
+let baseData = null;
+
+
+/* ============================================================
+   DOM HELPERS
+   ============================================================ */
+
+function $(id) {
+    return document.getElementById(id);
+}
+
+
+/* ============================================================
+   NUMBER HELPERS
+   ============================================================ */
+
+function getNumber(id) {
+    const value = parseFloat($(id).value);
+    return Number.isFinite(value) ? value : NaN;
+}
+
+function formatNumber(value, decimals = 2) {
+    if (!Number.isFinite(value)) {
+        return "0";
+    }
+
+    if (Math.abs(value) < 0.0000001) {
+        value = 0;
+    }
+
+    return value.toLocaleString("en-IN", {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+    });
+}
+
+function formatCurrency(value) {
+    if (!Number.isFinite(value)) {
+        return "₹0";
+    }
+
+    return "₹" + formatNumber(value, 2);
+}
+
+function formatQty(value) {
+    if (!Number.isFinite(value)) {
+        return "0";
+    }
+
+    return Math.round(value).toLocaleString("en-IN");
+}
+
+
+/* ============================================================
+   VALIDATION
+   ============================================================ */
+
+function showInputError(message) {
+    const box = $("inputError");
+    box.textContent = message;
+    box.style.display = "block";
+}
+
+function hideInputError() {
+    $("inputError").style.display = "none";
+}
+
+function showOrderError(message) {
+    const box = $("orderError");
+    box.textContent = message;
+    box.style.display = "block";
+}
+
+function hideOrderError() {
+    $("orderError").style.display = "none";
+}
+
+function validateBaseInputs() {
+
+    const holdingQty = getNumber("holdingQty");
+    const holdingPrice = getNumber("holdingPrice");
+    const peakPct = getNumber("peakPct");
+    const cfsPct = getNumber("cfsPct");
+    const buybackPct = getNumber("buybackPct");
+
+    if (!Number.isFinite(holdingQty) || holdingQty < 0) {
+        return "Enter a valid Holding / Sold Quantity.";
+    }
+
+    if (!Number.isInteger(holdingQty)) {
+        return "Holding / Sold Quantity must be a whole number.";
+    }
+
+    if (!Number.isFinite(holdingPrice) || holdingPrice <= 0) {
+        return "Enter a valid Holding Price.";
+    }
+
+    if (!Number.isFinite(peakPct) || peakPct < 0) {
+        return "Enter a valid Peak Margin %.";
+    }
+
+    if (!Number.isFinite(cfsPct) || cfsPct < 0) {
+        return "Enter a valid CFS %.";
+    }
+
+    if (!Number.isFinite(buybackPct) || buybackPct < 0) {
+        return "Enter a valid Buyback Limit %.";
+    }
+
+    return null;
+}
+
+
+/* ============================================================
+   CALCULATE MAX BUY ALLOWED QTY
+   ============================================================ */
+
+/*
+    Fund condition:
+
+    Order Value <= Peak Hit Available Fund
+
+    Order Value:
+        Qty × Buy Price
+
+    Peak Hit Available Fund:
+        Initial Available Fund
+        +
+        New Peak on Remaining Position
+
+    New Peak:
+        (Holding Qty - Buyback Qty)
+        × Holding Price
+        × Peak %
+
+    Therefore:
+
+        Qty × BuyPrice
+        <=
+        InitialAvailable
+        +
+        (HoldingQty - Qty)
+        × HoldingPrice
+        × PeakRate
+
+    Rearranging:
+
+        Qty ×
+        (BuyPrice + HoldingPrice × PeakRate)
+        <=
+        InitialAvailable
+        +
+        HoldingQty × HoldingPrice × PeakRate
+
+    So:
+
+        Qty <=
+        (
+            InitialAvailable
+            +
+            HoldingQty × HoldingPrice × PeakRate
+        )
+        /
+        (
+            BuyPrice
+            +
+            HoldingPrice × PeakRate
+        )
+
+    Buyback percentage limit is separately applied.
+*/
+
+function calculateMaxBuyAllowedQty(d, buyPrice) {
+
+    if (!Number.isFinite(buyPrice) || buyPrice <= 0) {
+        return 0;
+    }
+
+    const numerator =
+        d.initialAvailable +
+        (
+            d.holdingQty *
+            d.holdingPrice *
+            d.peakRate
+        );
+
+    const denominator =
+        buyPrice +
+        (
+            d.holdingPrice *
+            d.peakRate
+        );
+
+    let fundMaxQty = 0;
+
+    if (denominator > 0) {
+        fundMaxQty = Math.floor(numerator / denominator);
+    }
+
+    const limitMaxQty = Math.floor(
+        d.holdingQty *
+        d.buybackPct /
+        100
+    );
+
+    return Math.max(
+        Math.min(fundMaxQty, limitMaxQty),
+        0
+    );
+}
+
+
+/* ============================================================
+   BASE CALCULATION
+   ============================================================ */
+
+function calculateBase() {
+
+    hideInputError();
+    hideOrderError();
+
+    const error = validateBaseInputs();
+
+    if (error) {
+        showInputError(error);
+        return;
+    }
+
+    const holdingQty = getNumber("holdingQty");
+    const holdingPrice = getNumber("holdingPrice");
+    const peakPct = getNumber("peakPct");
+    const cfsPct = getNumber("cfsPct");
+    const buybackPct = getNumber("buybackPct");
+
+    const peakRate = peakPct / 100;
+
+    /*
+        Existing position calculation
+    */
+
+    const holdingValue =
+        holdingQty *
+        holdingPrice;
+
+    const initialPeak =
+        holdingValue *
+        peakRate;
+
+    const receivable =
+        holdingValue *
+        cfsPct /
+        100;
+
+    const initialAvailable =
+        receivable -
+        initialPeak;
+
+    baseData = {
+        holdingQty,
+        holdingPrice,
+        peakPct,
+        peakRate,
+        cfsPct,
+        buybackPct,
+        holdingValue,
+        initialPeak,
+        receivable,
+        initialAvailable
+    };
+
+    /*
+        Max quantity cannot be correctly determined
+        until Buy Price is known.
+
+        If an old Buy Price is already entered, use it.
+        Otherwise display the buyback percentage maximum
+        as a provisional quantity.
+    */
+
+    const existingBuyPrice = getNumber("buyPrice");
+
+    let maxBuyAllowedQty;
+
+    if (
+        Number.isFinite(existingBuyPrice) &&
+        existingBuyPrice > 0
+    ) {
+        maxBuyAllowedQty =
+            calculateMaxBuyAllowedQty(
+                baseData,
+                existingBuyPrice
+            );
+    } else {
+        maxBuyAllowedQty =
+            Math.floor(
+                holdingQty *
+                buybackPct /
+                100
+            );
+    }
+
+    baseData.maxBuyAllowedQty =
+        maxBuyAllowedQty;
+
+    /*
+        Display
+    */
+
+    $("holdingValue").textContent =
+        formatCurrency(holdingValue);
+
+    $("initialPeak").textContent =
+        formatCurrency(initialPeak);
+
+    $("receivable").textContent =
+        formatCurrency(receivable);
+
+    $("initialAvailable").textContent =
+        formatCurrency(initialAvailable);
+
+    $("maxBuyAllowedQty").textContent =
+        formatQty(maxBuyAllowedQty);
+
+    $("baseFormula").innerHTML = `
+        <strong>Holding Value</strong>
+        = Holding Quantity × Holding Price
+        = ${formatQty(holdingQty)} × ${formatCurrency(holdingPrice)}
+        = ${formatCurrency(holdingValue)}
+        <br>
+
+        <strong>Initial Peak</strong>
+        = Holding Value × Peak %
+        = ${formatCurrency(holdingValue)} × ${formatNumber(peakPct, 2)}%
+        = ${formatCurrency(initialPeak)}
+        <br>
+
+        <strong>Receivable</strong>
+        = Holding Value × CFS %
+        = ${formatCurrency(holdingValue)} × ${formatNumber(cfsPct, 2)}%
+        = ${formatCurrency(receivable)}
+        <br>
+
+        <strong>Initial Available Fund</strong>
+        = Receivable − Initial Peak
+        = ${formatCurrency(receivable)} − ${formatCurrency(initialPeak)}
+        = ${formatCurrency(initialAvailable)}
+        <br>
+
+        <strong>Buyback Limit Quantity</strong>
+        = Holding Quantity × Buyback Limit %
+        = ${formatQty(holdingQty)} × ${formatNumber(buybackPct, 2)}%
+        = ${formatQty(
+            Math.floor(
+                holdingQty * buybackPct / 100
+            )
+        )}
+        <br>
+
+        <strong>Max Buy Allowed Qty</strong>
+        = Minimum of Fund-based Quantity and Buyback Limit Quantity
+    `;
+
+    $("baseResults").style.display = "block";
+    $("orderSection").style.display = "block";
+
+    /*
+        If Buy Price already exists, update max qty.
+    */
+    if (
+        Number.isFinite(existingBuyPrice) &&
+        existingBuyPrice > 0
+    ) {
+        updateMaxQtyFromBuyPrice();
+    }
+
+    /*
+        Do not automatically show order/matrix results.
+    */
+    $("orderResults").style.display = "none";
+    $("matrixSection").style.display = "none";
+}
+
+
+/* ============================================================
+   BUY PRICE CHANGE
+   ============================================================ */
+
+function updateMaxQtyFromBuyPrice() {
+
+    if (!baseData) {
+        return;
+    }
+
+    const buyPrice = getNumber("buyPrice");
+
+    if (
+        !Number.isFinite(buyPrice) ||
+        buyPrice <= 0
+    ) {
+        baseData.maxBuyAllowedQty =
+            Math.floor(
+                baseData.holdingQty *
+                baseData.buybackPct /
+                100
+            );
+
+        $("maxBuyAllowedQty").textContent =
+            formatQty(baseData.maxBuyAllowedQty);
+
+        return;
+    }
+
+    const maxQty =
+        calculateMaxBuyAllowedQty(
+            baseData,
+            buyPrice
+        );
+
+    baseData.maxBuyAllowedQty = maxQty;
+
+    $("maxBuyAllowedQty").textContent =
+        formatQty(maxQty);
+}
+
+
+/* ============================================================
+   ORDER CALCULATION
+   ============================================================ */
+
+function calculateOrder(d, orderQty, buyPrice) {
+
+    /*
+        IMPORTANT:
+
+        Buyback order value uses BUY PRICE,
+        not the original Holding Price.
+    */
+
+    const orderValue =
+        orderQty *
+        buyPrice;
+
+    /*
+        Existing position is reduced by buyback quantity.
+    */
+
+    const remainingPosition =
+        Math.max(
+            d.holdingQty -
+            orderQty,
+            0
+        );
+
+    /*
+        Existing/remaining position peak
+        continues to use original Holding Price.
+
+        This preserves the original peak calculation.
+    */
+
+    const newPeak =
+        remainingPosition *
+        d.holdingPrice *
+        d.peakRate;
+
+    /*
+        Peak Hit Available Fund
+    */
+
+    const peakHitAvailable =
+        d.initialAvailable +
+        newPeak;
+
+    /*
+        Buyback order margin is based on
+        BUY PRICE.
+    */
+
+    const calculatedMargin =
+        orderValue;
+
+    const additionalRequired =
+        Math.max(
+            calculatedMargin -
+            peakHitAvailable,
+            0
+        );
+
+    const difference =
+        peakHitAvailable -
+        calculatedMargin;
+
+    const fundAccepted =
+        peakHitAvailable >=
+        calculatedMargin;
+
+    const limitExceeded =
+        orderQty >
+        d.maxBuyAllowedQty;
+
+    return {
+        orderQty,
+        buyPrice,
+        orderValue,
+        remainingPosition,
+        newPeak,
+        peakHitAvailable,
+        calculatedMargin,
+        additionalRequired,
+        difference,
+        fundAccepted,
+        limitExceeded
+    };
+}
+
+
+/* ============================================================
+   TEST BUYBACK ORDER
+   ============================================================ */
+
+function testOrder() {
+
+    hideOrderError();
+
+    if (!baseData) {
+        showOrderError(
+            "Please calculate the position first."
+        );
+        return;
+    }
+
+    const orderQty =
+        getNumber("buybackQty");
+
+    const buyPrice =
+        getNumber("buyPrice");
+
+    if (
+        !Number.isFinite(orderQty) ||
+        orderQty <= 0
+    ) {
+        showOrderError(
+            "Enter a valid Buyback Quantity."
+        );
+        return;
+    }
+
+    if (!Number.isInteger(orderQty)) {
+        showOrderError(
+            "Buyback Quantity must be a whole number."
+        );
+        return;
+    }
+
+    if (
+        !Number.isFinite(buyPrice) ||
+        buyPrice <= 0
+    ) {
+        showOrderError(
+            "Enter a valid Buy Price."
+        );
+        return;
+    }
+
+    /*
+        Update Max Buy Allowed Qty
+        based on the entered Buy Price.
+    */
+
+    updateMaxQtyFromBuyPrice();
+
+    const result =
+        calculateOrder(
+            baseData,
+            orderQty,
+            buyPrice
+        );
+
+    /*
+        Display values
+    */
+
+    $("orderQtyResult").textContent =
+        formatQty(result.orderQty);
+
+    $("buyPriceResult").textContent =
+        formatCurrency(result.buyPrice);
+
+    $("orderValue").textContent =
+        formatCurrency(result.orderValue);
+
+    $("remainingPosition").textContent =
+        formatQty(result.remainingPosition);
+
+    $("newPeak").textContent =
+        formatCurrency(result.newPeak);
+
+    $("peakHitAvailable").textContent =
+        formatCurrency(result.peakHitAvailable);
+
+    $("calculatedMargin").textContent =
+        formatCurrency(result.calculatedMargin);
+
+    $("additionalRequired").textContent =
+        formatCurrency(result.additionalRequired);
+
+    $("difference").textContent =
+        formatCurrency(result.difference);
+
+
+    /*
+        Decision
+
+        First check available fund.
+
+        Then check buyback limit.
+    */
+
+    const decisionBox =
+        $("decisionBox");
+
+    if (!result.fundAccepted) {
+
+        decisionBox.className =
+            "status-box status-reject";
+
+        decisionBox.innerHTML =
+            "REJECT — Insufficient Fund";
+
+    } else if (result.limitExceeded) {
+
+        decisionBox.className =
+            "status-box status-warning";
+
+        decisionBox.innerHTML =
+            "REJECT — Buyback Quantity Exceeds Allowed Limit";
+
+    } else {
+
+        decisionBox.className =
+            "status-box status-accept";
+
+        decisionBox.innerHTML =
+            "ACCEPT — Fund Available and Buyback Limit Within Range";
+    }
+
+
+    /*
+        RMS style message
+    */
+
+    let rmsMessage = "";
+
+    rmsMessage +=
+        "PEAK HIT AVAILABLE FUND " +
+        formatNumber(result.peakHitAvailable, 2) +
+        ", ";
+
+    rmsMessage +=
+        "ADDITIONAL REQUIRED FUND " +
+        formatNumber(result.additionalRequired, 2) +
+        ", ";
+
+    rmsMessage +=
+        "CALCULATED MARGIN FOR ORDER " +
+        formatNumber(result.calculatedMargin, 2);
+
+    $("rmsMessage").textContent =
+        rmsMessage;
+
+
+    /*
+        Formula display
+    */
+
+    $("orderFormula").innerHTML = `
+        <strong>Order Value</strong>
+        = Buyback Quantity × Buy Price
+        = ${formatQty(result.orderQty)}
+        × ${formatCurrency(result.buyPrice)}
+        = ${formatCurrency(result.orderValue)}
+        <br>
+
+        <strong>Remaining Position</strong>
+        = Holding Quantity − Buyback Quantity
+        = ${formatQty(baseData.holdingQty)}
+        − ${formatQty(result.orderQty)}
+        = ${formatQty(result.remainingPosition)}
+        <br>
+
+        <strong>New Peak</strong>
+        = Remaining Position × Holding Price × Peak %
+        = ${formatQty(result.remainingPosition)}
+        × ${formatCurrency(baseData.holdingPrice)}
+        × ${formatNumber(baseData.peakPct, 2)}%
+        = ${formatCurrency(result.newPeak)}
+        <br>
+
+        <strong>Peak Hit Available Fund</strong>
+        = Initial Available Fund + New Peak
+        = ${formatCurrency(baseData.initialAvailable)}
+        + ${formatCurrency(result.newPeak)}
+        = ${formatCurrency(result.peakHitAvailable)}
+        <br>
+
+        <strong>Calculated Margin for Order</strong>
+        = Buyback Quantity × Buy Price
+        = ${formatQty(result.orderQty)}
+        × ${formatCurrency(result.buyPrice)}
+        = ${formatCurrency(result.calculatedMargin)}
+        <br>
+
+        <strong>Additional Required Fund</strong>
+        = MAX(Calculated Margin − Peak Hit Available Fund, 0)
+        = MAX(
+        ${formatCurrency(result.calculatedMargin)}
+        −
+        ${formatCurrency(result.peakHitAvailable)},
+        0
+        )
+        = ${formatCurrency(result.additionalRequired)}
+    `;
+
+    $("orderResults").style.display = "block";
+
+    /*
+        Generate quantity matrix.
+    */
+
+    generateMatrix(baseData, buyPrice);
+}
+
+
+/* ============================================================
+   QUANTITY MATRIX
+   ============================================================ */
+
+function generateMatrix(d, buyPrice) {
+
+    const body =
+        $("matrixBody");
+
+    body.innerHTML = "";
+
+    /*
+        Matrix goes from 1 up to Holding Quantity.
+
+        To keep the page practical, cap it at 1000 rows.
+        This does NOT affect the actual order calculation.
+    */
+
+    const maxRows =
+        Math.min(
+            Math.floor(d.holdingQty),
+            1000
+        );
+
+    if (maxRows <= 0) {
+
+        body.innerHTML = `
+            <tr>
+                <td colspan="9" class="empty-note">
+                    No quantity available for matrix.
+                </td>
+            </tr>
+        `;
+
+        $("matrixSection").style.display = "block";
+        return;
+    }
+
+    for (let qty = 1; qty <= maxRows; qty++) {
+
+        const result =
+            calculateOrder(
+                d,
+                qty,
+                buyPrice
+            );
+
+        const allowed =
+            result.fundAccepted &&
+            qty <= d.maxBuyAllowedQty;
+
+        const tr =
+            document.createElement("tr");
+
+        tr.className =
+            allowed
+                ? "accepted-row"
+                : "rejected-row";
+
+        const statusText =
+            !result.fundAccepted
+                ? "REJECT - FUND"
+                : result.limitExceeded
+                    ? "REJECT - LIMIT"
+                    : "ACCEPT";
+
+        tr.innerHTML = `
+            <td>${formatQty(qty)}</td>
+
+            <td>
+                ${formatCurrency(result.orderValue)}
+            </td>
+
+            <td>
+                ${formatQty(result.remainingPosition)}
+            </td>
+
+            <td>
+                ${formatCurrency(result.newPeak)}
+            </td>
+
+            <td>
+                ${formatCurrency(result.peakHitAvailable)}
+            </td>
+
+            <td>
+                ${formatCurrency(result.calculatedMargin)}
+            </td>
+
+            <td>
+                ${formatCurrency(result.additionalRequired)}
+            </td>
+
+            <td>
+                ${formatCurrency(result.difference)}
+            </td>
+
+            <td>
+                <strong>${statusText}</strong>
+            </td>
+        `;
+
+        body.appendChild(tr);
+    }
+
+    $("matrixSection").style.display = "block";
+}
+
+
+/* ============================================================
+   CLEAR EVERYTHING
+   ============================================================ */
+
+function clearAll() {
+
+    /*
+        Clear inputs
+    */
+
+    $("holdingQty").value = "";
+    $("holdingPrice").value = "";
+    $("peakPct").value = "";
+    $("cfsPct").value = "";
+    $("buybackPct").value = "";
+
+    $("buybackQty").value = "";
+    $("buyPrice").value = "";
+
+    /*
+        Reset global state
+    */
+
+    baseData = null;
+
+    /*
+        Hide errors
+    */
+
+    hideInputError();
+    hideOrderError();
+
+    /*
+        Hide result sections
+    */
+
+    $("baseResults").style.display = "none";
+    $("orderSection").style.display = "none";
+    $("orderResults").style.display = "none";
+    $("matrixSection").style.display = "none";
+
+    /*
+        Clear table
+    */
+
+    $("matrixBody").innerHTML = "";
+
+    /*
+        Reset output values
+    */
+
+    $("holdingValue").textContent = "₹0";
+    $("initialPeak").textContent = "₹0";
+    $("receivable").textContent = "₹0";
+    $("initialAvailable").textContent = "₹0";
+    $("maxBuyAllowedQty").textContent = "0";
+
+    $("orderQtyResult").textContent = "0";
+    $("buyPriceResult").textContent = "₹0";
+    $("orderValue").textContent = "₹0";
+    $("remainingPosition").textContent = "0";
+    $("newPeak").textContent = "₹0";
+    $("peakHitAvailable").textContent = "₹0";
+    $("calculatedMargin").textContent = "₹0";
+    $("additionalRequired").textContent = "₹0";
+    $("difference").textContent = "₹0";
+
+    $("decisionBox").textContent = "";
+    $("decisionBox").className = "status-box";
+
+    $("rmsMessage").textContent = "";
+    $("baseFormula").innerHTML = "";
+    $("orderFormula").innerHTML = "";
+
+    /*
+        Return cursor to first field
+    */
+
+    $("holdingQty").focus();
+}
+
+
+/* ============================================================
+   LIVE BUY PRICE UPDATE
+   ============================================================ */
+
+$("buyPrice").addEventListener(
+    "input",
+    function () {
+
+        if (!baseData) {
+            return;
+        }
+
+        updateMaxQtyFromBuyPrice();
+
+        /*
+            If an order result is currently visible,
+            recalculate it automatically using
+            the new Buy Price.
+        */
+
+        const qty =
+            getNumber("buybackQty");
+
+        const price =
+            getNumber("buyPrice");
+
+        if (
+            Number.isFinite(qty) &&
+            qty > 0 &&
+            Number.isInteger(qty) &&
+            Number.isFinite(price) &&
+            price > 0 &&
+            $("orderResults").style.display !== "none"
+        ) {
+            testOrder();
+        }
+    }
+);
+
+
+/* ============================================================
+   ENTER KEY SUPPORT
+   ============================================================ */
+
+$("holdingQty").addEventListener(
+    "keydown",
+    function (e) {
+        if (e.key === "Enter") {
+            calculateBase();
+        }
+    }
+);
+
+$("holdingPrice").addEventListener(
+    "keydown",
+    function (e) {
+        if (e.key === "Enter") {
+            calculateBase();
+        }
+    }
+);
+
+$("peakPct").addEventListener(
+    "keydown",
+    function (e) {
+        if (e.key === "Enter") {
+            calculateBase();
+        }
+    }
+);
+
+$("cfsPct").addEventListener(
+    "keydown",
+    function (e) {
+        if (e.key === "Enter") {
+            calculateBase();
+        }
+    }
+);
+
+$("buybackPct").addEventListener(
+    "keydown",
+    function (e) {
+        if (e.key === "Enter") {
+            calculateBase();
+        }
+    }
+);
+
+$("buybackQty").addEventListener(
+    "keydown",
+    function (e) {
+        if (e.key === "Enter") {
+            testOrder();
+        }
+    }
+);
+
+$("buyPrice").addEventListener(
+    "keydown",
+    function (e) {
+        if (e.key === "Enter") {
+            testOrder();
+        }
+    }
+);
+
+
+/* ============================================================
+   INITIAL STATE
+   ============================================================ */
+
+clearAll();
+
+</script>
+
+</body>
+</html>
