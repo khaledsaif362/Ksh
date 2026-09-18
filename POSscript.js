@@ -154,6 +154,171 @@ let manualRowSeq = 0;
 let currentMode = "sample";
 
 
+/*
+ * Client list loaded from an uploaded .txt/.csv file —
+ * one client ID per line. When non-empty, this replaces
+ * Client ID 1/2 entirely: every position (sample or
+ * manual) is generated once per client here, as a
+ * buy-side row.
+ */
+
+let uploadedClients = [];
+
+
+/* =========================================================
+   HANDLE CLIENT LIST FILE UPLOAD
+========================================================= */
+
+function handleClientFileUpload(input) {
+
+    const file =
+        input.files && input.files[0];
+
+
+    if (!file) {
+
+        return;
+
+    }
+
+
+    const reader =
+        new FileReader();
+
+
+    reader.onload = function (e) {
+
+        const text =
+            String(e.target.result || "");
+
+
+        /*
+         * One client per line. Also tolerate a CSV
+         * export by taking just the first comma-separated
+         * value on each line, and strip any surrounding
+         * quotes Excel sometimes adds.
+         */
+
+        uploadedClients =
+            text
+                .split(/\r?\n/)
+                .map(line =>
+                    line
+                        .split(",")[0]
+                        .trim()
+                        .replace(/^"|"$/g, "")
+                )
+                .filter(id => id.length > 0);
+
+
+        refreshClientFileStatus();
+
+    };
+
+
+    reader.onerror = function () {
+
+        alert(
+            "Could not read that file. Please try again."
+        );
+
+    };
+
+
+    reader.readAsText(file);
+
+}
+
+
+/* =========================================================
+   CLEAR CLIENT LIST FILE
+========================================================= */
+
+function clearClientFile() {
+
+    uploadedClients = [];
+
+
+    const input =
+        document.getElementById("clientFile");
+
+
+    if (input) {
+
+        input.value = "";
+
+    }
+
+
+    refreshClientFileStatus();
+
+}
+
+
+/* =========================================================
+   REFRESH CLIENT FILE STATUS / GREY OUT CLIENT 1 & 2
+========================================================= */
+
+function refreshClientFileStatus() {
+
+    const status =
+        document.getElementById("clientFileStatus");
+
+
+    const clearBtn =
+        document.getElementById("clientFileClearBtn");
+
+
+    const active =
+        uploadedClients.length > 0;
+
+
+    if (status) {
+
+        status.textContent =
+            active
+                ? uploadedClients.length +
+                  " client(s) loaded from file"
+                : "";
+
+    }
+
+
+    if (clearBtn) {
+
+        clearBtn.style.display =
+            active ? "inline-block" : "none";
+
+    }
+
+
+    ["client1", "client2"].forEach(id => {
+
+        const el =
+            document.getElementById(id);
+
+
+        if (!el) {
+
+            return;
+
+        }
+
+
+        el.disabled = active;
+
+
+        if (active) {
+
+            el.value = "";
+
+        }
+
+    });
+
+}
+
+
 /* =========================================================
    SET MODE (Sample Positions / Manual Entry)
 ========================================================= */
@@ -988,16 +1153,32 @@ function buildManualRows(
             };
 
 
-            rows.push(
-                makeRow(client1, true)
-            );
+            if (uploadedClients.length > 0) {
 
+                uploadedClients.forEach(c => {
 
-            if (client2) {
+                    rows.push(
+                        makeRow(c, true)
+                    );
+
+                });
+
+            }
+
+            else {
 
                 rows.push(
-                    makeRow(client2, false)
+                    makeRow(client1, true)
                 );
+
+
+                if (client2) {
+
+                    rows.push(
+                        makeRow(client2, false)
+                    );
+
+                }
 
             }
 
@@ -1496,7 +1677,15 @@ function generateSegment(
     /* =====================================================
        PROCESS EACH ROW
        (skipped entirely in manual mode)
+
+       Wrapped in a function so it can be called once per
+       uploaded client (each pass treating that client as
+       "client1", buy-side only) without touching any of
+       the logic inside — same tested behaviour, just run
+       multiple times when a client list is loaded.
     ===================================================== */
+
+    function processSampleRows(client1, client2) {
 
     for (const row of (manualActive ? [] : data)) {
 
@@ -1840,6 +2029,26 @@ function generateSegment(
     }
 
 
+    }
+
+
+    if (uploadedClients.length > 0) {
+
+        uploadedClients.forEach(c => {
+
+            processSampleRows(c, null);
+
+        });
+
+    }
+
+    else {
+
+        processSampleRows(client1, client2);
+
+    }
+
+
     /* =====================================================
        FO FILE DOWNLOAD
     ===================================================== */
@@ -2110,10 +2319,10 @@ function generate() {
        CLIENT VALIDATION
     ===================================================== */
 
-    if (!client1) {
+    if (uploadedClients.length === 0 && !client1) {
 
         alert(
-            "Please provide Client 1."
+            "Please provide Client 1, or upload a client list."
         );
 
         return;
