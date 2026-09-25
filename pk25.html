@@ -31,7 +31,7 @@ body{
 
 .header{
     background:#176b4f;
-    color:white;
+    color:#fff;
     border-radius:0 0 10px 10px;
     padding:16px 20px;
     margin-bottom:12px;
@@ -48,7 +48,7 @@ body{
     opacity:.9;
 }
 
-/* CARD */
+/* ================= CARD ================= */
 
 .card{
     background:#fff;
@@ -81,7 +81,7 @@ body{
     padding:12px;
 }
 
-/* COMMON PARAMETERS */
+/* ================= PARAMETERS ================= */
 
 .parameters{
     display:grid;
@@ -126,7 +126,7 @@ body{
     font-size:10px;
 }
 
-/* TABLE */
+/* ================= TABLE ================= */
 
 .table-wrap{
     width:100%;
@@ -141,7 +141,7 @@ table{
 
 th{
     background:#176b4f;
-    color:white;
+    color:#fff;
     padding:8px 7px;
     font-size:11px;
     white-space:nowrap;
@@ -180,7 +180,7 @@ td input:focus{
     min-width:110px;
 }
 
-/* BUTTONS */
+/* ================= BUTTONS ================= */
 
 .actions{
     display:flex;
@@ -224,7 +224,7 @@ button:hover{
     opacity:.9;
 }
 
-/* FLOW */
+/* ================= FLOW ================= */
 
 .flow{
     display:flex;
@@ -260,7 +260,7 @@ button:hover{
     color:#4d8873;
 }
 
-/* SUMMARY */
+/* ================= SUMMARY ================= */
 
 .summary-grid{
     display:grid;
@@ -294,7 +294,7 @@ button:hover{
     margin-top:4px;
 }
 
-/* FINAL */
+/* ================= FINAL ================= */
 
 .final{
     margin-top:10px;
@@ -317,7 +317,7 @@ button:hover{
 }
 
 .final-box{
-    background:white;
+    background:#fff;
     border:1px solid #d7e5e0;
     border-radius:8px;
     padding:12px;
@@ -335,7 +335,7 @@ button:hover{
     margin-top:4px;
 }
 
-/* STATUS */
+/* ================= STATUS ================= */
 
 .status-ok{
     color:#19734f;
@@ -347,26 +347,24 @@ button:hover{
     font-weight:700;
 }
 
-.value-limit{
+/* ================= OVERALL BUYBACK ================= */
+
+.overall-limit{
+    background:#e3f3ec;
+    border:1px solid #afd4c5;
+    border-radius:8px;
+    padding:10px;
+    margin-top:10px;
     color:#176b4f;
-    font-weight:600;
+    font-size:11px;
+    line-height:1.7;
 }
 
-.invalid-row{
-    background:#fff3f2 !important;
+.overall-limit strong{
+    font-size:13px;
 }
 
-.valid-row{
-    background:#f7fcfa;
-}
-
-.limit-warning{
-    font-size:10px;
-    color:#b54139;
-    font-weight:600;
-}
-
-/* FORMULA */
+/* ================= FORMULA ================= */
 
 .formula{
     margin-top:10px;
@@ -376,16 +374,16 @@ button:hover{
     border:1px solid #dce9e4;
     color:#64756e;
     font-size:10px;
-    line-height:1.6;
+    line-height:1.7;
 }
 
-/* OUTPUT */
+/* ================= OUTPUT ================= */
 
 #output{
     display:none;
 }
 
-/* MOBILE */
+/* ================= MOBILE ================= */
 
 @media(max-width:800px){
 
@@ -451,18 +449,31 @@ button:hover{
 
 <div class="container">
 
+    <!-- HEADER -->
+
     <div class="header">
+
         <h1>Peak Margin Calculator</h1>
-        <p>Multiple Scrip Buyback / Peak Margin Calculation</p>
+
+        <p>
+            Multiple Scrip Buyback / Peak Margin Calculation
+        </p>
+
     </div>
+
 
     <!-- COMMON PARAMETERS -->
 
     <div class="card">
 
         <div class="card-title">
+
             <h2>Common Parameters</h2>
-            <p>Enter these values once. They apply to all scrips.</p>
+
+            <p>
+                These values apply to all scrips.
+            </p>
+
         </div>
 
         <div class="card-body">
@@ -470,47 +481,62 @@ button:hover{
             <div class="parameters">
 
                 <div class="parameter">
+
                     <label>Peak %</label>
+
                     <input
                         type="number"
                         id="peakPct"
                         min="0"
                         step="0.01"
-                        placeholder="Enter Peak %">
+                        value="25">
+
                     <div class="help">
                         Common Peak percentage
                     </div>
+
                 </div>
 
+
                 <div class="parameter">
+
                     <label>CFS %</label>
+
                     <input
                         type="number"
                         id="cfsPct"
                         min="0"
                         step="0.01"
-                        placeholder="Enter CFS %">
+                        value="100">
+
                     <div class="help">
                         Common CFS percentage
                     </div>
+
                 </div>
 
+
                 <div class="parameter">
+
                     <label>Buyback %</label>
+
                     <input
                         type="number"
                         id="buybackPct"
                         min="0"
                         step="0.01"
-                        placeholder="Enter Buyback %">
+                        value="80">
+
                     <div class="help">
-                        Applied on BUYBACK VALUE, not quantity
+                        Applied to overall holding value
                     </div>
+
                 </div>
 
             </div>
 
         </div>
+
     </div>
 
 
@@ -519,26 +545,41 @@ button:hover{
     <div class="card">
 
         <div class="card-title">
+
             <h2>Enter Scrip Details</h2>
-            <p>Enter the holding and buyback details for each scrip.</p>
+
+            <p>
+                Enter holding and buyback details for each scrip.
+            </p>
+
         </div>
 
         <div class="card-body">
 
             <div class="table-wrap">
 
-                <table id="inputTable">
+                <table>
 
                     <thead>
+
                         <tr>
+
                             <th>#</th>
+
                             <th>Scrip</th>
+
                             <th>Holding Qty</th>
+
                             <th>Holding Price</th>
+
                             <th>Buyback Qty</th>
+
                             <th>Buy Price</th>
+
                             <th>Action</th>
+
                         </tr>
+
                     </thead>
 
                     <tbody id="scripBody"></tbody>
@@ -547,42 +588,57 @@ button:hover{
 
             </div>
 
+
             <div class="actions">
 
                 <button
                     type="button"
                     class="add-btn"
                     onclick="addScrip()">
+
                     + Add Scrip
+
                 </button>
+
 
                 <button
                     type="button"
                     class="calculate-btn"
                     onclick="calculate()">
+
                     Calculate Peak Margin
+
                 </button>
+
 
                 <button
                     type="button"
                     class="clear-btn"
                     onclick="clearAll()">
+
                     Clear All
+
                 </button>
 
             </div>
 
         </div>
+
     </div>
 
 
-    <!-- HOW CALCULATION WORKS -->
+    <!-- CALCULATION FLOW -->
 
     <div class="card">
 
         <div class="card-title">
+
             <h2>How the Calculation Works</h2>
-            <p>Portfolio-level calculation for all scrips</p>
+
+            <p>
+                Portfolio-level calculation for all scrips
+            </p>
+
         </div>
 
         <div class="card-body">
@@ -590,72 +646,101 @@ button:hover{
             <div class="flow">
 
                 <div class="flow-box">
+
                     <div class="flow-title">
                         Total Holding Value
                     </div>
+
                     <div class="flow-value">
                         All scrips combined
                     </div>
+
                 </div>
+
 
                 <div class="arrow">→</div>
 
+
                 <div class="flow-box">
+
                     <div class="flow-title">
                         Initial Peak
                     </div>
+
                     <div class="flow-value">
                         Holding Value × Peak %
                     </div>
+
                 </div>
+
 
                 <div class="arrow">→</div>
 
+
                 <div class="flow-box">
+
                     <div class="flow-title">
                         Receivable
                     </div>
+
                     <div class="flow-value">
                         Holding Value × CFS %
                     </div>
+
                 </div>
+
 
                 <div class="arrow">→</div>
 
+
                 <div class="flow-box">
+
                     <div class="flow-title">
                         Initial Available
                     </div>
+
                     <div class="flow-value">
                         Receivable − Initial Peak
                     </div>
+
                 </div>
+
 
                 <div class="arrow">→</div>
 
+
                 <div class="flow-box">
+
                     <div class="flow-title">
                         Total New Peak
                     </div>
+
                     <div class="flow-value">
                         Remaining positions
                     </div>
+
                 </div>
+
 
                 <div class="arrow">→</div>
 
+
                 <div class="flow-box">
+
                     <div class="flow-title">
                         Peak Hit Available Fund
                     </div>
+
                     <div class="flow-value">
                         Initial Available + New Peak
                     </div>
+
                 </div>
 
             </div>
 
         </div>
+
     </div>
 
 
@@ -663,88 +748,185 @@ button:hover{
 
     <div id="output">
 
+        <!-- SUMMARY -->
+
         <div class="card">
 
             <div class="card-title">
+
                 <h2>Calculation Summary</h2>
-                <p>Combined calculation for all entered scrips</p>
+
+                <p>
+                    Combined calculation for all entered scrips
+                </p>
+
             </div>
 
             <div class="card-body">
 
                 <div class="summary-grid">
 
+
                     <div class="summary-box">
+
                         <div class="summary-label">
                             Total Holding Value
                         </div>
-                        <div class="summary-value" id="totalHolding">
+
+                        <div
+                            class="summary-value"
+                            id="totalHolding">
+
                             ₹0.00
+
                         </div>
+
                     </div>
 
+
                     <div class="summary-box">
+
                         <div class="summary-label">
                             Initial Peak
                         </div>
-                        <div class="summary-value" id="initialPeak">
+
+                        <div
+                            class="summary-value"
+                            id="initialPeak">
+
                             ₹0.00
+
                         </div>
+
                     </div>
 
+
                     <div class="summary-box">
+
                         <div class="summary-label">
                             Receivable
                         </div>
-                        <div class="summary-value" id="receivable">
+
+                        <div
+                            class="summary-value"
+                            id="receivable">
+
                             ₹0.00
+
                         </div>
+
                     </div>
 
+
                     <div class="summary-box">
+
                         <div class="summary-label">
                             Initial Available
                         </div>
-                        <div class="summary-value" id="initialAvailable">
+
+                        <div
+                            class="summary-value"
+                            id="initialAvailable">
+
                             ₹0.00
+
                         </div>
+
                     </div>
 
+
                     <div class="summary-box">
+
                         <div class="summary-label">
                             Total New Peak
                         </div>
-                        <div class="summary-value" id="totalNewPeak">
+
+                        <div
+                            class="summary-value"
+                            id="totalNewPeak">
+
                             ₹0.00
+
                         </div>
+
                     </div>
 
+
                     <div class="summary-box highlight">
+
                         <div class="summary-label">
                             Peak Hit Available Fund
                         </div>
-                        <div class="summary-value" id="peakHitFund">
+
+                        <div
+                            class="summary-value"
+                            id="peakHitFund">
+
                             ₹0.00
+
                         </div>
+
                     </div>
 
+
                     <div class="summary-box">
+
                         <div class="summary-label">
                             Calculated Margin
                         </div>
-                        <div class="summary-value" id="calculatedMargin">
+
+                        <div
+                            class="summary-value"
+                            id="calculatedMargin">
+
                             ₹0.00
+
                         </div>
+
                     </div>
 
+
                     <div class="summary-box highlight">
+
                         <div class="summary-label">
                             Additional Required
                         </div>
-                        <div class="summary-value" id="additionalRequired">
+
+                        <div
+                            class="summary-value"
+                            id="additionalRequired">
+
                             ₹0.00
+
                         </div>
+
                     </div>
+
+                </div>
+
+
+                <!-- OVERALL BUYBACK -->
+
+                <div class="overall-limit">
+
+                    Overall Buyback Limit:
+                    <strong id="overallBuybackLimit">
+                        ₹0.00
+                    </strong>
+
+                    <br>
+
+                    Actual Buyback Value:
+                    <strong id="overallBuybackValue">
+                        ₹0.00
+                    </strong>
+
+                    <br>
+
+                    Overall Buyback Status:
+                    <strong id="overallBuybackStatus">
+                        -
+                    </strong>
 
                 </div>
 
@@ -757,34 +939,55 @@ button:hover{
 
                     <div class="final-grid">
 
+
                         <div class="final-box">
+
                             <div class="final-label">
                                 Peak Hit Available Fund
                             </div>
 
-                            <div class="final-value" id="finalPeakHit">
+                            <div
+                                class="final-value"
+                                id="finalPeakHit">
+
                                 ₹0.00
+
                             </div>
+
                         </div>
 
+
                         <div class="final-box">
+
                             <div class="final-label">
                                 Calculated Margin
                             </div>
 
-                            <div class="final-value" id="finalMargin">
+                            <div
+                                class="final-value"
+                                id="finalMargin">
+
                                 ₹0.00
+
                             </div>
+
                         </div>
 
+
                         <div class="final-box">
+
                             <div class="final-label">
                                 Additional Required
                             </div>
 
-                            <div class="final-value" id="finalAdditional">
+                            <div
+                                class="final-value"
+                                id="finalAdditional">
+
                                 ₹0.00
+
                             </div>
+
                         </div>
 
                     </div>
@@ -792,6 +995,7 @@ button:hover{
                 </div>
 
             </div>
+
         </div>
 
 
@@ -800,8 +1004,15 @@ button:hover{
         <div class="card">
 
             <div class="card-title">
-                <h2>Scrip-wise Calculation</h2>
-                <p>Detailed calculation for each scrip</p>
+
+                <h2>
+                    Scrip-wise Calculation
+                </h2>
+
+                <p>
+                    Detailed calculation for each scrip
+                </p>
+
             </div>
 
             <div class="card-body">
@@ -811,19 +1022,25 @@ button:hover{
                     <table>
 
                         <thead>
+
                             <tr>
+
                                 <th>Scrip</th>
+
                                 <th>Holding Value</th>
-                                <th>Allowed Buyback Value</th>
-                                <th>Buyback Value</th>
-                                <th>Max Buyback Qty</th>
+
                                 <th>Buyback Qty</th>
+
                                 <th>Remaining Qty</th>
+
                                 <th>Buy Price</th>
+
                                 <th>New Peak</th>
-                                <th>Buyback Margin</th>
-                                <th>Status</th>
+
+                                <th>Buyback Value</th>
+
                             </tr>
+
                         </thead>
 
                         <tbody id="resultBody"></tbody>
@@ -832,46 +1049,85 @@ button:hover{
 
                 </div>
 
+
                 <div class="formula">
 
                     <b>Calculation:</b><br>
 
-                    Holding Value = Holding Qty × Holding Price<br>
+                    Total Holding Value =
+                    Sum of (Holding Qty × Holding Price)
 
-                    Initial Peak = Total Holding Value × Peak %<br>
+                    <br>
 
-                    Receivable = Total Holding Value × CFS %<br>
+                    Initial Peak =
+                    Total Holding Value × Peak %
 
-                    Initial Available = Receivable − Initial Peak<br>
+                    <br>
 
-                    Remaining Position = Holding Qty − Buyback Qty<br>
+                    Receivable =
+                    Total Holding Value × CFS %
 
-                    New Peak = Remaining Position × Holding Price × Peak %<br>
+                    <br>
 
-                    Peak Hit Available Fund = Initial Available + Total New Peak<br>
+                    Initial Available =
+                    Receivable − Initial Peak
 
-                    Buyback Value = Buyback Qty × Buy Price<br>
+                    <br>
 
-                    <b>
-                    Allowed Buyback Value =
-                    Holding Value × Buyback %
-                    </b>
+                    Remaining Position =
+                    Holding Qty − Buyback Qty
+
+                    <br>
+
+                    New Peak =
+                    Remaining Position × Holding Price × Peak %
+
+                    <br>
+
+                    Total New Peak =
+                    Sum of all scrip New Peaks
+
+                    <br>
+
+                    Peak Hit Available Fund =
+                    Initial Available + Total New Peak
+
+                    <br>
+
+                    Buyback Value =
+                    Buyback Qty × Buy Price
+
                     <br>
 
                     <b>
-                    Max Buyback Qty =
-                    FLOOR(Allowed Buyback Value ÷ Buy Price)
+                    Overall Allowed Buyback Value =
+                    Total Holding Value × Buyback %
                     </b>
+
                     <br>
 
-                    Calculated Margin = Total Buyback Value<br>
+                    <b>
+                    Overall Buyback Status =
+                    Total Buyback Value ≤ Overall Allowed Buyback Value
+                    </b>
+
+                    <br>
+
+                    Calculated Margin =
+                    Total Buyback Value
+
+                    <br>
 
                     Additional Required =
-                    MAX(Calculated Margin − Peak Hit Available Fund, 0)
+                    MAX(
+                    Calculated Margin − Peak Hit Available Fund,
+                    0
+                    )
 
                 </div>
 
             </div>
+
         </div>
 
     </div>
@@ -882,32 +1138,66 @@ button:hover{
 <script>
 
 /* =========================================
-   GLOBAL
+   DEFAULT VALUES
+========================================= */
+
+const DEFAULT_PEAK = 25;
+const DEFAULT_CFS = 100;
+const DEFAULT_BUYBACK = 80;
+
+
+/* =========================================
+   ROW COUNTER
 ========================================= */
 
 let rowCounter = 0;
 
 
 /* =========================================
-   NUMBER FORMAT
+   MONEY FORMAT
 ========================================= */
 
 function money(value){
 
     value = Number(value) || 0;
 
-    return "₹" + value.toLocaleString("en-IN",{
-        minimumFractionDigits:2,
-        maximumFractionDigits:2
-    });
+    return "₹" +
+        value.toLocaleString("en-IN",{
+            minimumFractionDigits:2,
+            maximumFractionDigits:2
+        });
 }
 
+
+/* =========================================
+   NUMBER
+========================================= */
 
 function numberValue(value){
 
     const n = Number(value);
 
-    return Number.isFinite(n) ? n : 0;
+    return Number.isFinite(n)
+        ? n
+        : 0;
+}
+
+
+/* =========================================
+   QUANTITY FORMAT
+========================================= */
+
+function formatQty(value){
+
+    value = Number(value) || 0;
+
+    if(Number.isInteger(value)){
+        return value.toString();
+    }
+
+    return value.toLocaleString("en-IN",{
+        maximumFractionDigits:4
+    });
 }
 
 
@@ -925,33 +1215,807 @@ function addScrip(
 
     rowCounter++;
 
-    const tbody = document.getElementById("scripBody");
+    const tbody =
+        document.getElementById("scripBody");
 
-    const tr = document.createElement("tr");
+    const tr =
+        document.createElement("tr");
 
-    tr.dataset.row = rowCounter;
 
     tr.innerHTML = `
 
-        <td>${rowCounter}</td>
+        <td>
+            ${rowCounter}
+        </td>
 
         <td>
+
             <input
                 class="scrip-input"
                 type="text"
                 value="${scrip}"
                 placeholder="Scrip">
+
         </td>
 
         <td>
+
             <input
                 type="number"
                 min="0"
                 step="0.01"
                 value="${holdingQty}"
                 placeholder="Holding Qty">
+
         </td>
 
         <td>
+
             <input
-          
+                type="number"
+                min="0"
+                step="0.01"
+                value="${holdingPrice}"
+                placeholder="Holding Price">
+
+        </td>
+
+        <td>
+
+            <input
+                type="number"
+                min="0"
+                step="0.01"
+                value="${buybackQty}"
+                placeholder="Buyback Qty">
+
+        </td>
+
+        <td>
+
+            <input
+                type="number"
+                min="0"
+                step="0.01"
+                value="${buyPrice}"
+                placeholder="Buy Price">
+
+        </td>
+
+        <td>
+
+            <button
+                type="button"
+                class="delete-btn"
+                onclick="deleteRow(this)">
+
+                Delete
+
+            </button>
+
+        </td>
+
+    `;
+
+
+    tbody.appendChild(tr);
+
+    renumberRows();
+}
+
+
+/* =========================================
+   DELETE
+========================================= */
+
+function deleteRow(button){
+
+    const row =
+        button.closest("tr");
+
+    if(row){
+        row.remove();
+    }
+
+    renumberRows();
+}
+
+
+/* =========================================
+   RENUMBER
+========================================= */
+
+function renumberRows(){
+
+    const rows =
+        document.querySelectorAll(
+            "#scripBody tr"
+        );
+
+    rows.forEach((row,index)=>{
+
+        row.children[0].textContent =
+            index + 1;
+
+    });
+}
+
+
+/* =========================================
+   GET INPUT ROWS
+========================================= */
+
+function getRows(){
+
+    const rows =
+        document.querySelectorAll(
+            "#scripBody tr"
+        );
+
+    const data = [];
+
+
+    rows.forEach(row=>{
+
+        const inputs =
+            row.querySelectorAll("input");
+
+
+        data.push({
+
+            scrip:
+                inputs[0].value.trim(),
+
+            holdingQty:
+                numberValue(inputs[1].value),
+
+            holdingPrice:
+                numberValue(inputs[2].value),
+
+            buybackQty:
+                numberValue(inputs[3].value),
+
+            buyPrice:
+                numberValue(inputs[4].value)
+
+        });
+
+    });
+
+
+    return data;
+}
+
+
+/* =========================================
+   CALCULATE
+========================================= */
+
+function calculate(){
+
+    const peakPct =
+        numberValue(
+            document.getElementById(
+                "peakPct"
+            ).value
+        );
+
+
+    const cfsPct =
+        numberValue(
+            document.getElementById(
+                "cfsPct"
+            ).value
+        );
+
+
+    const buybackPct =
+        numberValue(
+            document.getElementById(
+                "buybackPct"
+            ).value
+        );
+
+
+    if(
+        peakPct < 0 ||
+        cfsPct < 0 ||
+        buybackPct < 0
+    ){
+
+        alert(
+            "Percentage values cannot be negative."
+        );
+
+        return;
+    }
+
+
+    const rows = getRows();
+
+
+    if(rows.length === 0){
+
+        alert(
+            "Please add at least one scrip."
+        );
+
+        return;
+    }
+
+
+    const peakRate =
+        peakPct / 100;
+
+    const cfsRate =
+        cfsPct / 100;
+
+    const buybackRate =
+        buybackPct / 100;
+
+
+    /* =====================================
+       1. TOTAL HOLDING VALUE
+    ===================================== */
+
+    let totalHoldingValue = 0;
+
+
+    rows.forEach(item=>{
+
+        item.holdingValue =
+            item.holdingQty *
+            item.holdingPrice;
+
+
+        totalHoldingValue +=
+            item.holdingValue;
+
+    });
+
+
+    /* =====================================
+       2. INITIAL PEAK
+    ===================================== */
+
+    const initialPeak =
+        totalHoldingValue *
+        peakRate;
+
+
+    /* =====================================
+       3. RECEIVABLE
+    ===================================== */
+
+    const receivable =
+        totalHoldingValue *
+        cfsRate;
+
+
+    /* =====================================
+       4. INITIAL AVAILABLE
+    ===================================== */
+
+    const initialAvailable =
+        receivable -
+        initialPeak;
+
+
+    /* =====================================
+       5. OVERALL BUYBACK LIMIT
+       
+       IMPORTANT:
+       
+       Buyback % applies to TOTAL
+       HOLDING VALUE.
+
+       NOT to quantity.
+       
+       NOT separately to each scrip.
+    ===================================== */
+
+    const overallAllowedBuybackValue =
+        totalHoldingValue *
+        buybackRate;
+
+
+    /* =====================================
+       6. SCRIP CALCULATIONS
+    ===================================== */
+
+    let totalNewPeak = 0;
+
+    let totalBuybackValue = 0;
+
+
+    rows.forEach(item=>{
+
+        /* Remaining position */
+
+        item.remainingQty =
+            item.holdingQty -
+            item.buybackQty;
+
+
+        /* New Peak */
+
+        item.newPeak =
+            item.remainingQty *
+            item.holdingPrice *
+            peakRate;
+
+
+        totalNewPeak +=
+            item.newPeak;
+
+
+        /* Actual Buyback Value */
+
+        item.buybackValue =
+            item.buybackQty *
+            item.buyPrice;
+
+
+        totalBuybackValue +=
+            item.buybackValue;
+
+    });
+
+
+    /* =====================================
+       7. PEAK HIT AVAILABLE FUND
+    ===================================== */
+
+    const peakHitAvailableFund =
+        initialAvailable +
+        totalNewPeak;
+
+
+    /* =====================================
+       8. CALCULATED MARGIN
+    ===================================== */
+
+    const calculatedMargin =
+        totalBuybackValue;
+
+
+    /* =====================================
+       9. ADDITIONAL REQUIRED
+    ===================================== */
+
+    const additionalRequired =
+        Math.max(
+            calculatedMargin -
+            peakHitAvailableFund,
+            0
+        );
+
+
+    /* =====================================
+       10. OVERALL BUYBACK CHECK
+    ===================================== */
+
+    const buybackValid =
+        totalBuybackValue <=
+        overallAllowedBuybackValue +
+        0.000001;
+
+
+    /* =====================================
+       SUMMARY
+    ===================================== */
+
+    document.getElementById(
+        "totalHolding"
+    ).textContent =
+        money(totalHoldingValue);
+
+
+    document.getElementById(
+        "initialPeak"
+    ).textContent =
+        money(initialPeak);
+
+
+    document.getElementById(
+        "receivable"
+    ).textContent =
+        money(receivable);
+
+
+    document.getElementById(
+        "initialAvailable"
+    ).textContent =
+        money(initialAvailable);
+
+
+    document.getElementById(
+        "totalNewPeak"
+    ).textContent =
+        money(totalNewPeak);
+
+
+    document.getElementById(
+        "peakHitFund"
+    ).textContent =
+        money(peakHitAvailableFund);
+
+
+    document.getElementById(
+        "calculatedMargin"
+    ).textContent =
+        money(calculatedMargin);
+
+
+    document.getElementById(
+        "additionalRequired"
+    ).textContent =
+        money(additionalRequired);
+
+
+    /* =====================================
+       FINAL
+    ===================================== */
+
+    document.getElementById(
+        "finalPeakHit"
+    ).textContent =
+        money(peakHitAvailableFund);
+
+
+    document.getElementById(
+        "finalMargin"
+    ).textContent =
+        money(calculatedMargin);
+
+
+    document.getElementById(
+        "finalAdditional"
+    ).textContent =
+        money(additionalRequired);
+
+
+    /* =====================================
+       OVERALL BUYBACK DISPLAY
+    ===================================== */
+
+    document.getElementById(
+        "overallBuybackLimit"
+    ).textContent =
+        money(
+            overallAllowedBuybackValue
+        );
+
+
+    document.getElementById(
+        "overallBuybackValue"
+    ).textContent =
+        money(
+            totalBuybackValue
+        );
+
+
+    const status =
+        document.getElementById(
+            "overallBuybackStatus"
+        );
+
+
+    if(buybackValid){
+
+        status.textContent = "PASS";
+
+        status.className =
+            "status-ok";
+
+    }else{
+
+        status.textContent = "FAIL";
+
+        status.className =
+            "status-fail";
+
+    }
+
+
+    /* =====================================
+       RESULT TABLE
+    ===================================== */
+
+    const resultBody =
+        document.getElementById(
+            "resultBody"
+        );
+
+
+    resultBody.innerHTML = "";
+
+
+    rows.forEach(item=>{
+
+        const tr =
+            document.createElement("tr");
+
+
+        tr.innerHTML = `
+
+            <td>
+                ${escapeHTML(
+                    item.scrip || "-"
+                )}
+            </td>
+
+            <td>
+                ${money(
+                    item.holdingValue
+                )}
+            </td>
+
+            <td>
+                ${formatQty(
+                    item.buybackQty
+                )}
+            </td>
+
+            <td>
+                ${formatQty(
+                    item.remainingQty
+                )}
+            </td>
+
+            <td>
+                ${money(
+                    item.buyPrice
+                )}
+            </td>
+
+            <td>
+                ${money(
+                    item.newPeak
+                )}
+            </td>
+
+            <td>
+                ${money(
+                    item.buybackValue
+                )}
+            </td>
+
+        `;
+
+
+        resultBody.appendChild(tr);
+
+    });
+
+
+    /* =====================================
+       OVERALL ROW
+    ===================================== */
+
+    const totalRow =
+        document.createElement("tr");
+
+
+    totalRow.style.background =
+        "#e3f3ec";
+
+
+    totalRow.innerHTML = `
+
+        <td>
+            <strong>
+                Overall Status
+            </strong>
+        </td>
+
+        <td>
+            <strong>
+                ${money(
+                    totalHoldingValue
+                )}
+            </strong>
+        </td>
+
+        <td>
+            <strong>
+                ${formatQty(
+                    rows.reduce(
+                        (sum,item)=>
+                            sum +
+                            item.buybackQty,
+                        0
+                    )
+                )}
+            </strong>
+        </td>
+
+        <td>
+            <strong>
+                ${formatQty(
+                    rows.reduce(
+                        (sum,item)=>
+                            sum +
+                            item.remainingQty,
+                        0
+                    )
+                )}
+            </strong>
+        </td>
+
+        <td>
+            -
+        </td>
+
+        <td>
+            <strong>
+                ${money(
+                    totalNewPeak
+                )}
+            </strong>
+        </td>
+
+        <td>
+
+            <strong>
+                ${money(
+                    totalBuybackValue
+                )}
+            </strong>
+
+            <br>
+
+            <span class="${
+                buybackValid
+                ? "status-ok"
+                : "status-fail"
+            }">
+
+                ${
+                    buybackValid
+                    ? "PASS"
+                    : "FAIL"
+                }
+
+            </span>
+
+        </td>
+
+    `;
+
+
+    resultBody.appendChild(totalRow);
+
+
+    /* =====================================
+       SHOW OUTPUT
+    ===================================== */
+
+    document.getElementById(
+        "output"
+    ).style.display =
+        "block";
+
+
+    document.getElementById(
+        "output"
+    ).scrollIntoView({
+        behavior:"smooth",
+        block:"start"
+    });
+
+}
+
+
+/* =========================================
+   ESCAPE HTML
+========================================= */
+
+function escapeHTML(value){
+
+    return String(value)
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+}
+
+
+/* =========================================
+   CLEAR ALL
+========================================= */
+
+function clearAll(){
+
+    /*
+     * Reset percentages to the standard
+     * sample/default values.
+     */
+
+    document.getElementById(
+        "peakPct"
+    ).value =
+        DEFAULT_PEAK;
+
+
+    document.getElementById(
+        "cfsPct"
+    ).value =
+        DEFAULT_CFS;
+
+
+    document.getElementById(
+        "buybackPct"
+    ).value =
+        DEFAULT_BUYBACK;
+
+
+    /*
+     * Remove all scrip rows.
+     */
+
+    document.getElementById(
+        "scripBody"
+    ).innerHTML = "";
+
+
+    /*
+     * Remove output.
+     */
+
+    document.getElementById(
+        "resultBody"
+    ).innerHTML = "";
+
+
+    document.getElementById(
+        "output"
+    ).style.display =
+        "none";
+
+
+    rowCounter = 0;
+
+
+    /*
+     * Add one blank scrip row.
+     */
+
+    addScrip();
+
+}
+
+
+/* =========================================
+   INITIAL LOAD
+========================================= */
+
+document.getElementById(
+    "peakPct"
+).value =
+    DEFAULT_PEAK;
+
+
+document.getElementById(
+    "cfsPct"
+).value =
+    DEFAULT_CFS;
+
+
+document.getElementById(
+    "buybackPct"
+).value =
+    DEFAULT_BUYBACK;
+
+
+/*
+ * Blank scrip input row.
+ */
+
+addScrip();
+
+</script>
+
+</body>
+</html>
