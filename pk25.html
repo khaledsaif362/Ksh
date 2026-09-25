@@ -1,0 +1,1885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+<title>Peak Margin Calculator</title>
+
+<style>
+*{
+    box-sizing:border-box;
+}
+
+html,body{
+    margin:0;
+    padding:0;
+}
+
+body{
+    font-family:"Segoe UI",Arial,sans-serif;
+    background:#eef7f3;
+    color:#17382d;
+    font-size:13px;
+}
+
+.container{
+    width:97%;
+    max-width:1600px;
+    margin:18px auto;
+}
+
+/* ================= HEADER ================= */
+
+.header{
+    background:linear-gradient(135deg,#145b41,#19734f);
+    color:#fff;
+    padding:20px 22px;
+    border-radius:12px;
+    box-shadow:0 4px 12px rgba(20,91,65,.15);
+}
+
+.header h1{
+    margin:0;
+    font-size:23px;
+}
+
+.header p{
+    margin:6px 0 0;
+    font-size:13px;
+    opacity:.9;
+}
+
+/* ================= CARD ================= */
+
+.card{
+    background:#fff;
+    border:1px solid #d3e6dd;
+    border-radius:12px;
+    margin-top:15px;
+    box-shadow:0 2px 9px rgba(0,0,0,.05);
+    overflow:hidden;
+}
+
+.card-header{
+    padding:13px 17px;
+    background:#e5f3ec;
+    border-bottom:1px solid #d3e6dd;
+}
+
+.card-header h3{
+    margin:0;
+    color:#14583f;
+    font-size:15px;
+}
+
+.card-header span{
+    display:block;
+    margin-top:3px;
+    color:#678077;
+    font-size:11px;
+}
+
+/* ================= COMMON INPUTS ================= */
+
+.common-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:16px;
+    padding:18px;
+}
+
+.input-box{
+    border:1px solid #d5e6df;
+    border-radius:9px;
+    padding:12px;
+    background:#f9fcfa;
+}
+
+.input-box label{
+    display:block;
+    font-weight:700;
+    margin-bottom:7px;
+    color:#315d4b;
+}
+
+.input-box small{
+    display:block;
+    margin-top:5px;
+    color:#789087;
+    font-size:11px;
+}
+
+input{
+    width:100%;
+    height:38px;
+    border:1px solid #b9d6c8;
+    border-radius:7px;
+    padding:7px 10px;
+    outline:none;
+    background:#fff;
+    color:#17382d;
+    font-size:13px;
+}
+
+input:focus{
+    border-color:#19734f;
+    box-shadow:0 0 0 3px rgba(25,115,79,.08);
+}
+
+/* ================= STEPS ================= */
+
+.step-badge{
+    display:inline-flex;
+    width:24px;
+    height:24px;
+    border-radius:50%;
+    background:#19734f;
+    color:#fff;
+    align-items:center;
+    justify-content:center;
+    margin-right:7px;
+    font-size:12px;
+}
+
+/* ================= INPUT TABLE ================= */
+
+.table-wrap{
+    width:100%;
+    overflow-x:auto;
+}
+
+.input-table{
+    width:100%;
+    min-width:850px;
+    border-collapse:collapse;
+}
+
+th{
+    background:#176b4d;
+    color:#fff;
+    padding:11px 8px;
+    text-align:center;
+    white-space:nowrap;
+    font-size:12px;
+}
+
+td{
+    padding:7px;
+    border-bottom:1px solid #e0ece7;
+    text-align:center;
+    white-space:nowrap;
+}
+
+tbody tr:hover{
+    background:#f6fbf8;
+}
+
+.scrip{
+    min-width:140px;
+}
+
+.qty{
+    min-width:115px;
+}
+
+.price{
+    min-width:125px;
+}
+
+/* ================= BUTTONS ================= */
+
+.action-bar{
+    padding:15px;
+    display:flex;
+    gap:9px;
+    flex-wrap:wrap;
+}
+
+button{
+    border:0;
+    border-radius:7px;
+    padding:9px 16px;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+}
+
+.btn-add{
+    background:#e0f1e9;
+    color:#14583f;
+    border:1px solid #bcd9cb;
+}
+
+.btn-calculate{
+    background:#176b4d;
+    color:#fff;
+}
+
+.btn-clear{
+    background:#f7dfdd;
+    color:#a52c27;
+}
+
+.btn-delete{
+    background:#fae4e2;
+    color:#a52c27;
+    padding:6px 11px;
+}
+
+button:hover{
+    opacity:.9;
+}
+
+/* ================= CALCULATION FLOW ================= */
+
+.flow{
+    padding:17px;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:8px;
+}
+
+.flow-box{
+    background:#f4faf7;
+    border:1px solid #cfe4d9;
+    border-radius:8px;
+    padding:10px 13px;
+    min-width:145px;
+    text-align:center;
+}
+
+.flow-box strong{
+    display:block;
+    color:#14583f;
+    font-size:12px;
+}
+
+.flow-box small{
+    color:#6d8279;
+    font-size:10px;
+}
+
+.arrow{
+    color:#19734f;
+    font-size:18px;
+    font-weight:bold;
+}
+
+/* ================= SUMMARY ================= */
+
+.summary{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:12px;
+    padding:17px;
+}
+
+.summary-box{
+    border:1px solid #d2e5dc;
+    background:#f7fbf9;
+    border-radius:9px;
+    padding:13px;
+}
+
+.summary-box.highlight{
+    background:#e4f4ec;
+    border-color:#a9d3bf;
+}
+
+.summary-label{
+    font-size:11px;
+    color:#688078;
+    margin-bottom:6px;
+}
+
+.summary-value{
+    color:#14583f;
+    font-size:18px;
+    font-weight:800;
+}
+
+.summary-box.highlight .summary-value{
+    font-size:20px;
+}
+
+/* ================= FINAL RESULT ================= */
+
+.final-result{
+    margin:0 17px 17px;
+    border-radius:10px;
+    padding:16px;
+    background:#f5faf7;
+    border:1px solid #cfe4d9;
+}
+
+.final-title{
+    font-size:14px;
+    font-weight:800;
+    color:#14583f;
+    margin-bottom:12px;
+}
+
+.final-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+}
+
+.final-item{
+    background:#fff;
+    border:1px solid #d6e7df;
+    border-radius:8px;
+    padding:12px;
+}
+
+.final-item label{
+    display:block;
+    color:#6a8077;
+    font-size:11px;
+    margin-bottom:5px;
+}
+
+.final-item strong{
+    font-size:19px;
+    color:#14583f;
+}
+
+.final-item.warning strong{
+    color:#c0392b;
+}
+
+/* ================= RESULT TABLE ================= */
+
+.result-table{
+    width:100%;
+    min-width:1350px;
+    border-collapse:collapse;
+}
+
+.result-table td{
+    font-size:12px;
+}
+
+.total-row{
+    background:#e5f3ec;
+    font-weight:800;
+}
+
+.pass{
+    color:#16804f;
+    font-weight:800;
+}
+
+.fail{
+    color:#c0392b;
+    font-weight:800;
+}
+
+/* ================= INFO ================= */
+
+.info{
+    padding:14px 17px;
+    color:#61776e;
+    font-size:11px;
+    line-height:1.6;
+}
+
+.hidden{
+    display:none;
+}
+
+/* ================= MOBILE ================= */
+
+@media(max-width:850px){
+
+    .container{
+        width:98%;
+        margin:8px auto;
+    }
+
+    .common-grid{
+        grid-template-columns:1fr;
+    }
+
+    .summary{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .final-grid{
+        grid-template-columns:1fr;
+    }
+
+    .flow{
+        display:grid;
+        grid-template-columns:1fr;
+    }
+
+    .arrow{
+        text-align:center;
+        transform:rotate(90deg);
+    }
+
+    .header h1{
+        font-size:19px;
+    }
+}
+
+@media(max-width:500px){
+
+    .summary{
+        grid-template-columns:1fr;
+    }
+
+    .action-bar{
+        flex-direction:column;
+    }
+
+    button{
+        width:100%;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- =====================================================
+     HEADER
+===================================================== -->
+
+<div class="header">
+
+    <h1>Peak Margin Calculator</h1>
+
+    <p>
+        Multiple Scrip Buyback / Peak Margin Calculation
+    </p>
+
+</div>
+
+
+<!-- =====================================================
+     COMMON PARAMETERS
+===================================================== -->
+
+<div class="card">
+
+    <div class="card-header">
+
+        <h3>
+            <span class="step-badge">1</span>
+            Common Parameters
+        </h3>
+
+        <span>
+            Enter these values once. They apply to all scrips.
+        </span>
+
+    </div>
+
+
+    <div class="common-grid">
+
+        <div class="input-box">
+
+            <label>Peak %</label>
+
+            <input
+                type="number"
+                id="peakPct"
+                min="0"
+                step="0.01"
+                placeholder="Example: 25">
+
+            <small>
+                Common Peak percentage
+            </small>
+
+        </div>
+
+
+        <div class="input-box">
+
+            <label>CFS %</label>
+
+            <input
+                type="number"
+                id="cfsPct"
+                min="0"
+                step="0.01"
+                placeholder="Example: 100">
+
+            <small>
+                Common CFS percentage
+            </small>
+
+        </div>
+
+
+        <div class="input-box">
+
+            <label>Buyback %</label>
+
+            <input
+                type="number"
+                id="buybackPct"
+                min="0"
+                step="0.01"
+                placeholder="Example: 97">
+
+            <small>
+                Common buyback limit
+            </small>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     SCRIP INPUT
+===================================================== -->
+
+<div class="card">
+
+    <div class="card-header">
+
+        <h3>
+            <span class="step-badge">2</span>
+            Enter Scrip Details
+        </h3>
+
+        <span>
+            Enter the holding and buyback details for each scrip.
+        </span>
+
+    </div>
+
+
+    <div class="table-wrap">
+
+        <table class="input-table">
+
+            <thead>
+
+                <tr>
+
+                    <th>#</th>
+
+                    <th>Scrip</th>
+
+                    <th>Holding Qty</th>
+
+                    <th>Holding Price</th>
+
+                    <th>Buyback Qty</th>
+
+                    <th>Buy Price</th>
+
+                    <th>Action</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody id="inputBody"></tbody>
+
+        </table>
+
+    </div>
+
+
+    <div class="action-bar">
+
+        <button
+            type="button"
+            class="btn-add"
+            onclick="addRow()">
+            + Add Scrip
+        </button>
+
+        <button
+            type="button"
+            class="btn-calculate"
+            onclick="calculate()">
+            Calculate Peak Margin
+        </button>
+
+        <button
+            type="button"
+            class="btn-clear"
+            onclick="clearAll()">
+            Clear All
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     CALCULATION FLOW
+===================================================== -->
+
+<div
+    class="card hidden"
+    id="flowCard">
+
+    <div class="card-header">
+
+        <h3>
+            <span class="step-badge">3</span>
+            How the Calculation Works
+        </h3>
+
+        <span>
+            Portfolio-level calculation for all scrips
+        </span>
+
+    </div>
+
+
+    <div class="flow">
+
+        <div class="flow-box">
+            <strong>Total Holding Value</strong>
+            <small>All scrips combined</small>
+        </div>
+
+        <div class="arrow">→</div>
+
+        <div class="flow-box">
+            <strong>Initial Peak</strong>
+            <small>Holding Value × Peak %</small>
+        </div>
+
+        <div class="arrow">→</div>
+
+        <div class="flow-box">
+            <strong>Receivable</strong>
+            <small>Holding Value × CFS %</small>
+        </div>
+
+        <div class="arrow">→</div>
+
+        <div class="flow-box">
+            <strong>Initial Available</strong>
+            <small>Receivable − Initial Peak</small>
+        </div>
+
+        <div class="arrow">→</div>
+
+        <div class="flow-box">
+            <strong>Total New Peak</strong>
+            <small>All remaining positions</small>
+        </div>
+
+        <div class="arrow">→</div>
+
+        <div class="flow-box">
+            <strong>Peak Hit Available Fund</strong>
+            <small>Initial Available + New Peak</small>
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     OUTPUT
+===================================================== -->
+
+<div
+    class="card hidden"
+    id="outputCard">
+
+    <div class="card-header">
+
+        <h3>
+            <span class="step-badge">4</span>
+            Calculation Summary
+        </h3>
+
+        <span>
+            Combined calculation for all entered scrips
+        </span>
+
+    </div>
+
+
+    <div class="summary">
+
+        <div class="summary-box">
+
+            <div class="summary-label">
+                TOTAL HOLDING VALUE
+            </div>
+
+            <div
+                class="summary-value"
+                id="totalHolding">
+                ₹0.00
+            </div>
+
+        </div>
+
+
+        <div class="summary-box">
+
+            <div class="summary-label">
+                INITIAL PEAK
+            </div>
+
+            <div
+                class="summary-value"
+                id="totalInitialPeak">
+                ₹0.00
+            </div>
+
+        </div>
+
+
+        <div class="summary-box">
+
+            <div class="summary-label">
+                RECEIVABLE
+            </div>
+
+            <div
+                class="summary-value"
+                id="totalReceivable">
+                ₹0.00
+            </div>
+
+        </div>
+
+
+        <div class="summary-box">
+
+            <div class="summary-label">
+                INITIAL AVAILABLE
+            </div>
+
+            <div
+                class="summary-value"
+                id="totalInitialAvailable">
+                ₹0.00
+            </div>
+
+        </div>
+
+
+        <div class="summary-box">
+
+            <div class="summary-label">
+                TOTAL NEW PEAK
+            </div>
+
+            <div
+                class="summary-value"
+                id="totalNewPeak">
+                ₹0.00
+            </div>
+
+        </div>
+
+
+        <div class="summary-box highlight">
+
+            <div class="summary-label">
+                PEAK HIT AVAILABLE FUND
+            </div>
+
+            <div
+                class="summary-value"
+                id="totalPeakAvailable">
+                ₹0.00
+            </div>
+
+        </div>
+
+
+        <div class="summary-box">
+
+            <div class="summary-label">
+                CALCULATED MARGIN
+            </div>
+
+            <div
+                class="summary-value"
+                id="totalMargin">
+                ₹0.00
+            </div>
+
+        </div>
+
+
+        <div class="summary-box highlight">
+
+            <div class="summary-label">
+                ADDITIONAL REQUIRED
+            </div>
+
+            <div
+                class="summary-value"
+                id="totalAdditional">
+                ₹0.00
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- FINAL RESULT -->
+
+    <div class="final-result">
+
+        <div class="final-title">
+            Final Result
+        </div>
+
+        <div class="final-grid">
+
+            <div class="final-item">
+
+                <label>
+                    Peak Hit Available Fund
+                </label>
+
+                <strong id="finalAvailable">
+                    ₹0.00
+                </strong>
+
+            </div>
+
+
+            <div class="final-item">
+
+                <label>
+                    Calculated Margin
+                </label>
+
+                <strong id="finalMargin">
+                    ₹0.00
+                </strong>
+
+            </div>
+
+
+            <div class="final-item">
+
+                <label>
+                    Additional Required
+                </label>
+
+                <strong id="finalAdditional">
+                    ₹0.00
+                </strong>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- SCRIP DETAILS -->
+
+    <div class="card-header">
+
+        <h3>
+            Scrip-wise Calculation
+        </h3>
+
+        <span>
+            Detailed calculation for each scrip
+        </span>
+
+    </div>
+
+
+    <div class="table-wrap">
+
+        <table class="result-table">
+
+            <thead>
+
+                <tr>
+
+                    <th>Scrip</th>
+
+                    <th>Holding Qty</th>
+
+                    <th>Holding Price</th>
+
+                    <th>Holding Value</th>
+
+                    <th>Buyback Qty</th>
+
+                    <th>Remaining Qty</th>
+
+                    <th>Buy Price</th>
+
+                    <th>New Peak</th>
+
+                    <th>Buyback Margin</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody id="resultBody"></tbody>
+
+
+            <tfoot>
+
+                <tr class="total-row">
+
+                    <td>TOTAL</td>
+
+                    <td id="totalHoldingQty">0</td>
+
+                    <td>-</td>
+
+                    <td id="tableHoldingValue">
+                        ₹0.00
+                    </td>
+
+                    <td id="totalBuybackQty">
+                        0
+                    </td>
+
+                    <td id="totalRemainingQty">
+                        0
+                    </td>
+
+                    <td>-</td>
+
+                    <td id="tableNewPeak">
+                        ₹0.00
+                    </td>
+
+                    <td id="tableMargin">
+                        ₹0.00
+                    </td>
+
+                </tr>
+
+            </tfoot>
+
+        </table>
+
+    </div>
+
+
+    <div class="info">
+
+        <b>Calculation:</b><br>
+
+        Holding Value = Holding Qty × Holding Price<br>
+
+        Initial Peak = Total Holding Value × Peak %<br>
+
+        Receivable = Total Holding Value × CFS %<br>
+
+        Initial Available = Receivable − Initial Peak<br>
+
+        Remaining Position = Holding Qty − Buyback Qty<br>
+
+        New Peak = Remaining Position × Holding Price × Peak %<br>
+
+        Peak Hit Available Fund = Initial Available + Total New Peak<br>
+
+        Calculated Margin = Buyback Qty × Buy Price<br>
+
+        Additional Required = Calculated Margin − Peak Hit Available Fund
+
+    </div>
+
+</div>
+
+</div>
+
+
+<script>
+
+/* =========================================================
+   FORMAT FUNCTIONS
+========================================================= */
+
+function num(value){
+
+    const n = parseFloat(value);
+
+    return Number.isFinite(n) ? n : 0;
+}
+
+
+function money(value){
+
+    return "₹" + Number(value || 0).toLocaleString(
+        "en-IN",
+        {
+            minimumFractionDigits:2,
+            maximumFractionDigits:2
+        }
+    );
+}
+
+
+function qty(value){
+
+    return Number(value || 0).toLocaleString(
+        "en-IN",
+        {
+            maximumFractionDigits:0
+        }
+    );
+}
+
+
+/* =========================================================
+   ADD SCRIP
+========================================================= */
+
+function addRow(){
+
+    const tbody =
+        document.getElementById("inputBody");
+
+    const row =
+        document.createElement("tr");
+
+    row.innerHTML = `
+
+        <td class="serial"></td>
+
+        <td>
+            <input
+                class="scrip"
+                type="text"
+                placeholder="Enter scrip">
+        </td>
+
+        <td>
+            <input
+                class="holdingQty"
+                type="number"
+                min="0"
+                step="1"
+                placeholder="Qty">
+        </td>
+
+        <td>
+            <input
+                class="holdingPrice"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="Price">
+        </td>
+
+        <td>
+            <input
+                class="buybackQty"
+                type="number"
+                min="0"
+                step="1"
+                placeholder="Qty">
+        </td>
+
+        <td>
+            <input
+                class="buyPrice"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="Price">
+        </td>
+
+        <td>
+
+            <button
+                type="button"
+                class="btn-delete"
+                onclick="deleteRow(this)">
+                Delete
+            </button>
+
+        </td>
+
+    `;
+
+    tbody.appendChild(row);
+
+    updateSerial();
+
+}
+
+
+/* =========================================================
+   DELETE ROW
+========================================================= */
+
+function deleteRow(button){
+
+    const row =
+        button.closest("tr");
+
+    if(row){
+        row.remove();
+    }
+
+    updateSerial();
+
+}
+
+
+/* =========================================================
+   SERIAL NUMBERS
+========================================================= */
+
+function updateSerial(){
+
+    const rows =
+        document.querySelectorAll(
+            "#inputBody tr"
+        );
+
+    rows.forEach((row,index)=>{
+
+        row.querySelector(".serial")
+            .textContent = index + 1;
+
+    });
+
+}
+
+
+/* =========================================================
+   CALCULATE
+========================================================= */
+
+function calculate(){
+
+    const peakPct =
+        num(
+            document.getElementById("peakPct").value
+        );
+
+    const cfsPct =
+        num(
+            document.getElementById("cfsPct").value
+        );
+
+    const buybackPct =
+        num(
+            document.getElementById("buybackPct").value
+        );
+
+
+    if(
+        peakPct < 0 ||
+        cfsPct < 0 ||
+        buybackPct < 0
+    ){
+
+        alert("Percentage cannot be negative.");
+
+        return;
+
+    }
+
+
+    const peak =
+        peakPct / 100;
+
+    const cfs =
+        cfsPct / 100;
+
+    const buybackLimit =
+        buybackPct / 100;
+
+
+    const rows =
+        document.querySelectorAll(
+            "#inputBody tr"
+        );
+
+
+    if(rows.length === 0){
+
+        alert("Please add at least one scrip.");
+
+        return;
+
+    }
+
+
+    /*
+    ========================================================
+    STEP 1
+    COLLECT ALL SCRIPS
+    ========================================================
+    */
+
+    let totalHoldingValue = 0;
+
+    let totalHoldingQty = 0;
+
+    let totalBuybackQty = 0;
+
+    const data = [];
+
+
+    rows.forEach(row=>{
+
+        const scrip =
+            row.querySelector(".scrip").value.trim();
+
+        const holdingQty =
+            num(
+                row.querySelector(".holdingQty").value
+            );
+
+        const holdingPrice =
+            num(
+                row.querySelector(".holdingPrice").value
+            );
+
+        const buybackQty =
+            num(
+                row.querySelector(".buybackQty").value
+            );
+
+        const buyPrice =
+            num(
+                row.querySelector(".buyPrice").value
+            );
+
+
+        /*
+        HOLDING VALUE
+        */
+
+        const holdingValue =
+            holdingQty *
+            holdingPrice;
+
+
+        /*
+        REMAINING POSITION
+        */
+
+        const remainingQty =
+            Math.max(
+                holdingQty -
+                buybackQty,
+                0
+            );
+
+
+        /*
+        NEW PEAK
+        */
+
+        const newPeak =
+            remainingQty *
+            holdingPrice *
+            peak;
+
+
+        /*
+        BUYBACK MARGIN
+        */
+
+        const buybackMargin =
+            buybackQty *
+            buyPrice;
+
+
+        totalHoldingValue +=
+            holdingValue;
+
+        totalHoldingQty +=
+            holdingQty;
+
+        totalBuybackQty +=
+            buybackQty;
+
+
+        data.push({
+
+            scrip,
+            holdingQty,
+            holdingPrice,
+            holdingValue,
+            buybackQty,
+            remainingQty,
+            buyPrice,
+            newPeak,
+            buybackMargin
+
+        });
+
+    });
+
+
+    /*
+    ========================================================
+    STEP 2
+    INITIAL PEAK
+    ========================================================
+    */
+
+    const totalInitialPeak =
+        totalHoldingValue *
+        peak;
+
+
+    /*
+    ========================================================
+    STEP 3
+    RECEIVABLE
+    ========================================================
+    */
+
+    const totalReceivable =
+        totalHoldingValue *
+        cfs;
+
+
+    /*
+    ========================================================
+    STEP 4
+    INITIAL AVAILABLE
+    ========================================================
+    */
+
+    const totalInitialAvailable =
+        totalReceivable -
+        totalInitialPeak;
+
+
+    /*
+    ========================================================
+    STEP 5
+    TOTAL NEW PEAK
+    ========================================================
+    */
+
+    let totalNewPeak = 0;
+
+    data.forEach(item=>{
+
+        totalNewPeak +=
+            item.newPeak;
+
+    });
+
+
+    /*
+    ========================================================
+    STEP 6
+    PEAK HIT AVAILABLE FUND
+    ========================================================
+    */
+
+    const peakHitAvailableFund =
+        totalInitialAvailable +
+        totalNewPeak;
+
+
+    /*
+    ========================================================
+    STEP 7
+    TOTAL BUYBACK MARGIN
+    ========================================================
+    */
+
+    let totalBuybackMargin = 0;
+
+    data.forEach(item=>{
+
+        totalBuybackMargin +=
+            item.buybackMargin;
+
+    });
+
+
+    /*
+    ========================================================
+    STEP 8
+    ADDITIONAL REQUIRED
+    ========================================================
+    */
+
+    const additionalRequired =
+        Math.max(
+            totalBuybackMargin -
+            peakHitAvailableFund,
+            0
+        );
+
+
+    /*
+    ========================================================
+    STEP 9
+    MAX BUYBACK
+    ========================================================
+    */
+
+    let maxBuyAllowed;
+
+    if(buybackPct > 0){
+
+        maxBuyAllowed =
+            Math.floor(
+                totalHoldingQty *
+                buybackLimit
+            );
+
+    }
+    else{
+
+        maxBuyAllowed =
+            Math.floor(
+                totalHoldingQty
+            );
+
+    }
+
+
+    /*
+    ========================================================
+    STATUS
+    ========================================================
+    */
+
+    let status = "PASS";
+
+    let statusClass = "pass";
+
+
+    if(
+        totalBuybackQty >
+        maxBuyAllowed
+    ){
+
+        status = "FAIL";
+        statusClass = "fail";
+
+    }
+    else if(
+        additionalRequired > 0
+    ){
+
+        status = "FAIL";
+        statusClass = "fail";
+
+    }
+
+
+    /*
+    ========================================================
+    RESULT TABLE
+    ========================================================
+    */
+
+    const resultBody =
+        document.getElementById(
+            "resultBody"
+        );
+
+    resultBody.innerHTML = "";
+
+
+    data.forEach(item=>{
+
+        const tr =
+            document.createElement("tr");
+
+
+        tr.innerHTML = `
+
+            <td>
+                ${escapeHTML(
+                    item.scrip || "-"
+                )}
+            </td>
+
+            <td>
+                ${qty(item.holdingQty)}
+            </td>
+
+            <td>
+                ${money(item.holdingPrice)}
+            </td>
+
+            <td>
+                ${money(item.holdingValue)}
+            </td>
+
+            <td>
+                ${qty(item.buybackQty)}
+            </td>
+
+            <td>
+                ${qty(item.remainingQty)}
+            </td>
+
+            <td>
+                ${money(item.buyPrice)}
+            </td>
+
+            <td>
+                ${money(item.newPeak)}
+            </td>
+
+            <td>
+                ${money(item.buybackMargin)}
+            </td>
+
+        `;
+
+        resultBody.appendChild(tr);
+
+    });
+
+
+    /*
+    ========================================================
+    SUMMARY
+    ========================================================
+    */
+
+    document.getElementById(
+        "totalHolding"
+    ).textContent =
+        money(totalHoldingValue);
+
+
+    document.getElementById(
+        "totalInitialPeak"
+    ).textContent =
+        money(totalInitialPeak);
+
+
+    document.getElementById(
+        "totalReceivable"
+    ).textContent =
+        money(totalReceivable);
+
+
+    document.getElementById(
+        "totalInitialAvailable"
+    ).textContent =
+        money(totalInitialAvailable);
+
+
+    document.getElementById(
+        "totalNewPeak"
+    ).textContent =
+        money(totalNewPeak);
+
+
+    document.getElementById(
+        "totalPeakAvailable"
+    ).textContent =
+        money(peakHitAvailableFund);
+
+
+    document.getElementById(
+        "totalMargin"
+    ).textContent =
+        money(totalBuybackMargin);
+
+
+    document.getElementById(
+        "totalAdditional"
+    ).textContent =
+        money(additionalRequired);
+
+
+    /*
+    ========================================================
+    FINAL RESULT
+    ========================================================
+    */
+
+    document.getElementById(
+        "finalAvailable"
+    ).textContent =
+        money(peakHitAvailableFund);
+
+
+    document.getElementById(
+        "finalMargin"
+    ).textContent =
+        money(totalBuybackMargin);
+
+
+    document.getElementById(
+        "finalAdditional"
+    ).textContent =
+        money(additionalRequired);
+
+
+    /*
+    ========================================================
+    TABLE TOTALS
+    ========================================================
+    */
+
+    document.getElementById(
+        "totalHoldingQty"
+    ).textContent =
+        qty(totalHoldingQty);
+
+
+    document.getElementById(
+        "tableHoldingValue"
+    ).textContent =
+        money(totalHoldingValue);
+
+
+    document.getElementById(
+        "totalBuybackQty"
+    ).textContent =
+        qty(totalBuybackQty);
+
+
+    const totalRemainingQty =
+        Math.max(
+            totalHoldingQty -
+            totalBuybackQty,
+            0
+        );
+
+
+    document.getElementById(
+        "totalRemainingQty"
+    ).textContent =
+        qty(totalRemainingQty);
+
+
+    document.getElementById(
+        "tableNewPeak"
+    ).textContent =
+        money(totalNewPeak);
+
+
+    document.getElementById(
+        "tableMargin"
+    ).textContent =
+        money(totalBuybackMargin);
+
+
+    /*
+    ========================================================
+    OVERALL STATUS
+    ========================================================
+    */
+
+    const statusRow =
+        document.createElement("tr");
+
+
+    statusRow.className =
+        "total-row";
+
+
+    statusRow.innerHTML = `
+
+        <td
+            colspan="8"
+            style="text-align:right;">
+            Overall Status
+        </td>
+
+        <td class="${statusClass}">
+            ${status}
+        </td>
+
+    `;
+
+
+    resultBody.appendChild(statusRow);
+
+
+    /*
+    SHOW CALCULATION FLOW
+    */
+
+    document.getElementById(
+        "flowCard"
+    ).classList.remove("hidden");
+
+
+    /*
+    SHOW OUTPUT
+    */
+
+    document.getElementById(
+        "outputCard"
+    ).classList.remove("hidden");
+
+
+    /*
+    SCROLL TO RESULT
+    */
+
+    document.getElementById(
+        "outputCard"
+    ).scrollIntoView({
+        behavior:"smooth",
+        block:"start"
+    });
+
+}
+
+
+/* =========================================================
+   CLEAR
+========================================================= */
+
+function clearAll(){
+
+    document.getElementById(
+        "peakPct"
+    ).value = "";
+
+    document.getElementById(
+        "cfsPct"
+    ).value = "";
+
+    document.getElementById(
+        "buybackPct"
+    ).value = "";
+
+
+    document.getElementById(
+        "inputBody"
+    ).innerHTML = "";
+
+
+    document.getElementById(
+        "resultBody"
+    ).innerHTML = "";
+
+
+    const moneyIds = [
+
+        "totalHolding",
+        "totalInitialPeak",
+        "totalReceivable",
+        "totalInitialAvailable",
+        "totalNewPeak",
+        "totalPeakAvailable",
+        "totalMargin",
+        "totalAdditional",
+        "finalAvailable",
+        "finalMargin",
+        "finalAdditional"
+
+    ];
+
+
+    moneyIds.forEach(id=>{
+
+        document.getElementById(id)
+            .textContent = "₹0.00";
+
+    });
+
+
+    document.getElementById(
+        "totalHoldingQty"
+    ).textContent = "0";
+
+
+    document.getElementById(
+        "totalBuybackQty"
+    ).textContent = "0";
+
+
+    document.getElementById(
+        "totalRemainingQty"
+    ).textContent = "0";
+
+
+    document.getElementById(
+        "tableHoldingValue"
+    ).textContent = "₹0.00";
+
+
+    document.getElementById(
+        "tableNewPeak"
+    ).textContent = "₹0.00";
+
+
+    document.getElementById(
+        "tableMargin"
+    ).textContent = "₹0.00";
+
+
+    document.getElementById(
+        "outputCard"
+    ).classList.add("hidden");
+
+
+    document.getElementById(
+        "flowCard"
+    ).classList.add("hidden");
+
+}
+
+
+/* =========================================================
+   ESCAPE HTML
+========================================================= */
+
+function escapeHTML(value){
+
+    return String(value)
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+
+}
+
+
+/* =========================================================
+   FIRST LOAD
+========================================================= */
+
+window.addEventListener(
+    "DOMContentLoaded",
+    function(){
+
+        document.getElementById(
+            "outputCard"
+        ).classList.add("hidden");
+
+        document.getElementById(
+            "flowCard"
+        ).classList.add("hidden");
+
+    }
+);
+
+</script>
+
+</body>
+</html>
